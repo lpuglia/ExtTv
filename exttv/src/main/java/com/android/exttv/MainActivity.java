@@ -72,8 +72,8 @@ public class MainActivity extends Activity {
     }};
 
     Map<String, String> plugins_map = new LinkedHashMap<String, String>() {{
-        put("La7","https://pastebin.com/raw/Z9GDygd6");
-        put("Rai","https://pastebin.com/raw/BiGPWMDd");
+        put("La7","https://raw.githubusercontent.com/lpuglia/ExtTv/master/plugins/la7plugin.html");
+        put("Rai","https://raw.githubusercontent.com/lpuglia/ExtTv/master/plugins/raiplugin.html");
     }};
 
     public class mainAppInterface {
