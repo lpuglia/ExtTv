@@ -15,6 +15,9 @@
  */
 package com.android.exttv.util;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
@@ -31,9 +34,14 @@ import androidx.annotation.WorkerThread;
 import androidx.tvprovider.media.tv.Channel;
 import androidx.tvprovider.media.tv.ChannelLogoUtils;
 import androidx.tvprovider.media.tv.TvContractCompat;
+
+import android.os.PersistableBundle;
 import android.util.Log;
 
+import com.android.exttv.SyncProgramsJobService;
 import com.android.exttv.model.Subscription;
+
+import java.util.List;
 
 /** Manages interactions with the TV Provider. */
 public class TvUtil {
@@ -136,4 +144,26 @@ public class TvUtil {
     private static int getJobIdForChannelId(long channelId) {
         return (int) (CHANNEL_JOB_ID_OFFSET + channelId);
     }
+
+
+    public static void scheduleSyncingProgramsForChannel(Context context, List<Long> channelIds) {
+        ComponentName componentName = new ComponentName(context, SyncProgramsJobService.class);
+        JobInfo.Builder builder = new JobInfo.Builder(1, componentName);
+
+        PersistableBundle bundle = new PersistableBundle();
+        bundle.putLong("Live", channelIds.get(0));
+        bundle.putLong("OnDemand", channelIds.get(1));
+        builder.setExtras(bundle);
+
+        builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
+
+        JobScheduler scheduler =
+                (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+
+        Log.d(TAG, "Scheduled channel creation.");
+        scheduler.schedule(builder.build());
+    }
+
+
+
 }

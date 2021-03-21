@@ -19,10 +19,12 @@ public class Episode implements Comparable<Episode> {
     private String thumbURL;
     private String pageURL;
     private String duration;
+    public long durationLong;
     private Bitmap thumb;
     private GregorianCalendar airDate;
 
     public Episode(String json) {
+        if(json.equals("")) return;
         try {
             JSONObject jObject = new JSONObject(json);
 
@@ -30,7 +32,7 @@ public class Episode implements Comparable<Episode> {
             c.setTime(new Date(jObject.getLong("AirDate")));
 
             @SuppressLint("SimpleDateFormat") SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
-
+            this.durationLong = jObject.getLong("Duration");
             this.setPageURL(jObject.getString("PageURL"))
                     .setThumbURL(jObject.getString("ThumbURL"))
                     .setAirDate((GregorianCalendar) c)

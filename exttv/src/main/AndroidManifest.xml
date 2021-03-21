@@ -20,6 +20,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
     <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
 
@@ -39,6 +40,7 @@
         android:theme="@style/Theme.Leanback">
         <activity
             android:name="com.android.exttv.MainActivity"
+            android:usesCleartextTraffic="true"
             android:banner="@drawable/icon"
             android:icon="@drawable/icon"
             android:label="@string/app_name"
@@ -62,6 +64,12 @@
                     android:scheme="@string/schema" />
             </intent-filter>
         </activity>
-    </application>
 
+        <service
+            android:usesCleartextTraffic="true"
+            android:name=".SyncProgramsJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+    </application>
 </manifest>

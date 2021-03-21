@@ -74,7 +74,7 @@ public class DisplayerManager {
     }
 
     public void playSelectedEpisode() {
-        scraperManager.handleEpisode(itemArrayAdapter.getFocusedEpisode(), true);
+        scraperManager._handleEpisode(itemArrayAdapter.getFocusedEpisode(), true, "");
     }
 
     LinkedList<String> messages = new LinkedList<>();

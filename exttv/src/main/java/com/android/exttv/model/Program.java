@@ -6,6 +6,7 @@ import java.util.Objects;
 
 public class Program {
     private int posterArtAspectRatio = TvContractCompat.PreviewPrograms.ASPECT_RATIO_16_9;
+    private Long channelId;
     private String title;
     private String description;
     private String cardImageUrl;
@@ -13,7 +14,35 @@ public class Program {
     private String videoUrl;
     private String type;
     private String scraperURL;
+    private Episode episode;
     private boolean requiresProxy=false;
+
+    public Episode getEpisode() {
+        return episode;
+    }
+
+    public Program setEpisode(Episode episode) {
+        this.episode = episode;
+        return this;
+    }
+
+    public Long getChannelId() {
+        return channelId;
+    }
+
+    public Program setChannelId(Long channelId) {
+        this.channelId = channelId;
+        return this;
+    }
+
+    public boolean isRequiresProxy() {
+        return requiresProxy;
+    }
+
+    public Program setRequiresProxy(boolean requiresProxy) {
+        this.requiresProxy = requiresProxy;
+        return this;
+    }
 
     public String getScraperURL() {
         return scraperURL;

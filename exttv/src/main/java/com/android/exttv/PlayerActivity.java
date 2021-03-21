@@ -162,8 +162,7 @@ public class PlayerActivity extends Activity {
         initializePlayer(currentProgram.isLive());
 
         webView = findViewById(R.id.webview);
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
+        webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient( new SSLWebViewClient() );
 
         startScraper(currentProgram);
@@ -290,7 +289,7 @@ public class PlayerActivity extends Activity {
     @Override
     public void onStop() {
         super.onStop();
-        if(scraper.getCurrentProgram().isLive()){
+        if(scraper.isLive()){
             player.release();
             finish();
         }else{

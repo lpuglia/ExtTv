@@ -1,6 +1,7 @@
 package com.android.exttv.util;
 
 import com.android.exttv.scrapers.ScraperManager;
+import com.android.exttv.scrapers.ScriptEngine;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -8,12 +9,12 @@ import org.json.JSONObject;
 public class ProxyProvider {
     static String bestProxy = null;
 
-    public static String getBest(ScraperManager scraperManager){
+    public static String getBest(ScriptEngine scriptEngine){
         if(bestProxy!=null) return bestProxy;
 
         try {
             String apiUrl = "https://api.nordvpn.com/v1/servers/recommendations?limit=10&filters%5Bcountry_id%5D=106";
-            String response = scraperManager.getResponse(apiUrl);
+            String response = scriptEngine.getResponse(apiUrl);
 
             JSONArray servers = new JSONArray(response);
             for (int i=0; i < servers.length(); i++) {
