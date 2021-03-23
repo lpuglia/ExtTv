@@ -4,8 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
 import com.android.exttv.DelegatingSocketFactory;
@@ -18,6 +18,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.CookieManager;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import okhttp3.Authenticator;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Credentials;
+import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -41,31 +43,45 @@ public abstract class ScriptEngine {
     public Plugin plugin;
 
     protected final Context context;
-//    protected final Program currentProgram;
     protected OkHttpClient client;
     protected Map<String,String> headers = new HashMap<>();
 
 
-    public ScriptEngine(Context context, WebView webView) {
-        this.webView = webView;
+    public ScriptEngine(Context context, String scraperURL, boolean requiresProxy) {
         this.context = context;
+        this.webView = new WebView(context);
+        this.webView.getSettings().setJavaScriptEnabled(true);
+        this.webView.addJavascriptInterface(this, "android");
+
+        plugin = new Plugin(scraperURL, context);
+        OkHttpClient.Builder clientb = initClientBuilder();
+        if(requiresProxy)
+            initClientProxy(clientb);
+
+        clientb.cookieJar(new JavaNetCookieJar(new CookieManager()));
+        client = clientb.build();
     }
 
-    protected Runnable pageFinished = ()->{
-        final String promise =
-                "function getResponse(url) {\n" +
-                        "    return new Promise(resolve => {\n" +
-                        "        randomId = 'id'+(Math.random()*100000000000000000).toString(36)\n" +
-                        "        window[randomId.toString()] = resolve\n" +
-                        "        android.getResponseAsync(url, randomId)\n" +
-                        "    }); \n" +
-                        "};";
-        webView.evaluateJavascript(promise, null);
-        webView.loadUrl("javascript:preBackground()");
-        postFinished();
-    };
+    public void init(){
+        this.webView.evaluateJavascript(plugin.getScript(), new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String s) {
+                final String promise =
+                        "function getResponse(url) {\n" +
+                                "    return new Promise(resolve => {\n" +
+                                "        randomId = 'id'+(Math.random()*100000000000000000).toString(36)\n" +
+                                "        window[randomId.toString()] = resolve\n" +
+                                "        android.getResponseAsync(url, randomId)\n" +
+                                "    }); \n" +
+                                "};";
+                webView.evaluateJavascript(promise, null);
+                webView.evaluateJavascript("preBackground()", null);
+                postFinished();
+            }
+        });
+    }
 
-    private Map<String, String> parseJson(String jsonMediaSource){
+    protected Map<String, String> parseJson(String jsonMediaSource){
         try {
             Map<String, String> map = new HashMap<>();
             JSONObject jObject = new JSONObject(jsonMediaSource);
@@ -96,14 +112,8 @@ public abstract class ScriptEngine {
     }
 
     void scrapeVideoURL(String url){
-        webView.loadUrl("javascript:android.playStream(scrapeVideo('"+url+"'))");
+        webView.evaluateJavascript("android.playStream(scrapeVideo('"+url+"'))", null);
     }
-
-    @JavascriptInterface
-    public void playStream(String jsonMediaSource){
-        _playStream(parseJson(jsonMediaSource));
-    }
-
 
     protected OkHttpClient.Builder initClientBuilder(){
         return new OkHttpClient.Builder()
@@ -142,8 +152,7 @@ public abstract class ScriptEngine {
         Request.Builder requestb = new Request.Builder().url(url).get();
         for(Map.Entry<String, String> a : headers.entrySet())
             requestb.addHeader(a.getKey(), a.getValue());
-
-        return requestb.tag("REQUEST").build();
+        return requestb.build();
     }
 
     @JavascriptInterface
@@ -191,21 +200,8 @@ public abstract class ScriptEngine {
 
     @SuppressLint("SetJavaScriptEnabled")
     public void cancel(){
-//        if(client != null){
-//            for (Call call : client.dispatcher().queuedCalls()) {
-//                if (call.request().tag().equals("REQUEST"))
-//                    call.cancel();
-//            }
-//
-//            for (Call call : client.dispatcher().runningCalls()) {
-//                if (call.request().tag().equals("REQUEST"))
-//                    call.cancel();
-//            }
-//        }
         webView.stopLoading();
         webView.getSettings().setJavaScriptEnabled(false);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.loadUrl("about:blank");
     }
 
     public boolean isLive(){
@@ -216,7 +212,6 @@ public abstract class ScriptEngine {
         new Handler(context.getMainLooper()).post(runnable);
     };
 
-    public abstract void _playStream(Map<String, String> mediaSource);
     public abstract void _handleEpisode(Episode episode, boolean play, String title);
     public abstract void postFinished();
 }

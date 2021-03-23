@@ -34,8 +34,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -47,7 +45,6 @@ import com.android.exttv.model.ProgramDatabase;
 import com.android.exttv.scrapers.ScraperManager;
 import com.android.exttv.util.AppLinkHelper;
 import com.android.exttv.util.RemoteKeyEvent;
-import com.android.exttv.util.SSLWebViewClient;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -78,7 +75,6 @@ public class PlayerActivity extends Activity {
     private Episode currentEpisode;
     private boolean paused = false;
     private long playbackPosition = 0;
-    private WebView webView;
 
     public SimpleExoPlayer player;
     public ScraperManager scraper;
@@ -160,10 +156,6 @@ public class PlayerActivity extends Activity {
 
         Program currentProgram = setCurrentProgramFromIntent(getIntent().getData());
         initializePlayer(currentProgram.isLive());
-
-        webView = findViewById(R.id.webview);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.setWebViewClient( new SSLWebViewClient() );
 
         startScraper(currentProgram);
 
@@ -259,7 +251,7 @@ public class PlayerActivity extends Activity {
             scraper = null;
         }
 
-        scraper = new ScraperManager(this, webView, currentProgram, episode);
+        scraper = new ScraperManager(this, currentProgram, episode);
     }
 
     public void setCurrentEpisode(Episode episode) {

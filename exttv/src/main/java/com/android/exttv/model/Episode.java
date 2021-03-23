@@ -2,6 +2,7 @@ package com.android.exttv.model;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,25 +20,30 @@ public class Episode implements Comparable<Episode> {
     private String thumbURL;
     private String pageURL;
     private String duration;
-    public long durationLong;
+    private long durationLong;
     private Bitmap thumb;
     private GregorianCalendar airDate;
 
     public Episode(String json) {
         if(json.equals("")) return;
         try {
+            Log.d("asd", json);
             JSONObject jObject = new JSONObject(json);
 
             Calendar c = Calendar.getInstance();
             c.setTime(new Date(jObject.getLong("AirDate")));
 
+            durationLong = 0;
+            if (jObject.has("Duration") && !jObject.isNull("Duration")) {
+                durationLong = jObject.getLong("Duration");
+            }
+
             @SuppressLint("SimpleDateFormat") SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
-            this.durationLong = jObject.getLong("Duration");
             this.setPageURL(jObject.getString("PageURL"))
                     .setThumbURL(jObject.getString("ThumbURL"))
                     .setAirDate((GregorianCalendar) c)
                     .setDescription(jObject.getString("Description"))
-                    .setDuration(df.format(jObject.getLong("Duration")))
+                    .setDuration(df.format(durationLong))
                     .setTitle(jObject.getString("Title"));
         } catch (JSONException e) {
             e.printStackTrace();
@@ -105,6 +111,15 @@ public class Episode implements Comparable<Episode> {
 
     public Episode setPageURL(String pageURL) {
         this.pageURL = pageURL;
+        return this;
+    }
+
+    public long getDurationLong() {
+        return durationLong;
+    }
+
+    public Episode setDurationLong(long durationLong) {
+        this.durationLong = durationLong;
         return this;
     }
 

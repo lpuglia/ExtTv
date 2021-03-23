@@ -11,7 +11,6 @@ import android.os.StrictMode;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
-import android.webkit.WebView;
 
 import androidx.tvprovider.media.tv.PreviewProgram;
 import androidx.tvprovider.media.tv.TvContractCompat;
@@ -27,8 +26,8 @@ import com.google.gson.Gson;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 
-import java.net.CookieManager;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,66 +35,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import okhttp3.JavaNetCookieJar;
-import okhttp3.OkHttpClient;
-
 public class SyncProgramsJobService extends JobService {
 
     private int pluginCounter = 0;
 
     ArrayList<String> plugins = new ArrayList<String>() {{
-        add("http://172.26.96.1/plugins/la7plugin.js");
-        add("http://172.26.96.1/plugins/raiplugin.js");
-        add("http://172.26.96.1/plugins/mediasetplugin.js");
-        add("http://172.26.96.1/plugins/discoveryplugin.js");
+        add("http://172.23.160.1/plugins/la7plugin.js");
+        add("http://172.23.160.1/plugins/raiplugin.js");
+        add("http://172.23.160.1/plugins/mediasetplugin.js");
+        add("http://172.23.160.1/plugins/discoveryplugin.js");
     }};
 
     public class SyncProgramManager extends ScriptEngine{
 
         private PersistableBundle bundle;
 
-        public SyncProgramManager(JobService jobService, WebView webView, String pluginUrl, PersistableBundle bundle) {
-            super(jobService, webView);
+        public SyncProgramManager(JobService jobService, String pluginUrl, PersistableBundle bundle) {
+            super(jobService, pluginUrl, false);
             this.bundle = bundle;
-            plugin = new Plugin(pluginUrl, context);
-            OkHttpClient.Builder clientb = initClientBuilder();
-
-            clientb.cookieJar(new JavaNetCookieJar(new CookieManager()));
-            client = clientb.build();
-
-            webView.addJavascriptInterface(this, "android");
-//            ((SSLWebViewClient)webView.getWebViewClient()).pageFinished = pageFinished;
-//            webView.loadData(plugin.getScript(), "text/html", "utf-8");
-            webView.evaluateJavascript(plugin.getScript(), new ValueCallback<String>() {
-                @Override
-                public void onReceiveValue(String s) {
-                    Log.d("asd", "asd");
-                    pageFinished.run();
-                }
-            });
+            init();
         }
 
         @Override
         public void postFinished() {
-//            if(!webView.getUrl().equals("about:blank")){
-                Log.d("asd", String.valueOf(pluginCounter));
-                webView.loadUrl("javascript:android.getName(name)");
-                webView.loadUrl("javascript:if (typeof programs == 'undefined') {programs=[]}"); //define programs if it is undefined
-                webView.loadUrl("javascript:android.getPrograms(JSON.stringify(programs))");
-//            }
+            webView.evaluateJavascript("(function() { if (typeof name == 'undefined') {name='undefined'}; return {name}; })();", new ValueCallback<String>() {
+                @Override public void onReceiveValue(String name) {
+                    try { plugin.setName(new JSONObject(name).getString("name"));
+                    } catch (JSONException e) { e.printStackTrace(); }
+                }});
+            webView.evaluateJavascript("(function() { if (typeof programs == 'undefined') {programs=[]}; return programs; })();", new ValueCallback<String>() {
+                @Override public void onReceiveValue(String jsonPrograms) { getPrograms(jsonPrograms); }
+            });
         }
 
-        @JavascriptInterface
-        public void getName(String name) {
-            plugin.setName(name);
-        }
-
-        @Override public void _playStream(Map<String, String> mediaSource) {}
-
-        /** Show a toast from the web page */
-        @JavascriptInterface
         public void getPrograms(String jsonPrograms) {
-//            Log.d("asd", String.valueOf(jsonPrograms));
             ArrayList<Program> listPrograms = new ArrayList<>();
             try {
                 JSONArray jObject = new JSONArray(jsonPrograms);
@@ -129,33 +102,14 @@ public class SyncProgramsJobService extends JobService {
                 if(p.isLive())
                     _handleEpisode(new Episode(""), false, p.getTitle());
                 else
-                    runOnMainLoop(() -> webView.loadUrl("javascript:scrapeLastEpisode('"+p.getVideoUrl()+"','"+p.getTitle()+"')"));
+                    runOnMainLoop(() -> webView.evaluateJavascript("scrapeLastEpisode('"+p.getVideoUrl()+"','"+p.getTitle()+"')", null));
             }
-//            runOnMainLoop(() -> webView.loadUrl("javascript:android.getNextPlugin()"));
-        }
-
-//        @JavascriptInterface
-//        public void getNextPlugin() {
-//            if(pluginCounter < plugins.size()-1){
-//                plugin = new Plugin(plugins.get(++pluginCounter), context);
-//                runOnMainLoop(() ->
-//                        webView.evaluateJavascript(plugin.getScript(), new ValueCallback<String>() {
-//                                    @Override
-//                                    public void onReceiveValue(String s) {
-//                                        pageFinished.run();
-//                                    }
-//                                }));
-//            }
-//        }
-
-        @Override public void _handleEpisode(Episode episode, boolean play, String title) {
-            Program program = ProgramDatabase.programs.get(Objects.hash(title));
-            program.setEpisode(episode);
-            addProgram(program);
         }
 
         @SuppressLint("RestrictedApi")
-        protected void addProgram(Program program) {
+        @Override public void _handleEpisode(Episode episode, boolean play, String title) {
+            Program program = ProgramDatabase.programs.get(Objects.hash(title));
+            program.setEpisode(episode);
 
             SharedPreferences mPrefs = getSharedPreferences("test", MODE_PRIVATE);
             SharedPreferences.Editor prefsEditor = mPrefs.edit();
@@ -190,28 +144,28 @@ public class SyncProgramsJobService extends JobService {
                         createPreviewProgram(program).toContentValues());
             }
         }
-    }
 
-    private PreviewProgram createPreviewProgram(Program program){
-        Uri intentUri = AppLinkHelper.buildPlaybackUri(program.getChannelId(), program.hashCode());
-        PreviewProgram.Builder builder = new PreviewProgram.Builder().setChannelId(program.getChannelId())
-                .setType(TvContractCompat.PreviewProgramColumns.TYPE_MOVIE)
-                .setTitle(program.getTitle())
-                .setLive(program.isLive())
-                .setPosterArtUri(Uri.parse(program.getCardImageUrl()))
-                .setPosterArtAspectRatio(program.getPosterArtAspectRatio())
-                .setLogoUri(Uri.parse(program.getLogo()));
-        if(!program.isLive())
-            builder.setDurationMillis((int) program.getEpisode().durationLong)
-                    .setDescription(program.getEpisode().getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("d MMM uuuu")) + " - " + program.getEpisode().getDescription())
-                    .setThumbnailUri(Uri.parse(program.getEpisode().getThumbURL()))
-                    .setEpisodeTitle(program.getEpisode().getTitle())
+        private PreviewProgram createPreviewProgram(Program program){
+            Uri intentUri = AppLinkHelper.buildPlaybackUri(program.getChannelId(), program.hashCode());
+            PreviewProgram.Builder builder = new PreviewProgram.Builder().setChannelId(program.getChannelId())
+                    .setType(TvContractCompat.PreviewProgramColumns.TYPE_MOVIE)
+                    .setTitle(program.getTitle())
+                    .setLive(program.isLive())
+                    .setPosterArtUri(Uri.parse(program.getCardImageUrl()))
+                    .setPosterArtAspectRatio(program.getPosterArtAspectRatio())
+                    .setLogoUri(Uri.parse(program.getLogo()))
                     .setIntentUri(intentUri);
-        return builder.build();
+            if(!program.isLive())
+                builder.setDurationMillis((int) program.getEpisode().getDurationLong())
+                        .setDescription(program.getEpisode().getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("d MMM uuuu")) + " - " + program.getEpisode().getDescription())
+                        .setThumbnailUri(Uri.parse(program.getEpisode().getThumbURL()))
+                        .setEpisodeTitle(program.getEpisode().getTitle());
+            return builder.build();
+        }
+
     }
 
     List<SyncProgramManager> syncProgramManager = new ArrayList<>(); //keep a reference of syncProgramManager if you don't want your job to be terminated
-
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
         PersistableBundle bundle = jobParameters.getExtras();
@@ -221,9 +175,7 @@ public class SyncProgramsJobService extends JobService {
         StrictMode.setThreadPolicy(policy);
 
         for(String p : plugins) {
-            WebView webView = new WebView(this);
-            webView.getSettings().setJavaScriptEnabled(true);
-            syncProgramManager.add(new SyncProgramManager(this, webView, p, bundle));
+            syncProgramManager.add(new SyncProgramManager(this, p, bundle));
         }
         return true;
     }
