@@ -16,48 +16,64 @@ import androidx.tvprovider.media.tv.PreviewProgram;
 import androidx.tvprovider.media.tv.TvContractCompat;
 
 import com.android.exttv.model.Episode;
-import com.android.exttv.model.Plugin;
 import com.android.exttv.model.Program;
-import com.android.exttv.model.ProgramDatabase;
 import com.android.exttv.scrapers.ScriptEngine;
 import com.android.exttv.util.AppLinkHelper;
 import com.google.gson.Gson;
 
+import org.conscrypt.Conscrypt;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
+import java.security.Security;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class SyncProgramsJobService extends JobService {
 
-    private int pluginCounter = 0;
+    Map<String, Set<String>> idMap = new HashMap<>();
+    private final Map<Integer, Program> programMap = new LinkedHashMap<>();
+    private final Map<Integer, Program> onDemand = new HashMap<>();
+
+    private String host = "172.24.192.1";
 
     ArrayList<String> plugins = new ArrayList<String>() {{
-        add("http://172.23.160.1/plugins/la7plugin.js");
-        add("http://172.23.160.1/plugins/raiplugin.js");
-        add("http://172.23.160.1/plugins/mediasetplugin.js");
-        add("http://172.23.160.1/plugins/discoveryplugin.js");
+        add("http://"+host+"/plugins/la7plugin.js");
+        add("http://"+host+"/plugins/raiplugin.js");
+        add("http://"+host+"/plugins/mediasetplugin.js");
+        add("http://"+host+"/plugins/discoveryplugin.js");
     }};
 
     public class SyncProgramManager extends ScriptEngine{
 
-        private PersistableBundle bundle;
+        private final PersistableBundle bundle;
+        private final String pluginURl;
 
         public SyncProgramManager(JobService jobService, String pluginUrl, PersistableBundle bundle) {
-            super(jobService, pluginUrl, false);
+            super(jobService, pluginUrl);
             this.bundle = bundle;
+            this.pluginURl = pluginUrl;
             init();
         }
 
         @Override
         public void postFinished() {
+            webView.evaluateJavascript("(function() { if (typeof pluginRequiresProxy == 'undefined') {pluginRequiresProxy=false}; return {pluginRequiresProxy}; })();", new ValueCallback<String>() {
+                @Override public void onReceiveValue(String name) {
+                    try { buildClient(new JSONObject(name).getBoolean("pluginRequiresProxy"));
+                    } catch (JSONException e) { e.printStackTrace(); }
+                }});
             webView.evaluateJavascript("(function() { if (typeof name == 'undefined') {name='undefined'}; return {name}; })();", new ValueCallback<String>() {
                 @Override public void onReceiveValue(String name) {
                     try { plugin.setName(new JSONObject(name).getString("name"));
@@ -96,70 +112,116 @@ public class SyncProgramsJobService extends JobService {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-//            Log.d("asd", String.valueOf(listPrograms));
-            for(Program p : listPrograms){
-                ProgramDatabase.programs.put(p.hashCode(), p);
-                if(p.isLive())
-                    _handleEpisode(new Episode(""), false, p.getTitle());
-                else
-                    runOnMainLoop(() -> webView.evaluateJavascript("scrapeLastEpisode('"+p.getVideoUrl()+"','"+p.getTitle()+"')", null));
+
+            // Search Live programs and remove
+            Iterator<Program> i = listPrograms.iterator();
+            while (i.hasNext()) {
+                Program p = i.next();
+                if(p.isLive()){
+                    programMap.put(p.hashCode(), p);
+                    i.remove();
+                }
             }
+            for(Program p : listPrograms){
+                onDemand.put(p.hashCode(), p);
+                idMap.get(pluginURl).add(p.getTitle());
+            }
+            for(Program p : listPrograms)
+                runOnMainLoop(() -> webView.evaluateJavascript(
+                        "scrapeLastEpisode('" + p.getVideoUrl() + "','" + p.getTitle() + "')"+
+                               ".then(response => {"+
+                                    "addEpisode(response, true, '"+p.getTitle()+"')" +
+                                               ".catch(err => console.log(err))" +
+                                               ".then(() => android.finalize('"+p.getTitle()+"'))" +
+                                "})",
+                        null));
+
+            if(idMap.get(pluginURl).isEmpty()){
+                idMap.remove(pluginURl);
+                if(idMap.isEmpty()) setPrograms();
+            }
+        }
+
+        @JavascriptInterface
+        public void finalize(String title){
+            idMap.get(pluginURl).remove(title);
+            if(idMap.get(pluginURl).isEmpty()) idMap.remove(pluginURl);
+            if(idMap.isEmpty()) setPrograms();
         }
 
         @SuppressLint("RestrictedApi")
         @Override public void _handleEpisode(Episode episode, boolean play, String title) {
-            Program program = ProgramDatabase.programs.get(Objects.hash(title));
+            Program program = onDemand.get(Objects.hash(title));
             program.setEpisode(episode);
+        }
+
+        @SuppressLint("RestrictedApi")
+        private void setPrograms() {
+            List<Program> onDemandPrograms = new ArrayList<>(onDemand.values());
+            Collections.sort(onDemandPrograms);
+            for(Program p : onDemandPrograms) programMap.put(p.hashCode(), p);
 
             SharedPreferences mPrefs = getSharedPreferences("test", MODE_PRIVATE);
             SharedPreferences.Editor prefsEditor = mPrefs.edit();
             prefsEditor.remove("programs");
             prefsEditor.apply();
             Gson gson = new Gson();
-            String json = gson.toJson(ProgramDatabase.programs);
+            String json = gson.toJson(programMap);
             prefsEditor.putString("programs", json);
             prefsEditor.apply();
 
             boolean found = false;
+//            Cursor cursor = getContentResolver().query(TvContractCompat.PreviewPrograms.CONTENT_URI, null, null, null, null);
+//            if (cursor != null && cursor.moveToFirst()) {
+//                do {
+//                    PreviewProgram previewProgram = PreviewProgram.fromCursor(cursor);
+//                    if(previewProgram.getTitle().equals(program.getTitle())){
+//                        found = true;
+//                        getContentResolver().update(
+//                                TvContractCompat.buildPreviewProgramUri(previewProgram.getId()),
+//                                createPreviewProgram(program).toContentValues(),
+//                                null,
+//                                null);
+//                        break;
+//                    }
+//                } while (cursor.moveToNext());
+//            }
+
             Cursor cursor = getContentResolver().query(TvContractCompat.PreviewPrograms.CONTENT_URI, null, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     PreviewProgram previewProgram = PreviewProgram.fromCursor(cursor);
-                    if(previewProgram.getTitle().equals(program.getTitle())){
-                        found = true;
-                        getContentResolver().update(
-                                        TvContractCompat.buildPreviewProgramUri(previewProgram.getId()),
-                                        createPreviewProgram(program).toContentValues(),
-                                        null,
-                                        null);
-                        break;
-                    }
-//                    getContentResolver().delete(TvContractCompat.buildPreviewProgramUri(previewProgram.getId()), null, null);
+                    getContentResolver().delete(TvContractCompat.buildPreviewProgramUri(previewProgram.getId()), null, null);
                 } while (cursor.moveToNext());
             }
-
-            if(!found){
-                getContentResolver().insert(
-                        TvContractCompat.PreviewPrograms.CONTENT_URI,
-                        createPreviewProgram(program).toContentValues());
-            }
+//
+            for(Map.Entry<Integer, Program> p : programMap.entrySet())
+                if(!found){
+                    getContentResolver().insert(
+                            TvContractCompat.PreviewPrograms.CONTENT_URI,
+                            createPreviewProgram(p.getValue()).toContentValues());
+                }
         }
 
         private PreviewProgram createPreviewProgram(Program program){
             Uri intentUri = AppLinkHelper.buildPlaybackUri(program.getChannelId(), program.hashCode());
             PreviewProgram.Builder builder = new PreviewProgram.Builder().setChannelId(program.getChannelId())
                     .setType(TvContractCompat.PreviewProgramColumns.TYPE_MOVIE)
-                    .setTitle(program.getTitle())
                     .setLive(program.isLive())
                     .setPosterArtUri(Uri.parse(program.getCardImageUrl()))
                     .setPosterArtAspectRatio(program.getPosterArtAspectRatio())
                     .setLogoUri(Uri.parse(program.getLogo()))
                     .setIntentUri(intentUri);
-            if(!program.isLive())
+            String airDate = "";
+            if(!program.isLive()) {
+                airDate += " - " + program.getEpisode().getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("d MMM uuuu"));
+
                 builder.setDurationMillis((int) program.getEpisode().getDurationLong())
-                        .setDescription(program.getEpisode().getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("d MMM uuuu")) + " - " + program.getEpisode().getDescription())
+                        .setDescription(program.getEpisode().getDescription())
                         .setThumbnailUri(Uri.parse(program.getEpisode().getThumbURL()))
                         .setEpisodeTitle(program.getEpisode().getTitle());
+            }
+            builder.setTitle(program.getTitle() + airDate);
             return builder.build();
         }
 
@@ -168,21 +230,23 @@ public class SyncProgramsJobService extends JobService {
     List<SyncProgramManager> syncProgramManager = new ArrayList<>(); //keep a reference of syncProgramManager if you don't want your job to be terminated
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
+        Security.insertProviderAt(Conscrypt.newProvider(), 1); //without this I get handshake error
         PersistableBundle bundle = jobParameters.getExtras();
-        Log.d("asd","onStartJob" + bundle);
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build(); //avoid NetworkOnMainThreadException when the job is called from system
         StrictMode.setThreadPolicy(policy);
 
+        for(String p : plugins) idMap.put(p, new HashSet<String>());
+
         for(String p : plugins) {
             syncProgramManager.add(new SyncProgramManager(this, p, bundle));
         }
+//        jobFinished(jobParameters, true);
         return true;
     }
 
     @Override
     public boolean onStopJob(JobParameters jobParameters) {
-        Log.d("asd","onStopJob" + jobParameters);
         return true;
     }
 }

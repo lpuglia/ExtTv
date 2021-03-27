@@ -4,7 +4,7 @@ import androidx.tvprovider.media.tv.TvContractCompat;
 
 import java.util.Objects;
 
-public class Program {
+public class Program implements Comparable<Program> {
     private int posterArtAspectRatio = TvContractCompat.PreviewPrograms.ASPECT_RATIO_16_9;
     private Long channelId;
     private String title;
@@ -147,4 +147,8 @@ public class Program {
         return Objects.hash(title);
     }
 
+    @Override
+    public int compareTo(Program program) {
+        return -episode.getAirDate().compareTo(program.getEpisode().getAirDate());
+    }
 }

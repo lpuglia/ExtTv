@@ -1,6 +1,7 @@
 var name = "Rai"
+var pluginRequiresProxy = false
 
-var programs = [       
+var programs = [
     {
         "Title" : "Rai 1",
         "Description" : "rai",
@@ -61,7 +62,7 @@ async function getLiveStream(url) {
 async function scrapeLastEpisode(url, title){
     response = await getResponse(url)
     json = JSON.parse(response)
-    addEpisode("https://www.raiplay.it/" + json.first_item_path, true, title);
+    return "https://www.raiplay.it/" + json.first_item_path
 }
 
 async function scrapeEpisodes(url){

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -28,15 +29,18 @@ public class Plugin {
             // check if uri is an URL
             if(URLUtil.isValidUrl(uri)){
                 try {
-                    URLConnection conn = new URL(uri).openConnection();
+                    HttpURLConnection conn = (HttpURLConnection) new URL(uri).openConnection();
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    InputStreamReader inputStreamReader = new InputStreamReader(conn.getInputStream());
+                    BufferedReader in = new BufferedReader(inputStreamReader);
                     String str;
                     script = in.readLine();
                     while ((str = in.readLine()) != null) {
                         script+="\n"+str;
                     }
+                    conn.disconnect();
+                    inputStreamReader.close();
                     in.close();
                     return;
                 }catch(IOException e){
@@ -58,7 +62,8 @@ public class Plugin {
                 while ( (receiveString = bufferedReader.readLine()) != null ) {
                     stringBuilder.append("\n").append(receiveString);
                 }
-
+                inputStreamReader.close();
+                bufferedReader.close();
                 inputStream.close();
                 script = stringBuilder.toString();
             }

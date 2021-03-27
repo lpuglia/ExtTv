@@ -16,32 +16,34 @@ public class ScraperManager extends ScriptEngine{
     private final Episode overrideEpisode;
     public final DisplayerManager displayerManager;
     private final PlayerActivity playerActivity;
-    public final DataSource.Factory dataSourceFactory;
+    public DataSource.Factory dataSourceFactory;
     private final Program currentProgram;
 
     public ScraperManager(PlayerActivity playerActivity, Program currentProgram, Episode overrideEpisode) {
-        super(playerActivity, currentProgram.getScraperURL(), currentProgram.requiresProxy());
+        super(playerActivity, currentProgram.getScraperURL());
 
         this.displayerManager = new DisplayerManager(playerActivity, this, currentProgram.isLive());
-        this.dataSourceFactory = new OkHttpDataSourceFactory(client);
         this.overrideEpisode = overrideEpisode;
         this.playerActivity = playerActivity;
         this.currentProgram = currentProgram;
 
         toastOnUi("Playing " + currentProgram.getVideoUrl());
-//        toastOnUi("Using " +  + " as proxy");
         init();
     }
 
 
     @Override
     public void postFinished() {
+        buildClient(currentProgram.requiresProxy());
+        this.dataSourceFactory = new OkHttpDataSourceFactory(client);
         if(currentProgram.isLive()){
             webView.evaluateJavascript("getLiveStream('"+currentProgram.getVideoUrl()+"')", null);
         }else{
             webView.evaluateJavascript("scrapeEpisodes('"+currentProgram.getVideoUrl()+"')", null);
             Log.d("asd","Finished Calling scrapeEpisodes");
         }
+        if(currentProgram.requiresProxy())
+            toastOnUi("Using " + client.proxy().address() + " as proxy");
     }
 
     @Override

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
+import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
@@ -47,38 +48,43 @@ public abstract class ScriptEngine {
     protected Map<String,String> headers = new HashMap<>();
 
 
-    public ScriptEngine(Context context, String scraperURL, boolean requiresProxy) {
+    public ScriptEngine(Context context, String scraperURL) {
         this.context = context;
         this.webView = new WebView(context);
         this.webView.getSettings().setJavaScriptEnabled(true);
         this.webView.addJavascriptInterface(this, "android");
 
         plugin = new Plugin(scraperURL, context);
-        OkHttpClient.Builder clientb = initClientBuilder();
-        if(requiresProxy)
-            initClientProxy(clientb);
-
-        clientb.cookieJar(new JavaNetCookieJar(new CookieManager()));
-        client = clientb.build();
     }
 
     public void init(){
         this.webView.evaluateJavascript(plugin.getScript(), new ValueCallback<String>() {
             @Override
             public void onReceiveValue(String s) {
-                final String promise =
-                        "function getResponse(url) {\n" +
-                                "    return new Promise(resolve => {\n" +
-                                "        randomId = 'id'+(Math.random()*100000000000000000).toString(36)\n" +
-                                "        window[randomId.toString()] = resolve\n" +
-                                "        android.getResponseAsync(url, randomId)\n" +
-                                "    }); \n" +
-                                "};";
-                webView.evaluateJavascript(promise, null);
-                webView.evaluateJavascript("preBackground()", null);
                 postFinished();
             }
         });
+    }
+
+    @JavascriptInterface
+    public void buildClient(boolean requiresProxy){
+        final String promise =
+                "function getResponse(url) {\n" +
+                        "    return new Promise(resolve => {\n" +
+                        "        randomId = 'id'+(Math.random()*100000000000000000).toString(36)\n" +
+                        "        window[randomId.toString()] = resolve\n" +
+                        "        android.getResponseAsync(url, randomId)\n" +
+                        "    }); \n" +
+                        "};";
+
+        OkHttpClient.Builder clientb = initClientBuilder();
+        if(requiresProxy)
+            initClientProxy(clientb);
+
+        clientb.cookieJar(new JavaNetCookieJar(new CookieManager()));
+        client = clientb.build();
+        webView.evaluateJavascript(promise, null);
+        webView.evaluateJavascript("preBackground()", null);
     }
 
     protected Map<String, String> parseJson(String jsonMediaSource){

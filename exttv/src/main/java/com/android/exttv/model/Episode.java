@@ -27,7 +27,6 @@ public class Episode implements Comparable<Episode> {
     public Episode(String json) {
         if(json.equals("")) return;
         try {
-            Log.d("asd", json);
             JSONObject jObject = new JSONObject(json);
 
             Calendar c = Calendar.getInstance();

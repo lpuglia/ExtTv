@@ -1,5 +1,5 @@
 var name = "La7"
-var requiresProxy = false
+var pluginRequiresProxy = false
 la7Logo = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/LA7_-_Logo_2011.svg/1024px-LA7_-_Logo_2011.svg.png"
 
 var programs = [
@@ -35,6 +35,7 @@ var programs = [
 ]
 
 async function getLiveStream(url) {
+    console.log(url)
     response = await getResponse(url);
     preTokenUrl = response.split("var preTokenUrl = \"")[1].split("\";")[0]
     response = await getResponse(preTokenUrl);
@@ -55,7 +56,7 @@ async function scrapeLastEpisode(url, title){
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString(response, 'text/html');
     //scrape last episode
-    addEpisode("https://www.la7.it"+htmlDoc.querySelector("div.subcontent > div.ultima_puntata > a").getAttribute("href"), false, title);
+    return "https://www.la7.it"+htmlDoc.querySelector("div.subcontent > div.ultima_puntata > a").getAttribute("href");
 }
 
 async function scrapeEpisodes(url){
