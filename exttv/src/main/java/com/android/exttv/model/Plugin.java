@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.webkit.URLUtil;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 
@@ -38,7 +39,7 @@ public class Plugin {
             if(URLUtil.isValidUrl(uri)){
                 try {
                     HttpURLConnection conn = (HttpURLConnection) new URL(uri).openConnection();
-                    conn.setConnectTimeout(5000);
+                    conn.setConnectTimeout(2000);
                     conn.setReadTimeout(5000);
                     InputStreamReader inputStreamReader = new InputStreamReader(conn.getInputStream());
                     BufferedReader in = new BufferedReader(inputStreamReader);
@@ -51,11 +52,10 @@ public class Plugin {
                     inputStreamReader.close();
                     in.close();
                     return;
-                }catch(FileNotFoundException e){ // if plugin file is not reachable
+                }catch(IOException e){ // if plugin file is not reachable
                     SharedPreferences mPrefs = context.getSharedPreferences("test", MODE_PRIVATE);
                     uri = mPrefs.getString(uri, ""); //overwrite uri variable with file name
-                }catch(IOException e){
-                    e.printStackTrace();
+                    Log.d("Plugin", "URI not accessible, attempting to read " +uri+"...");
                 }
             } else {
                 Log.d("Plugin", "URI is not an URL, attempting to read file...");
