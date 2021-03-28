@@ -1,12 +1,16 @@
 package com.android.exttv.model;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.webkit.URLUtil;
+
+import com.google.gson.Gson;
 
 import org.xml.sax.InputSource;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,13 +21,17 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import static android.content.Context.MODE_PRIVATE;
+
 public class Plugin {
     private String name;
     private String script;
-    private Context context;
+    private final Context context;
+    private final String uri;
     private ArrayList<Program> programs;
 
     public Plugin(String uri, Context context) {
+        this.uri = uri;
         this.context = context;
         try {
             // check if uri is an URL
@@ -37,12 +45,15 @@ public class Plugin {
                     String str;
                     script = in.readLine();
                     while ((str = in.readLine()) != null) {
-                        script+="\n"+str;
+                        script += "\n" + str;
                     }
                     conn.disconnect();
                     inputStreamReader.close();
                     in.close();
                     return;
+                }catch(FileNotFoundException e){ // if plugin file is not reachable
+                    SharedPreferences mPrefs = context.getSharedPreferences("test", MODE_PRIVATE);
+                    uri = mPrefs.getString(uri, ""); //overwrite uri variable with file name
                 }catch(IOException e){
                     e.printStackTrace();
                 }
@@ -76,12 +87,18 @@ public class Plugin {
     public void saveScript(){
         OutputStreamWriter outputStreamWriter = null;
         try {
-            outputStreamWriter = new OutputStreamWriter(context.openFileOutput(name+".js", Context.MODE_PRIVATE));
+            outputStreamWriter = new OutputStreamWriter(context.openFileOutput(name+".js", MODE_PRIVATE));
             outputStreamWriter.write(script);
             outputStreamWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        SharedPreferences mPrefs = context.getSharedPreferences("test", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+        prefsEditor.remove(uri);
+        prefsEditor.apply();
+        prefsEditor.putString(uri, name+".js");
+        prefsEditor.apply();
     }
 
     public String getName() {
