@@ -43,6 +43,40 @@ var programs = [
     }
 ]
 
+async function getCurrentLiveProgram(url){
+    var title
+    for(var i in programs){
+        if(programs[i].VideoUrl == url){
+            title = programs[i].Title
+            break;
+        }
+    }
+    response = await getResponse("https://www.raiplay.it/palinsesto/onAir.json")
+
+    json = JSON.parse(response).on_air
+    for(var i in json){
+        if(json[i].channel == title){
+            var a = json[i].currentItem.duration.split(':');
+            var duration = ((+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2])) * 1000;
+
+            var offsetUTC = -1
+            var DaylightSavingTime = -1 // TO FIX WITH AUTOMATIC DST detection
+            a = json[i].currentItem.hour.split(':')
+            airHour = ((+a[0] + offsetUTC + DaylightSavingTime)*60*60 + a[1]*60) * 1000
+
+            return JSON.stringify(dict = {
+                "Title" : json[i].currentItem.program.name,
+                "Duration" : duration,
+                "Description" : json[i].currentItem.description,
+                "AirDate" : airHour,
+                "ThumbURL" : "https://www.raiplay.it/" + json[i].currentItem.image,
+                "PageURL" : ""
+                }
+            )
+        }
+    }
+}
+
 async function getLiveStream(url) {
     response = await getResponse(url)
     sourceURL = response.split("<![CDATA[")[1].split("]]><")[0]
@@ -59,7 +93,7 @@ async function getLiveStream(url) {
                             }));
 }
 
-async function scrapeLastEpisode(url, title){
+async function scrapeLastEpisode(url){
     response = await getResponse(url)
     json = JSON.parse(response)
     return "https://www.raiplay.it/" + json.first_item_path
@@ -90,11 +124,9 @@ async function addEpisode(url, play = false, title = ""){
     json = JSON.parse(response)
 
     var dateParts = json.date_published.split("-");
-    date_published = new Date(+dateParts[2], dateParts[1] - 1, +dateParts[0]).getTime(); 
+    date_published = new Date(+dateParts[2], dateParts[1] - 1, +dateParts[0]).getTime();
 
-    var hms = json.video.duration;   // your input string
-    var a = hms.split(':'); // split it at the colons
-    // minutes are worth 60 seconds. Hours are worth 60 minutes.
+    var a = json.video.duration.split(':');
     var duration = ((+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2])) * 1000;
 
     var js = JSON.stringify(dict = {

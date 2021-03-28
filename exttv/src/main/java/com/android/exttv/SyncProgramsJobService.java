@@ -8,7 +8,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.PersistableBundle;
 import android.os.StrictMode;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 
@@ -29,7 +28,6 @@ import org.json.JSONObject;
 import java.security.Security;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +44,7 @@ public class SyncProgramsJobService extends JobService {
     private final Map<Integer, Program> programMap = new LinkedHashMap<>();
     private final Map<Integer, Program> onDemand = new HashMap<>();
 
-    private String host = "172.24.192.1";
+    private String host = "192.168.0.43";
 
     ArrayList<String> plugins = new ArrayList<String>() {{
         add("http://"+host+"/plugins/la7plugin.js");
@@ -113,28 +111,32 @@ public class SyncProgramsJobService extends JobService {
                 e.printStackTrace();
             }
 
-            // Search Live programs and remove
-            Iterator<Program> i = listPrograms.iterator();
-            while (i.hasNext()) {
-                Program p = i.next();
+//            for(Program p : listPrograms)
+//                idMap.get(pluginURl).add(p.getTitle());
+
+            for(Program p: listPrograms){
+                idMap.get(pluginURl).add(p.getTitle());
                 if(p.isLive()){
                     programMap.put(p.hashCode(), p);
-                    i.remove();
+                    runOnMainLoop(() -> webView.evaluateJavascript(
+                            "getCurrentLiveProgram('" + p.getVideoUrl() + "')" +
+                                    ".then(response => {" +
+                                        "android.handleLive(response, '"+p.getTitle()+"');" +
+                                        "android.finalize('"+p.getTitle()+"')" +
+                                    "})",
+                            null));
+                }else{
+                    onDemand.put(p.hashCode(), p);
+                    runOnMainLoop(() -> webView.evaluateJavascript(
+                            "scrapeLastEpisode('" + p.getVideoUrl() + "')" +
+                                    ".then(response => {" +
+                                        "addEpisode(response, true, '"+p.getTitle()+"')" +
+                                        ".catch(err => console.log(err))" +
+                                        ".then(() => android.finalize('"+p.getTitle()+"'))" +
+                                    "})",
+                            null));
                 }
             }
-            for(Program p : listPrograms){
-                onDemand.put(p.hashCode(), p);
-                idMap.get(pluginURl).add(p.getTitle());
-            }
-            for(Program p : listPrograms)
-                runOnMainLoop(() -> webView.evaluateJavascript(
-                        "scrapeLastEpisode('" + p.getVideoUrl() + "','" + p.getTitle() + "')"+
-                               ".then(response => {"+
-                                    "addEpisode(response, true, '"+p.getTitle()+"')" +
-                                               ".catch(err => console.log(err))" +
-                                               ".then(() => android.finalize('"+p.getTitle()+"'))" +
-                                "})",
-                        null));
 
             if(idMap.get(pluginURl).isEmpty()){
                 idMap.remove(pluginURl);
@@ -151,8 +153,13 @@ public class SyncProgramsJobService extends JobService {
 
         @SuppressLint("RestrictedApi")
         @Override public void _handleEpisode(Episode episode, boolean play, String title) {
-            Program program = onDemand.get(Objects.hash(title));
-            program.setEpisode(episode);
+            onDemand.get(Objects.hash(title)).setEpisode(episode);
+        }
+
+        @JavascriptInterface
+        public void handleLive(String jsonResponse, String title) {
+            Episode episode = new Episode(jsonResponse);
+            programMap.get(Objects.hash(title)).setEpisode(episode);
         }
 
         @SuppressLint("RestrictedApi")
@@ -197,9 +204,13 @@ public class SyncProgramsJobService extends JobService {
 //
             for(Map.Entry<Integer, Program> p : programMap.entrySet())
                 if(!found){
-                    getContentResolver().insert(
-                            TvContractCompat.PreviewPrograms.CONTENT_URI,
-                            createPreviewProgram(p.getValue()).toContentValues());
+                    try {
+                        getContentResolver().insert(
+                                TvContractCompat.PreviewPrograms.CONTENT_URI,
+                                createPreviewProgram(p.getValue()).toContentValues());
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
                 }
         }
 
@@ -213,13 +224,30 @@ public class SyncProgramsJobService extends JobService {
                     .setLogoUri(Uri.parse(program.getLogo()))
                     .setIntentUri(intentUri);
             String airDate = "";
-            if(!program.isLive()) {
-                airDate += " - " + program.getEpisode().getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("d MMM uuuu"));
+            Episode episode = program.getEpisode();
+            if(program.isLive()) {
+                String ad = "";
+                try {
+                    ad = episode.getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("HH:mm")) + " ⬩ ";
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
 
-                builder.setDurationMillis((int) program.getEpisode().getDurationLong())
-                        .setDescription(program.getEpisode().getDescription())
-                        .setThumbnailUri(Uri.parse(program.getEpisode().getThumbURL()))
-                        .setEpisodeTitle(program.getEpisode().getTitle());
+                String description = ad + (episode.getTitle()!=null?episode.getTitle():"No title") +
+                        " ⬩ " +
+                        (episode.getDescription()!=null?episode.getDescription():"No info");
+
+                builder.setDurationMillis((int) episode.getDurationLong())
+                        .setDescription(description)
+                        .setEpisodeTitle(episode.getTitle())
+                        .setThumbnailUri(Uri.parse(episode.getThumbURL()==null?program.getCardImageUrl():episode.getThumbURL()));
+            }else{
+                airDate += " ⬩ " + episode.getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("d MMM uuuu"));
+
+                builder.setDurationMillis((int) episode.getDurationLong())
+                        .setDescription(episode.getDescription())
+                        .setThumbnailUri(Uri.parse(episode.getThumbURL()))
+                        .setEpisodeTitle(episode.getTitle());
             }
             builder.setTitle(program.getTitle() + airDate);
             return builder.build();

@@ -24,6 +24,8 @@ public class Episode implements Comparable<Episode> {
     private Bitmap thumb;
     private GregorianCalendar airDate;
 
+    public Episode(){}
+
     public Episode(String json) {
         if(json.equals("")) return;
         try {

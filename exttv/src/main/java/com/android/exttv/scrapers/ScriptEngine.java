@@ -58,6 +58,8 @@ public abstract class ScriptEngine {
     }
 
     public void init(){
+        // define all the method that needs to be filled
+        this.webView.evaluateJavascript("function preBackground(){}; async function getCurrentLiveProgram(){}",null);
         this.webView.evaluateJavascript(plugin.getScript(), new ValueCallback<String>() {
             @Override
             public void onReceiveValue(String s) {

@@ -34,8 +34,31 @@ var programs = [
     }
 ]
 
+async function getCurrentLiveProgram(url){
+    response = await getResponse(url);
+    var parser = new DOMParser();
+    var htmlDoc = parser.parseFromString(response, 'text/html');
+    nodes = htmlDoc.querySelectorAll("div.list-programmi > div.item-programma")
+    date = Date.now()/1000
+    i = 0
+    while(i<nodes.length){
+        if (date > nodes[i].className.split(" ")[1]) currentLiveProgram = nodes[i]
+        else break
+        i++
+    }
+    i--
+    return JSON.stringify(dict = {
+        "Title" : currentLiveProgram.querySelector("div.item-inner > div.titolo > a").textContent,
+        "Duration" : (nodes[i].className.split(" ")[1] - nodes[i-1].className.split(" ")[1])*1000,
+        "Description" : "No Description",
+        "AirDate" : nodes[i].className.split(" ")[1]*1000,
+        "ThumbURL" : "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/LA7_-_Logo_2011.svg/1024px-LA7_-_Logo_2011.svg.png",
+        "PageURL" : ""
+        }
+    )
+}
+
 async function getLiveStream(url) {
-    console.log(url)
     response = await getResponse(url);
     preTokenUrl = response.split("var preTokenUrl = \"")[1].split("\";")[0]
     response = await getResponse(preTokenUrl);
@@ -51,7 +74,7 @@ async function getLiveStream(url) {
                         }));
 }
 
-async function scrapeLastEpisode(url, title){
+async function scrapeLastEpisode(url){
     response = await getResponse(url);
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString(response, 'text/html');
