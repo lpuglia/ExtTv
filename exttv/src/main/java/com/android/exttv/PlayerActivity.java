@@ -27,7 +27,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PersistableBundle;
 import android.os.StrictMode;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,8 +67,14 @@ import com.squareup.picasso.Picasso;
 import org.conscrypt.Conscrypt;
 
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PlayerActivity extends Activity {
 
@@ -155,6 +163,10 @@ public class PlayerActivity extends Activity {
         playerView = findViewById(R.id.video_view);
 
         Program currentProgram = setCurrentProgramFromIntent(getIntent().getData());
+        if(currentProgram==null){ //for sync program
+            finish();
+            return;
+        }
         initializePlayer(currentProgram.isLive());
 
         startScraper(currentProgram);
@@ -187,7 +199,7 @@ public class PlayerActivity extends Activity {
 
     private Program setCurrentProgramFromIntent(Uri intentUri){
         AppLinkHelper.AppLinkAction action = AppLinkHelper.extractAction(intentUri);
-        Program program;
+        Program program = null;
         if (AppLinkHelper.PLAYBACK.equals(action.getAction())) {
             AppLinkHelper.PlaybackAction paction = (AppLinkHelper.PlaybackAction) action;
             program = ProgramDatabase.programs.get((int) paction.getMovieId());
@@ -196,6 +208,20 @@ public class PlayerActivity extends Activity {
             if (program.isLive()) {
                 ImageView watermark = findViewById(R.id.watermark);
                 Picasso.with(getBaseContext()).load(program.getLogo()).into(watermark);
+            }
+        } else if (AppLinkHelper.BROWSE.equals(action.getAction())) {
+            Set<String> plugin_files = new LinkedHashSet<>();
+            PersistableBundle bundle = new PersistableBundle ();
+            for(Program p : ProgramDatabase.programs.values()){
+                plugin_files.add(p.getScraperURL());
+                bundle.putLong(p.getType(), p.getChannelId());
+            }
+            SyncProgramsJobService syncProgramsJobService = new SyncProgramsJobService();
+
+            for(String p : plugin_files)
+                syncProgramsJobService.idMap.put(p, new HashSet<String>());
+            for(String p : plugin_files) {
+                syncProgramsJobService.syncProgramManager.add(syncProgramsJobService.new SyncProgramManager(this, p, bundle));
             }
         } else {
             throw new IllegalArgumentException("Invalid Action " + action);

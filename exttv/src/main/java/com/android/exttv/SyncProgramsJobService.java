@@ -3,6 +3,7 @@ package com.android.exttv;
 import android.annotation.SuppressLint;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
@@ -40,7 +41,7 @@ import java.util.Set;
 
 public class SyncProgramsJobService extends JobService {
 
-    Map<String, Set<String>> idMap = new HashMap<>();
+    public Map<String, Set<String>> idMap = new HashMap<>();
     private final Map<Integer, Program> programMap = new LinkedHashMap<>();
     private final Map<Integer, Program> onDemand = new HashMap<>();
 
@@ -51,6 +52,7 @@ public class SyncProgramsJobService extends JobService {
         add("http://"+host+"/plugins/raiplugin.js");
         add("http://"+host+"/plugins/mediasetplugin.js");
         add("http://"+host+"/plugins/discoveryplugin.js");
+        add("http://"+host+"/plugins/liratvplugin.js");
     }};
 
     public class SyncProgramManager extends ScriptEngine{
@@ -58,8 +60,8 @@ public class SyncProgramsJobService extends JobService {
         private final PersistableBundle bundle;
         private final String pluginURl;
 
-        public SyncProgramManager(JobService jobService, String pluginUrl, PersistableBundle bundle) {
-            super(jobService, pluginUrl);
+        public SyncProgramManager(Context context, String pluginUrl, PersistableBundle bundle) {
+            super(context, pluginUrl);
             this.bundle = bundle;
             this.pluginURl = pluginUrl;
             init();
@@ -158,7 +160,11 @@ public class SyncProgramsJobService extends JobService {
 
         @JavascriptInterface
         public void handleLive(String jsonResponse, String title) {
-            Episode episode = new Episode(jsonResponse);
+            Episode episode;
+            if(jsonResponse.equals("undefined"))
+                episode = new Episode();
+            else
+                episode = new Episode(jsonResponse);
             programMap.get(Objects.hash(title)).setEpisode(episode);
         }
 
@@ -168,7 +174,7 @@ public class SyncProgramsJobService extends JobService {
             Collections.sort(onDemandPrograms);
             for(Program p : onDemandPrograms) programMap.put(p.hashCode(), p);
 
-            SharedPreferences mPrefs = getSharedPreferences("test", MODE_PRIVATE);
+            SharedPreferences mPrefs = this.context.getSharedPreferences("test", MODE_PRIVATE);
             SharedPreferences.Editor prefsEditor = mPrefs.edit();
             prefsEditor.remove("programs");
             prefsEditor.apply();
@@ -194,18 +200,18 @@ public class SyncProgramsJobService extends JobService {
 //                } while (cursor.moveToNext());
 //            }
 
-            Cursor cursor = getContentResolver().query(TvContractCompat.PreviewPrograms.CONTENT_URI, null, null, null, null);
+            Cursor cursor = this.context.getContentResolver().query(TvContractCompat.PreviewPrograms.CONTENT_URI, null, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     PreviewProgram previewProgram = PreviewProgram.fromCursor(cursor);
-                    getContentResolver().delete(TvContractCompat.buildPreviewProgramUri(previewProgram.getId()), null, null);
+                    this.context.getContentResolver().delete(TvContractCompat.buildPreviewProgramUri(previewProgram.getId()), null, null);
                 } while (cursor.moveToNext());
             }
 //
             for(Map.Entry<Integer, Program> p : programMap.entrySet())
                 if(!found){
                     try {
-                        getContentResolver().insert(
+                        this.context.getContentResolver().insert(
                                 TvContractCompat.PreviewPrograms.CONTENT_URI,
                                 createPreviewProgram(p.getValue()).toContentValues());
                     }catch (Exception e){
@@ -229,13 +235,11 @@ public class SyncProgramsJobService extends JobService {
                 String ad = "";
                 try {
                     ad = episode.getAirDate().toZonedDateTime().format(DateTimeFormatter.ofPattern("HH:mm")) + " ⬩ ";
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+                }catch (Exception e){}
 
                 String description = ad + (episode.getTitle()!=null?episode.getTitle():"No title") +
                         " ⬩ " +
-                        (episode.getDescription()!=null?episode.getDescription():"No info");
+                        (episode.getDescription()!=null?episode.getDescription():"No Description");
 
                 builder.setDurationMillis((int) episode.getDurationLong())
                         .setDescription(description)

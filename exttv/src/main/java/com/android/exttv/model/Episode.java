@@ -43,7 +43,7 @@ public class Episode implements Comparable<Episode> {
             this.setPageURL(jObject.getString("PageURL"))
                     .setThumbURL(jObject.getString("ThumbURL"))
                     .setAirDate((GregorianCalendar) c)
-                    .setDescription(jObject.getString("Description"))
+                    .setDescription(jObject.has("Description")?jObject.getString("Description"):"No Description")
                     .setDuration(df.format(durationLong))
                     .setTitle(jObject.getString("Title"));
         } catch (JSONException e) {
