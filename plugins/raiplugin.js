@@ -96,14 +96,7 @@ async function getLiveStream(url) {
 async function scrapeLastEpisode(url){
     response = await getResponse(url)
     json = JSON.parse(response)
-    return "https://www.raiplay.it/" + json.first_item_path
-}
-
-async function scrapeEpisodes(url){
-    response = await getResponse(url)
-    json = JSON.parse(response)
-    //scrape last episode
-    addEpisode("https://www.raiplay.it/" + json.first_item_path, true);
+    // return "https://www.raiplay.it/" + json.first_item_path
     blocks = json.blocks
     for (i = 0; i < blocks.length; i++) {
         block = blocks[i]
@@ -114,7 +107,30 @@ async function scrapeEpisodes(url){
         reader = JSON.parse(response);
         cards = reader.seasons[i].episodes[0].cards
         for(var j = 0; j < cards.length; j++) {
-            addEpisode("https://www.raiplay.it/" + cards[j].path_id)
+            return "https://www.raiplay.it/" + cards[j].path_id
+        }
+    }
+
+}
+
+async function scrapeEpisodes(url){
+    response = await getResponse(url)
+    json = JSON.parse(response)
+    //scrape last episode
+    // addEpisode("https://www.raiplay.it/" + json.first_item_path, true);
+    blocks = json.blocks
+    play = true
+    for (i = 0; i < blocks.length; i++) {
+        block = blocks[i]
+        publishingBlock = block.id
+        contentSet = block.sets[0].id;
+        seasonURL = url.replace(".json", "/" + publishingBlock + "/" + contentSet + "/episodes.json");
+        response = await getResponse(seasonURL, "scrapeEpisodesAsync");
+        reader = JSON.parse(response);
+        cards = reader.seasons[i].episodes[0].cards
+        for(var j = 0; j < cards.length; j++) {
+            addEpisode("https://www.raiplay.it/" + cards[j].path_id, play)
+            play = false
         }
     }
 }

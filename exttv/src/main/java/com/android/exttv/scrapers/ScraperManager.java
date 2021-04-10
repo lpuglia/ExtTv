@@ -31,7 +31,6 @@ public class ScraperManager extends ScriptEngine{
         init();
     }
 
-
     @Override
     public void postFinished() {
         buildClient(currentProgram.requiresProxy());

@@ -133,7 +133,7 @@ public class SyncProgramsJobService extends JobService {
                             "scrapeLastEpisode('" + p.getVideoUrl() + "')" +
                                     ".then(response => {" +
                                         "addEpisode(response, true, '"+p.getTitle()+"')" +
-                                        ".catch(err => console.log(err))" +
+                                        ".catch(err => android.handleEpisode(null, false, '"+p.getTitle()+"'))" +
                                         ".then(() => android.finalize('"+p.getTitle()+"'))" +
                                     "})",
                             null));
@@ -155,7 +155,10 @@ public class SyncProgramsJobService extends JobService {
 
         @SuppressLint("RestrictedApi")
         @Override public void _handleEpisode(Episode episode, boolean play, String title) {
-            onDemand.get(Objects.hash(title)).setEpisode(episode);
+            if(episode==null)
+                onDemand.remove(Objects.hash(title));
+            else
+                onDemand.get(Objects.hash(title)).setEpisode(episode);
         }
 
         @JavascriptInterface

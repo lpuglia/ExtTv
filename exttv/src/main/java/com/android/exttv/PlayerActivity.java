@@ -156,6 +156,7 @@ public class PlayerActivity extends Activity {
 
         Security.insertProviderAt(Conscrypt.newProvider(), 1); //without this I get handshake error
 
+        // disable strict mode because ScraperManager.postfinished may need to scrape a proxy when onDemand is called
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
 

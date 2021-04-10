@@ -116,7 +116,13 @@ public abstract class ScriptEngine {
 
     @JavascriptInterface
     public void handleEpisode(String episode, boolean play, String title){
-        _handleEpisode(new Episode(episode), play, title);
+        Episode ep = null;
+        try{
+            ep = new Episode(episode);
+        }catch (Exception e){
+            Log.d("ScriptEngine", "Can't create episode for "+ title +" program.");
+        }
+        _handleEpisode(ep, play, title);
     }
 
     void scrapeVideoURL(String url){
@@ -148,7 +154,6 @@ public abstract class ScriptEngine {
             best_proxy = ProxyProvider.getBest(this);
 
 //            toastOnUi("Using " + best_proxy + " as proxy");
-
             clientb.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(best_proxy, 89)))
                     .proxyAuthenticator(proxyAuthenticator)
                     .socketFactory(new DelegatingSocketFactory(SSLSocketFactory.getDefault())); // important for HTTPS proxy

@@ -1,6 +1,5 @@
 package com.android.exttv.util;
 
-import com.android.exttv.scrapers.ScraperManager;
 import com.android.exttv.scrapers.ScriptEngine;
 
 import org.json.JSONArray;
