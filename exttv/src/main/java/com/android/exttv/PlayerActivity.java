@@ -69,6 +69,7 @@ import org.conscrypt.Conscrypt;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -76,13 +77,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.android.exttv.util.AppLinkHelper.getEpisodeCursor;
+import static com.android.exttv.util.AppLinkHelper.setEpisodeCursor;
+
 public class PlayerActivity extends Activity {
 
     private PlayerView playerView;
     private RemoteKeyEvent remoteKeyEvent;
     private Episode currentEpisode;
     private boolean paused = false;
-    private long playbackPosition = 0;
 
     public SimpleExoPlayer player;
     public ScraperManager scraper;
@@ -91,6 +94,14 @@ public class PlayerActivity extends Activity {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         return remoteKeyEvent.dispatchKeyEvent(event);
+    }
+
+
+    private Long getCurrentEpisodeCursor(){
+        return getEpisodeCursor(currentEpisode, getBaseContext());
+    }
+    public void setCurrentEpisodeCursor(){
+        setEpisodeCursor(player.getCurrentPosition(), currentEpisode, getBaseContext());
     }
 
     public void preparePlayer(Map<String, String> mediaSource){
@@ -137,10 +148,8 @@ public class PlayerActivity extends Activity {
                 }
                 player.prepare(ms, false, false);
             }
-            if(playbackPosition!=0){
-                player.seekTo(playbackPosition);
-                playbackPosition=0;
-            }
+            Long position = getCurrentEpisodeCursor();
+            if(position!=0) player.seekTo(position);
         }
     }
 
@@ -210,22 +219,22 @@ public class PlayerActivity extends Activity {
                 ImageView watermark = findViewById(R.id.watermark);
                 Picasso.with(getBaseContext()).load(program.getLogo()).into(watermark);
             }
-        } else if (AppLinkHelper.BROWSE.equals(action.getAction())) {
-            Set<String> plugin_files = new LinkedHashSet<>();
-            PersistableBundle bundle = new PersistableBundle ();
-            for(Program p : ProgramDatabase.programs.values()){
-                plugin_files.add(p.getScraperURL());
-                bundle.putLong(p.getType(), p.getChannelId());
-            }
-            SyncProgramsJobService syncProgramsJobService = new SyncProgramsJobService();
-
-            for(String p : plugin_files)
-                syncProgramsJobService.idMap.put(p, new HashSet<String>());
-            for(String p : plugin_files) {
-                syncProgramsJobService.syncProgramManager.add(syncProgramsJobService.new SyncProgramManager(this, p, bundle));
-            }
+//        } else if (AppLinkHelper.BROWSE.equals(action.getAction())) {
         } else {
             throw new IllegalArgumentException("Invalid Action " + action);
+        }
+        Set<String> plugin_files = new LinkedHashSet<>();
+        PersistableBundle bundle = new PersistableBundle ();
+        for(Program p : ProgramDatabase.programs.values()){
+            plugin_files.add(p.getScraperURL());
+            bundle.putLong(p.getType(), p.getChannelId());
+        }
+        SyncProgramsJobService syncProgramsJobService = new SyncProgramsJobService();
+
+        for(String p : plugin_files)
+            syncProgramsJobService.idMap.put(p, new HashSet<String>());
+        for(String p : plugin_files) {
+            syncProgramsJobService.syncProgramManager.add(syncProgramsJobService.new SyncProgramManager(this, p, bundle));
         }
         return program;
     }
@@ -289,6 +298,10 @@ public class PlayerActivity extends Activity {
     public void onPause() {
         super.onPause();
         player.setPlayWhenReady(false);
+        if(currentEpisode!=null){ //if on-demand program
+            setCurrentEpisodeCursor();
+        }
+
     }
 
 
@@ -312,7 +325,6 @@ public class PlayerActivity extends Activity {
             player.release();
             finish();
         }else{
-            playbackPosition = player.getCurrentPosition();
             player.release();
             paused=true;
             cardsReady = false;

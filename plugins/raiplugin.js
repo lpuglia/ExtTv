@@ -40,7 +40,16 @@ var programs = [
         "Logo" : "https://www.raiplay.it/dl/img/2016/09/1473662801274Logo-Rai3.png",
         "VideoUrl" : "https://www.raiplay.it/programmi/report.json",
         "CardImageUrl" : "https://www.raiplay.it/cropgd/1024x576/dl/img/2020/10/23/1603468212314_2048x1152.jpg"
+    },{
+        "Title" : "Una Pezza di Lundini",
+        "Description" : "rai",
+        "Type" : "OnDemand",
+        "Logo" : "https://www.raiplay.it/dl/img/2016/09/1473662585214Logo-Rai2.png",
+        "VideoUrl" : "https://www.raiplay.it/programmi/unapezzadilundini.json",
+        "CardImageUrl" : "https://www.raiplay.it/cropgd/2048x1152/dl/img/2021/04/17/1618684844497_2048x1152.jpg"
     }
+
+
 ]
 
 async function getCurrentLiveProgram(url){
@@ -145,15 +154,17 @@ async function addEpisode(url, play = false, title = ""){
     var a = json.video.duration.split(':');
     var duration = ((+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2])) * 1000;
 
-    var js = JSON.stringify(dict = {
-                  "PageURL": json.video.content_url + "&output=56",
-                  "ThumbURL": "https://www.raiplay.it/" + json.images.landscape,
-                  "AirDate": date_published,
-                  "Description": json.description,
-                  "Duration": duration,
-                  "Title": json.episode_title
-                });
-    android.handleEpisode(js, play, title)
+    if(duration>=60*10*1000){
+        var js = JSON.stringify(dict = {
+                      "PageURL": json.video.content_url + "&output=56",
+                      "ThumbURL": "https://www.raiplay.it/" + json.images.landscape,
+                      "AirDate": date_published,
+                      "Description": json.description,
+                      "Duration": duration,
+                      "Title": json.episode_title
+                    });
+        android.handleEpisode(js, play, title)
+    }
 }
 
 function scrapeVideo(url){

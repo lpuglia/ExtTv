@@ -1,10 +1,20 @@
 package com.android.exttv.util;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 
 import androidx.annotation.StringDef;
 
+import com.android.exttv.model.Episode;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+
+import static android.content.Context.MODE_PRIVATE;
 
 /** Builds and parses uris for deep linking within the app. */
 public class AppLinkHelper {
@@ -19,6 +29,40 @@ public class AppLinkHelper {
     private static final int URI_INDEX_MOVIE = 2;
     private static final int URI_INDEX_POSITION = 3;
     public static final int DEFAULT_POSITION = -1;
+
+
+    public static void setEpisodeCursor(Long position, Episode episode, Context context){
+        if(episode==null) return;
+        SharedPreferences mPrefs = context.getSharedPreferences("test", MODE_PRIVATE);
+        Gson gson = new Gson();
+        HashMap<String, Long> cursorPositions;
+        if(mPrefs.contains("cursorPositions")){
+            String json = mPrefs.getString("cursorPositions", "");
+            java.lang.reflect.Type type = new TypeToken<HashMap<String, Long>>(){}.getType();
+            cursorPositions  = gson.fromJson(json, type);
+        }else{
+            cursorPositions = new LinkedHashMap<>();
+        }
+        cursorPositions.put(episode.getPageURL(), position);
+        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+        prefsEditor.putString("cursorPositions", gson.toJson(cursorPositions));
+        prefsEditor.apply();
+    }
+
+    public static Long getEpisodeCursor(Episode episode, Context context){
+        if(episode==null) return Long.valueOf(0);
+        SharedPreferences mPrefs = context.getSharedPreferences("test", MODE_PRIVATE);
+        Gson gson = new Gson();
+        HashMap<String, Long> cursorPositions;
+        if(mPrefs.contains("cursorPositions")) {
+            String json = mPrefs.getString("cursorPositions", "");
+            java.lang.reflect.Type type = new TypeToken<HashMap<String, Long>>() {}.getType();
+            cursorPositions = gson.fromJson(json, type);
+            if(cursorPositions.containsKey(episode.getPageURL()))
+                return cursorPositions.get(episode.getPageURL());
+        }
+        return Long.valueOf(0);
+    }
 
     /**
      * Builds a {@link Uri} for deep link into playing a movie from the beginning.

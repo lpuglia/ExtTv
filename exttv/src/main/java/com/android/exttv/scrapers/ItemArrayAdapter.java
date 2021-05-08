@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import static com.android.exttv.util.AppLinkHelper.getEpisodeCursor;
 
 public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.ViewHolder> {
 
@@ -78,6 +81,8 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
             notifyItemChanged(focusedItem);
             focusedItem+=1;
             notifyItemChanged(focusedItem);
+            notifyItemChanged(focusedItem+1);
+            notifyItemChanged(focusedItem+2);
         }
         return Math.min(focusedItem + 2, episodeList.episodes.size()-1);
     }
@@ -87,6 +92,8 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
             notifyItemChanged(focusedItem);
             focusedItem -= 1;
             notifyItemChanged(focusedItem);
+            notifyItemChanged(focusedItem-1);
+            notifyItemChanged(focusedItem-2);
         }
         return Math.max(focusedItem - 2,0);
     }
@@ -96,6 +103,10 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
     @Override
     public void onBindViewHolder(ViewHolder holder, int listPosition) {
         Episode episode = episodeList.get(listPosition);
+
+        float viewed = (float) (Math.round(((float)getEpisodeCursor(episode, context))/episode.getDurationLong()*100.0)/100.0);
+        float unviewed = (float) (1.0 - viewed);
+
         int white = Color.parseColor("#FFFFFF");
         holder.title.setTextColor(white);
         holder.title.setText(episode.getTitle());
@@ -132,6 +143,16 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
 
         holder.card.setBackgroundColor(Color.parseColor("#CC303030"));
         holder.container.setPadding(10,10,10,10);
+
+        LinearLayout.LayoutParams lppw = ((LinearLayout.LayoutParams) holder.progview.getLayoutParams());
+        LinearLayout.LayoutParams lppuw = ((LinearLayout.LayoutParams) holder.progunview.getLayoutParams());
+        lppw.weight = viewed;
+        lppuw.weight = unviewed;
+        holder.progview.setLayoutParams(lppw);
+        holder.progunview.setLayoutParams(lppuw);
+
+        Log.d("ASD", viewed + " " + unviewed + " " + episode.getTitle());
+
         if(listPosition==focusedItem){
             holder.card.setBackgroundColor(Color.parseColor("#FFCCCCCC"));
             holder.container.setPadding(0,0,0,0);
@@ -154,6 +175,9 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
         public LinearLayout card;
         public LinearLayout container;
         public ProgressBar progress;
+        public View progview;
+        public View progunview;
+        public LinearLayout progress_view;
         public ViewHolder(View itemView) {
             super(itemView);
             title = (TextView) itemView.findViewById(R.id.title);
@@ -164,6 +188,9 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
             card = (LinearLayout) itemView.findViewById(R.id.episode_card);
             container = (LinearLayout) itemView.findViewById(R.id.episode_container);
             progress = (ProgressBar) itemView.findViewById(R.id.cards_progress);
+            progview = (View) itemView.findViewById(R.id.progview);
+            progunview = (View) itemView.findViewById(R.id.progunview);
+            progress_view = (LinearLayout) itemView.findViewById(R.id.progress_view);
         }
 
     }

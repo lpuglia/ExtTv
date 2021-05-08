@@ -52,6 +52,7 @@ public class ScraperManager extends ScriptEngine{
                 Episode toPlay = overrideEpisode == null ? episode : overrideEpisode;
                 displayerManager.setTopContainer(toPlay);
                 scrapeVideoURL(toPlay.getPageURL());
+                playerActivity.setCurrentEpisodeCursor();
                 playerActivity.setCurrentEpisode(toPlay);
             }
             displayerManager.addData(episode);
