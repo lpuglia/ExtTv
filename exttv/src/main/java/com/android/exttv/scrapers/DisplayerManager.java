@@ -77,6 +77,12 @@ public class DisplayerManager {
         scraperManager._handleEpisode(itemArrayAdapter.getFocusedEpisode(), true, "");
     }
 
+    public void playNextEpisode(Episode episode) {
+        Episode next_episode = itemArrayAdapter.getNextEpisode(episode);
+        if(next_episode!=null)
+            scraperManager._handleEpisode(next_episode, true, "");
+    }
+
     LinkedList<String> messages = new LinkedList<>();
 
     protected void runOnUiThread(Runnable runnable){

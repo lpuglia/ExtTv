@@ -39,7 +39,6 @@ public class Episode implements Comparable<Episode> {
             if (jObject.has("Duration") && !jObject.isNull("Duration")) {
                 durationLong = jObject.getLong("Duration");
             }
-            Log.d("asd", String.valueOf(durationLong));
             @SuppressLint("SimpleDateFormat") SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             this.setPageURL(jObject.getString("PageURL"))

@@ -46,6 +46,9 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
         }
         public Episode get(int index){ return episodes.get(index); }
         public int length(){ return  episodes.size(); }
+        public int find(Episode p){
+            return Collections.binarySearch(episodes, p);
+        }
     }
 
     private final EpisodesArraySorted episodeList = new EpisodesArraySorted();
@@ -59,6 +62,11 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
         return episodeList == null ? 0 : episodeList.episodes.size();
     }
     public Episode getFocusedEpisode(){ return episodeList.get(focusedItem); }
+
+    public Episode getNextEpisode(Episode episode){
+        int index = episodeList.find(episode)-1;
+        return index<0? null : episodeList.get(index);
+    }
 
     @NotNull
     @Override
@@ -150,8 +158,6 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
         lppuw.weight = unviewed;
         holder.progview.setLayoutParams(lppw);
         holder.progunview.setLayoutParams(lppuw);
-
-        Log.d("ASD", viewed + " " + unviewed + " " + episode.getTitle());
 
         if(listPosition==focusedItem){
             holder.card.setBackgroundColor(Color.parseColor("#FFCCCCCC"));

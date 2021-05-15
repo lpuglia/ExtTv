@@ -98,7 +98,10 @@ public class PlayerActivity extends Activity {
 
 
     private Long getCurrentEpisodeCursor(){
-        return getEpisodeCursor(currentEpisode, getBaseContext());
+        Long position = getEpisodeCursor(currentEpisode, getBaseContext());
+        Long duration = currentEpisode.getDurationLong();
+        if(position < duration-(duration/99)) return position; // if cursor is before 99% of the duration
+        return Long.valueOf(0);
     }
     public void setCurrentEpisodeCursor(){
         setEpisodeCursor(player.getCurrentPosition(), currentEpisode, getBaseContext());
@@ -411,7 +414,9 @@ public class PlayerActivity extends Activity {
                         findViewById(R.id.playpause).setVisibility(View.INVISIBLE);
                     }
                 }else{
-                    if(!leaving) {
+                    if(playbackState==ExoPlayer.STATE_ENDED){
+                        scraper.displayerManager.playNextEpisode(currentEpisode);
+                    }else if(!leaving) {
                         if ((previousState && previousPlaybackState == player.STATE_READY) && playbackState == ExoPlayer.STATE_BUFFERING) {
                             showUI();
                         } else if (previousPlaybackState == ExoPlayer.STATE_BUFFERING && (playWhenReady && playbackState == player.STATE_READY)) {
@@ -427,24 +432,24 @@ public class PlayerActivity extends Activity {
                     }
                 }
 
-//                switch(playbackState){
-//                    case ExoPlayer.STATE_IDLE:
-//                        Log.d("STATE", "STATE_IDLE");
-//                        break;
-//                    case ExoPlayer.STATE_BUFFERING:
-//                        Log.d("STATE", "STATE_BUFFERING");
-//                        break;
-//                    case ExoPlayer.STATE_READY:
-//                        if(playWhenReady){
-//                            Log.d("STATE", "STATE_READY_PLAY");
-//                        }else{
-//                            Log.d("STATE", "STATE_READY_PAUSE");
-//                        }
-//                        break;
-//                    case ExoPlayer.STATE_ENDED:
-//                        Log.d("STATE", "STATE_ENDED");
-//                        break;
-//                }
+                switch(playbackState){
+                    case ExoPlayer.STATE_IDLE:
+                        Log.d("STATE", "STATE_IDLE");
+                        break;
+                    case ExoPlayer.STATE_BUFFERING:
+                        Log.d("STATE", "STATE_BUFFERING");
+                        break;
+                    case ExoPlayer.STATE_READY:
+                        if(playWhenReady){
+                            Log.d("STATE", "STATE_READY_PLAY");
+                        }else{
+                            Log.d("STATE", "STATE_READY_PAUSE");
+                        }
+                        break;
+                    case ExoPlayer.STATE_ENDED:
+                        Log.d("STATE", "STATE_ENDED");
+                        break;
+                }
 
                 if (playbackState == ExoPlayer.STATE_BUFFERING ) {
                     progressBar.setVisibility(View.VISIBLE);
