@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class Episode implements Comparable<Episode> {
     private String title;
@@ -38,8 +39,9 @@ public class Episode implements Comparable<Episode> {
             if (jObject.has("Duration") && !jObject.isNull("Duration")) {
                 durationLong = jObject.getLong("Duration");
             }
-
+            Log.d("asd", String.valueOf(durationLong));
             @SuppressLint("SimpleDateFormat") SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+            df.setTimeZone(TimeZone.getTimeZone("UTC"));
             this.setPageURL(jObject.getString("PageURL"))
                     .setThumbURL(jObject.getString("ThumbURL"))
                     .setAirDate((GregorianCalendar) c)
