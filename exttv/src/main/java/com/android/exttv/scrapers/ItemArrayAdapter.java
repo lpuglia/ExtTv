@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -186,17 +185,17 @@ public class ItemArrayAdapter extends RecyclerView.Adapter<ItemArrayAdapter.View
         public LinearLayout progress_view;
         public ViewHolder(View itemView) {
             super(itemView);
-            title = (TextView) itemView.findViewById(R.id.title);
-            date = (TextView) itemView.findViewById(R.id.date);
-            duration = (TextView) itemView.findViewById(R.id.duration);
-            description = (TextView) itemView.findViewById(R.id.description);
-            thumbnail = (ImageView) itemView.findViewById(R.id.thumb);
-            card = (LinearLayout) itemView.findViewById(R.id.episode_card);
-            container = (LinearLayout) itemView.findViewById(R.id.episode_container);
-            progress = (ProgressBar) itemView.findViewById(R.id.cards_progress);
-            progview = (View) itemView.findViewById(R.id.progview);
-            progunview = (View) itemView.findViewById(R.id.progunview);
-            progress_view = (LinearLayout) itemView.findViewById(R.id.progress_view);
+            title = itemView.findViewById(R.id.title);
+            date = itemView.findViewById(R.id.date);
+            duration = itemView.findViewById(R.id.duration);
+            description = itemView.findViewById(R.id.description);
+            thumbnail = itemView.findViewById(R.id.thumb);
+            card = itemView.findViewById(R.id.episode_card);
+            container = itemView.findViewById(R.id.episode_container);
+            progress = itemView.findViewById(R.id.cards_progress);
+            progview = itemView.findViewById(R.id.progview);
+            progunview = itemView.findViewById(R.id.progunview);
+            progress_view = itemView.findViewById(R.id.progress_view);
         }
 
     }

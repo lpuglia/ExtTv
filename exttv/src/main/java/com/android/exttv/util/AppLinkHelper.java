@@ -50,7 +50,7 @@ public class AppLinkHelper {
     }
 
     public static Long getEpisodeCursor(Episode episode, Context context){
-        if(episode==null) return Long.valueOf(0);
+        if(episode==null) return 0L;
         SharedPreferences mPrefs = context.getSharedPreferences("test", MODE_PRIVATE);
         Gson gson = new Gson();
         HashMap<String, Long> cursorPositions;
@@ -61,7 +61,7 @@ public class AppLinkHelper {
             if(cursorPositions.containsKey(episode.getPageURL()))
                 return cursorPositions.get(episode.getPageURL());
         }
-        return Long.valueOf(0);
+        return 0L;
     }
 
     /**
@@ -187,7 +187,7 @@ public class AppLinkHelper {
     }
 
     private static long extractLong(Uri uri, int index) {
-        return Long.valueOf(extract(uri, index));
+        return Long.parseLong(extract(uri, index));
     }
 
     private static String extract(Uri uri, int index) {

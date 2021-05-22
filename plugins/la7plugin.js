@@ -64,7 +64,7 @@ async function getLiveStream(url) {
     response = await getResponse(preTokenUrl);
     preAuth = JSON.parse(response)["preAuthToken"]
     license_url = "https://la7.prod.conax.cloud/widevine/license?d=" + Date.now()
-    sourceURL = "https://d15umi5iaezxgx.cloudfront.net/OUT/DASH/Live.mpd";
+    sourceURL = "https://d15umi5iaezxgx.cloudfront.net/LA7/DRM/DASH/Live.mpd";
     android.playStream(JSON.stringify(dict = {
                           "StreamType": "Dash",
                           "Source": sourceURL,

@@ -32,7 +32,7 @@ public class DisplayerManager {
             // Initializing list view with the custom adapter
             layoutManager = new LinearLayoutManager(playerActivity.getBaseContext(), LinearLayoutManager.HORIZONTAL, false);
             itemArrayAdapter = new ItemArrayAdapter();
-            RecyclerView listView = (RecyclerView) playerActivity.findViewById(R.id.episode_list);
+            RecyclerView listView = playerActivity.findViewById(R.id.episode_list);
             listView.setLayoutManager(layoutManager);
             listView.setItemAnimator(new DefaultItemAnimator());
             listView.setAdapter(itemArrayAdapter);

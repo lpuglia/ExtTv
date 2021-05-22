@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
-import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
 import com.android.exttv.DelegatingSocketFactory;
@@ -60,12 +59,7 @@ public abstract class ScriptEngine {
     public void init(){
         // define all the method that needs to be filled
         this.webView.evaluateJavascript("function preBackground(){}; async function getCurrentLiveProgram(){}",null);
-        this.webView.evaluateJavascript(plugin.getScript(), new ValueCallback<String>() {
-            @Override
-            public void onReceiveValue(String s) {
-                postFinished();
-            }
-        });
+        this.webView.evaluateJavascript(plugin.getScript(), s -> postFinished());
     }
 
     @JavascriptInterface
@@ -136,8 +130,8 @@ public abstract class ScriptEngine {
                 .readTimeout(60, TimeUnit.SECONDS);
     }
 
-    protected String initClientProxy(OkHttpClient.Builder clientb) {
-        String best_proxy = "";
+    protected void initClientProxy(OkHttpClient.Builder clientb) {
+        String best_proxy;
         SharedPreferences prefs = context.getSharedPreferences("com.android.exttv", 0);
         if(prefs.contains("username") && prefs.contains("username")) {
             final String username = (prefs.contains("username")) ? prefs.getString("username", null) : "" ;
@@ -158,7 +152,6 @@ public abstract class ScriptEngine {
                     .proxyAuthenticator(proxyAuthenticator)
                     .socketFactory(new DelegatingSocketFactory(SSLSocketFactory.getDefault())); // important for HTTPS proxy
         }
-        return best_proxy;
     }
 
     private Request getRequest(String url){
@@ -223,7 +216,7 @@ public abstract class ScriptEngine {
 
     protected void runOnMainLoop(Runnable runnable){
         new Handler(context.getMainLooper()).post(runnable);
-    };
+    }
 
     public abstract void _handleEpisode(Episode episode, boolean play, String title);
     public abstract void postFinished();

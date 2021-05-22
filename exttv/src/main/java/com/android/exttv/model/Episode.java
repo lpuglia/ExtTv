@@ -2,7 +2,6 @@ package com.android.exttv.model;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -11,8 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.TimeZone;
 
 public class Episode implements Comparable<Episode> {

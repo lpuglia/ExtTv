@@ -4,23 +4,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.webkit.URLUtil;
-import android.widget.Toast;
-
-import com.google.gson.Gson;
-
-import org.xml.sax.InputSource;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -45,9 +37,8 @@ public class Plugin {
                     BufferedReader in = new BufferedReader(inputStreamReader);
                     String str;
                     script = in.readLine();
-                    while ((str = in.readLine()) != null) {
-                        script += "\n" + str;
-                    }
+                    while ((str = in.readLine()) != null) script += "\n" + str;
+
                     conn.disconnect();
                     inputStreamReader.close();
                     in.close();
@@ -61,13 +52,13 @@ public class Plugin {
                 Log.d("Plugin", "URI is not an URL, attempting to read file...");
             }
             //otherwise uri is a PATH
-            InputStream inputStream = null;
+            InputStream inputStream;
             inputStream = context.openFileInput(uri);
 
             if ( inputStream != null ) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String receiveString = "";
+                String receiveString;
                 StringBuilder stringBuilder = new StringBuilder();
 
                 while ( (receiveString = bufferedReader.readLine()) != null ) {
@@ -85,7 +76,7 @@ public class Plugin {
     }
 
     public void saveScript(){
-        OutputStreamWriter outputStreamWriter = null;
+        OutputStreamWriter outputStreamWriter;
         try {
             outputStreamWriter = new OutputStreamWriter(context.openFileOutput(name+".js", MODE_PRIVATE));
             outputStreamWriter.write(script);

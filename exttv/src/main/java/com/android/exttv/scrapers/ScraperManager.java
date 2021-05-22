@@ -6,7 +6,7 @@ import android.webkit.JavascriptInterface;
 import com.android.exttv.PlayerActivity;
 import com.android.exttv.model.Episode;
 import com.android.exttv.model.Program;
-import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 
 import java.util.Map;
@@ -34,7 +34,7 @@ public class ScraperManager extends ScriptEngine{
     @Override
     public void postFinished() {
         buildClient(currentProgram.requiresProxy());
-        this.dataSourceFactory = new OkHttpDataSourceFactory(client);
+        this.dataSourceFactory = new OkHttpDataSource.Factory(client);
         if(currentProgram.isLive()){
             webView.evaluateJavascript("getLiveStream('"+currentProgram.getVideoUrl()+"')", null);
         }else{

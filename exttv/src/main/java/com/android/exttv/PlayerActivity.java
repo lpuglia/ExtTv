@@ -49,13 +49,14 @@ import com.android.exttv.util.AppLinkHelper;
 import com.android.exttv.util.RemoteKeyEvent;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -67,13 +68,9 @@ import com.squareup.picasso.Picasso;
 import org.conscrypt.Conscrypt;
 
 import java.security.Security;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -129,6 +126,7 @@ public class PlayerActivity extends Activity {
             }
 
             MediaSource ms = null;
+            MediaItem mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.get("Source")));
             if(mediaSource.containsKey("StreamType")){
                 switch (mediaSource.get("StreamType")) {
                     case "Dash":
@@ -136,23 +134,26 @@ public class PlayerActivity extends Activity {
                         if (drmManager != null)
                             dashMediaSource.setDrmSessionManager(drmManager);
                         if (mediaSource.containsKey("Source")) {
-                            ms = dashMediaSource.createMediaSource(Uri.parse(mediaSource.get("Source")));
+                            ms = dashMediaSource.createMediaSource(mediaItem);
                         }
                         break;
                     case "Hls":
-                        ms = new HlsMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(Uri.parse(mediaSource.get("Source")));
+                        ms = new HlsMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(mediaItem);
                         break;
                     case "Extractor":
-                        ms = new ExtractorMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(Uri.parse(mediaSource.get("Source")));
+                        ms = new ProgressiveMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(mediaItem);
                         break;
                     case "Default":
-                        ms = new DefaultMediaSourceFactory(scraper.dataSourceFactory).createMediaSource(Uri.parse(mediaSource.get("Source")));
+                        ms = new DefaultMediaSourceFactory(scraper.dataSourceFactory).createMediaSource(mediaItem);
                         break;
                 }
-                player.prepare(ms, false, false);
+                player.setMediaSource(ms);
+                player.prepare();
             }
-            Long position = getCurrentEpisodeCursor();
-            if(position!=0) player.seekTo(position);
+            if(currentEpisode!=null) {
+                Long position = getCurrentEpisodeCursor();
+                if (position != 0) player.seekTo(position);
+            }
         }
     }
 
