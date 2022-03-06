@@ -46,7 +46,7 @@ public class SyncProgramsJobService extends JobService {
     private final Map<Integer, Program> onDemand = new HashMap<>();
 
 //    private String host = "http://192.168.1.75";
-    private String host = "https://github.com/lpuglia/ExtTv/blob/master";
+    private String host = "https://raw.githubusercontent.com/lpuglia/ExtTv/master";
 
     ArrayList<String> plugins = new ArrayList<String>() {{
         add(host+"/plugins/la7plugin.js");

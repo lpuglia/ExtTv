@@ -1,5 +1,5 @@
 var name = "Discovery"
-var pluginRequiresProxy = false
+//var pluginRequiresProxy = false
 
 var programs = [
     {
