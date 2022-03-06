@@ -23,7 +23,7 @@ var programs = [
         "Type" : "OnDemand",
         "Logo" : la7Logo,
         "VideoUrl" : "https://www.la7.it/dimartedi/rivedila7",
-        "CardImageUrl" : "https://www.la7.it/sites/default/files/property/header/home/dimartedi_home.jpg"
+        "CardImageUrl" : "https://www.la7.it/sites/default/files/property/header/home/dimartedi_head_home_2022.jpg"
     },{
         "Title" : "Otto e Mezzo",
         "Description" : "la7",
@@ -133,7 +133,6 @@ function scrapeVideo(url){
     streamURL =  "https://awsvodpkg.iltrovatore.it/local/dash/" +
                  response.split("http://la7-vh.akamaihd.net/i")[1].split("csmil/master.m3u8")[0] +
                  "urlset/manifest.mpd";
-    console.log(url)
     js = JSON.stringify(dict = {
                   "StreamType": "Default",
                   "Source": streamURL

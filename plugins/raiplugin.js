@@ -72,7 +72,6 @@ async function getCurrentLiveProgram(url){
             var DaylightSavingTime = -1 // TO FIX WITH AUTOMATIC DST detection
             a = json[i].currentItem.hour.split(':')
             airHour = ((+a[0] + offsetUTC + DaylightSavingTime)*60*60 + a[1]*60) * 1000
-
             return JSON.stringify(dict = {
                 "Title" : json[i].currentItem.program.name,
                 "Duration" : duration,
@@ -153,6 +152,8 @@ async function addEpisode(url, play = false, title = ""){
 
     var a = json.video.duration.split(':');
     var duration = ((+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2])) * 1000;
+
+    if(isNaN(duration)) duration = 60*10*1000
 
     if(duration>=60*10*1000){
         var js = JSON.stringify(dict = {

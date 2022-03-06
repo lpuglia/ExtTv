@@ -45,14 +45,15 @@ public class SyncProgramsJobService extends JobService {
     private final Map<Integer, Program> programMap = new LinkedHashMap<>();
     private final Map<Integer, Program> onDemand = new HashMap<>();
 
-    private String host = "192.168.0.43";
+//    private String host = "http://192.168.1.75";
+    private String host = "https://github.com/lpuglia/ExtTv/blob/master";
 
     ArrayList<String> plugins = new ArrayList<String>() {{
-        add("http://"+host+"/plugins/la7plugin.js");
-        add("http://"+host+"/plugins/raiplugin.js");
-        add("http://"+host+"/plugins/mediasetplugin.js");
-        add("http://"+host+"/plugins/discoveryplugin.js");
-        add("http://"+host+"/plugins/liratvplugin.js");
+        add(host+"/plugins/la7plugin.js");
+        add(host+"/plugins/raiplugin.js");
+        add(host+"/plugins/mediasetplugin.js");
+        add(host+"/plugins/discoveryplugin.js");
+        add(host+"/plugins/liratvplugin.js");
     }};
 
     public class SyncProgramManager extends ScriptEngine{

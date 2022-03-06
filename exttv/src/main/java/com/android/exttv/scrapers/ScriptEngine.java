@@ -109,6 +109,11 @@ public abstract class ScriptEngine {
     }
 
     @JavascriptInterface
+    public void removeHeaders(String key){
+        headers.remove(key);
+    }
+
+    @JavascriptInterface
     public void handleEpisode(String episode, boolean play, String title){
         Episode ep = null;
         try{
