@@ -15,6 +15,8 @@ import com.android.exttv.model.Program;
 import com.android.exttv.model.ProgramDatabase;
 import com.squareup.picasso.Picasso;
 
+import org.w3c.dom.Text;
+
 import java.util.Map;
 
 import static android.widget.Toast.LENGTH_SHORT;
@@ -58,6 +60,8 @@ public class RemoteKeyEvent {
 //    Log.d("XXX", "key: "+action);
 //    Log.d("XXX", "key: "+keyCode);
 
+//        android.widget.TextView texto = playerActivity.findViewById(R.id.texto);
+//        texto.setText(String.valueOf(keyCode));
         if (action == 1) {
             View bottomPanel = playerActivity.findViewById(R.id.bottom_panel);
             if (!isLive && playerActivity.cardsReady) {
@@ -69,6 +73,7 @@ public class RemoteKeyEvent {
                         }
                         return true;
                     case 4: //back
+                    case 111: //back
                         if (!bottomPanel.isShown()) break;
                     case 20: //down
                         if (bottomPanel.isShown()) {
@@ -88,6 +93,7 @@ public class RemoteKeyEvent {
                             return true;
                         }
                     case 66: // enter
+                    case 160: // enter
                         if (bottomPanel.isShown()) {
                             playerActivity.findViewById(R.id.progress_bar).setVisibility(View.VISIBLE);
                             playerActivity.scraper.displayerManager.playSelectedEpisode();
@@ -114,6 +120,7 @@ public class RemoteKeyEvent {
         if (action == 1) {
             switch (keyCode) {
                 case 4: //back
+                case 111: //back
                     if (System.currentTimeMillis() - backKeyUpTime < 3000) {
                         playerActivity.returnHomeScreen();
                     } else {
@@ -198,6 +205,7 @@ public class RemoteKeyEvent {
                     break;
                 case 62:
                 case 66: // enter
+                case 160: // enter
                     playerActivity.player.setPlayWhenReady(!playerActivity.player.isPlaying());
                 default:
                     // code block
