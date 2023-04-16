@@ -1,5 +1,5 @@
 var name = "Rai"
-//var pluginRequiresProxy = false
+var pluginRequiresProxy = false
 
 var programs = [
     {
