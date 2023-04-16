@@ -1,5 +1,5 @@
 var name = "Discovery"
-//var pluginRequiresProxy = false
+var pluginRequiresProxy = false
 
 var programs = [
     {
@@ -45,7 +45,7 @@ var programs = [
         "Title" : "Accordi e Disaccordi",
         "Description" : "discovery",
         "Type" : "OnDemand",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "Logo" : "https://discoverymedia.s3.amazonaws.com/media/canale/nove-1485167045.png",
         "VideoUrl" : "https://disco-api.discoveryplus.it/cms/routes/programmi/accordi-e-disaccordi?decorators=viewingHistory&include=default",
         "CardImageUrl" : "https://eu2-prod-images.disco-api.com/2020/11/26/4f5746e2-233f-44c0-a318-93e8889936ef.jpeg?f=jpeg"

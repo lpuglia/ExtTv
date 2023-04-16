@@ -6,7 +6,7 @@ var programs = [{
         "Title" : "Rete 4",
         "Description" : "mediaset",
         "Type" : "Live",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "VideoUrl" : "https://link.theplatform.eu/s/PR1GhC/h7J0pAWfnE5w" + mediasetExta,
         "Logo" : "https://cdn.one.accedo.tv/files/5b9940daa6f547000c07c39e",
         "CardImageUrl" : "https://tv.upgo.news/wp-content/uploads/2020/07/nuovologo-rete4.jpg"
@@ -14,7 +14,7 @@ var programs = [{
         "Title" : "Canale 5",
         "Description" : "mediaset",
         "Type" : "Live",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "VideoUrl" : "https://link.theplatform.eu/s/PR1GhC/aVIT5Z5LuPa1" + mediasetExta,
         "Logo" : "https://cdn.one.accedo.tv/files/5b1e2ea5a0e845000cd36e55",
         "CardImageUrl" : "https://www.monkeytalkie.com/wp-content/uploads/2018/04/IMG_02.jpg"
@@ -22,7 +22,7 @@ var programs = [{
         "Title" : "Italia 1",
         "Description" : "mediaset",
         "Type" : "Live",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "VideoUrl" : "https://link.theplatform.eu/s/PR1GhC/ZDbCaAqpagXc" + mediasetExta,
         "Logo" : "https://cdn.one.accedo.tv/files/5ae6ec03a0e845000cd36a5b",
         "CardImageUrl" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4X8subiNP39Ko22lOm36IIfdSifXFbjGe0Q&usqp=CAU"
@@ -30,7 +30,7 @@ var programs = [{
         "Title" : "Top Crime",
         "Description" : "mediaset",
         "Type" : "Live",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "VideoUrl" : "https://link.theplatform.eu/s/PR1GhC/4F3wY7ZM6yur" + mediasetExta,
         "CardImageUrl" : "https://cdn.one.accedo.tv/files/5b2d2f8c23eec6000dd56ff1"
     }
