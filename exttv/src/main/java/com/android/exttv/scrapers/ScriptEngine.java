@@ -120,6 +120,7 @@ public abstract class ScriptEngine {
             ep = new Episode(episode);
         }catch (Exception e){
             Log.d("ScriptEngine", "Can't create episode for "+ title +" program.");
+            Log.e("ScriptEngine", String.valueOf(e));
         }
         _handleEpisode(ep, play, title);
     }
@@ -168,7 +169,6 @@ public abstract class ScriptEngine {
 
     @JavascriptInterface
     public String getResponse(String url) {
-//        Log.d("asd","ask response");
         Request request = getRequest(url);
         String stringResponse = "failed";
         try {
@@ -185,8 +185,9 @@ public abstract class ScriptEngine {
 
     @JavascriptInterface
     public void getResponseAsync(String url, String id) {
+        int counter = 0;
         Consumer<String> consumer = (response) -> {
-            String escapedResponse = response.replace("\\","\\\\").replace("'","\\'");
+            String escapedResponse = response.replace("%0A","").replace("\\","\\\\").replace("'","\\'");
             runOnMainLoop(() -> webView.loadUrl("javascript:window['"+ id +"']('"+escapedResponse+"')"));
         };
 //        Log.d("asd","ask response");

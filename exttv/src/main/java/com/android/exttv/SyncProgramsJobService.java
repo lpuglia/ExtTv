@@ -45,7 +45,7 @@ public class SyncProgramsJobService extends JobService {
     private final Map<Integer, Program> programMap = new LinkedHashMap<>();
     private final Map<Integer, Program> onDemand = new HashMap<>();
 
-//    private String host = "http://192.168.1.75";
+//    private String host = "http://192.168.1.100";
     private String host = "https://raw.githubusercontent.com/lpuglia/ExtTv/master";
 
     ArrayList<String> plugins = new ArrayList<String>() {{
