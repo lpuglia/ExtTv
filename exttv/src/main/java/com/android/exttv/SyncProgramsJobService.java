@@ -51,8 +51,8 @@ public class SyncProgramsJobService extends JobService {
     ArrayList<String> plugins = new ArrayList<String>() {{
         add(host+"/plugins/la7plugin.js");
         add(host+"/plugins/raiplugin.js");
-        add(host+"/plugins/mediasetplugin.js");
-        add(host+"/plugins/discoveryplugin.js");
+//        add(host+"/plugins/mediasetplugin.js");
+//        add(host+"/plugins/discoveryplugin.js");
         add(host+"/plugins/liratvplugin.js");
     }};
 
@@ -132,6 +132,7 @@ public class SyncProgramsJobService extends JobService {
                     onDemand.put(p.hashCode(), p);
                     runOnMainLoop(() -> webView.evaluateJavascript(
                             "scrapeLastEpisode('" + p.getVideoUrl() + "')" +
+                                    ".catch(err => android.handleEpisode(null, false, '"+p.getTitle()+"'))" +
                                     ".then(response => {" +
                                         "addEpisode(response, true, '"+p.getTitle()+"')" +
                                         ".catch(err => android.handleEpisode(null, false, '"+p.getTitle()+"'))" +
