@@ -1,12 +1,12 @@
 var name = "Rai"
-var pluginRequiresProxy = false
+// var pluginRequiresProxy = false
 
 var programs = [
     {
         "Title" : "Rai 1",
         "Description" : "rai",
         "Type" : "Live",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "Logo" : "https://www.raiplay.it/dl/img/2016/09/1473661951374Logo-Rai1.png",
         "CardImageUrl" : "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Rai_1_-_Logo_2016.svg/512px-Rai_1_-_Logo_2016.svg.png",
         "VideoUrl" : "https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=2606803&output=56"
@@ -14,7 +14,7 @@ var programs = [
         "Title" : "Rai 2",
         "Description" : "rai",
         "Type" : "Live",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "Logo" : "https://www.raiplay.it/dl/img/2016/09/1473662585214Logo-Rai2.png",
         "CardImageUrl" : "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Rai_2_-_Logo_2016.svg/512px-Rai_2_-_Logo_2016.svg.png",
         "VideoUrl" : "https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308718&output=56"
@@ -22,7 +22,7 @@ var programs = [
         "Title" : "Rai 3",
         "Description" : "rai",
         "Type" : "Live",
-        "RequireProxy" : true,
+        "RequireProxy" : false,
         "Logo" : "https://www.raiplay.it/dl/img/2016/09/1473662801274Logo-Rai3.png",
         "VideoUrl" : "https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308709&output=56",
         "CardImageUrl" : "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Rai_3_-_Logo_2016.svg/512px-Rai_3_-_Logo_2016.svg.png"
