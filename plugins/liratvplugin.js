@@ -53,7 +53,7 @@ async function addEpisode(url, play = false, title = ""){
     dateVideo = doc.querySelector("time.entry-date").getAttribute("datetime")
 
     var dateParts = dateVideo.split("T")[0].split('-');
-    date = new Date(+dateParts[0], dateParts[1], +dateParts[2]).getTime(); 
+    date = new Date(+dateParts[0], dateParts[1]-1, +dateParts[2]).getTime(); 
 
     var js = JSON.stringify(dict = {
                   "PageURL": url,
