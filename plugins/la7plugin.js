@@ -23,7 +23,7 @@ var programs = [
         "Type" : "OnDemand",
         "Logo" : la7Logo,
         "VideoUrl" : "https://www.la7.it/dimartedi/rivedila7",
-        "CardImageUrl" : "https://www.la7.it/sites/default/files/property/header/home/dimartedi_head_home_2022.jpg"
+        "CardImageUrl" : "https://www.la7.it/sites/default/files/property/header/home/dimartedi_22-23_head_home.jpg"
     },{
         "Title" : "Otto e Mezzo",
         "Description" : "la7",
