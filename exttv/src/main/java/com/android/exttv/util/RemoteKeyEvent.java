@@ -1,5 +1,6 @@
 package com.android.exttv.util;
 
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,6 +81,13 @@ public class RemoteKeyEvent {
                             makeLayuoutPopOut(R.id.bottom_panel);
                             bottomPanel.setVisibility(View.INVISIBLE);
                             return true;
+                        }else{
+                            View hiddenPanel = playerActivity.findViewById(R.id.control_container);
+                            if (!hiddenPanel.isShown()) {
+                                hiddenPanel.setVisibility(View.VISIBLE);
+                            }else{
+                                hiddenPanel.setVisibility(View.INVISIBLE);
+                            }
                         }
                         return true;
                     case 21: //left

@@ -242,7 +242,7 @@ public class PlayerActivity extends Activity {
                         mediaSource.put("Source", uriString);
                         break;
                 }
-                Program program = new Program().setType("OnDemand");
+                Program program = new Program().setType("OnDemand").setVideoUrl(uriString);
                 Episode episode = new Episode().setTitle("External Video Stream").setDescription(uriString).setAirDate(new GregorianCalendar());
                 remoteKeyEvent = new RemoteKeyEvent(this, program.isLive(), program.hashCode());
                 scraper = new ScraperManager(this, program, episode);
