@@ -30,7 +30,7 @@ var programs = [
         "Type" : "OnDemand",
         "Logo" : la7Logo,
         "VideoUrl" : "https://www.la7.it/otto-e-mezzo/rivedila7",
-        "CardImageUrl" : "https://www.la7.it/sites/default/files/property/header/home/ottoemezzo19-20_home.jpg"
+        "CardImageUrl" : "https://www.la7.it/sites/default/files/property/header/home/a_ottoemezzo2024_head_home.jpg"
     }
 ]
 
