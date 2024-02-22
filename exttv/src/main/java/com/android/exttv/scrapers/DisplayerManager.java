@@ -1,5 +1,6 @@
 package com.android.exttv.scrapers;
 
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -46,17 +47,26 @@ public class DisplayerManager {
     }
 
     public void setTopContainer(Episode episode){
+        Log.d("mediasource", "episode.getThumbURL()");
         ImageView thumb = playerActivity.findViewById(R.id.top_thumb);
-        Picasso.with(playerActivity.getBaseContext())
-                .load(episode.getThumbURL())
-                .into(thumb, new com.squareup.picasso.Callback() {
-                    @Override
-                    public void onSuccess() {
-                        playerActivity.findViewById(R.id.top_thumb_progress).setVisibility(View.GONE);
-                    }
-                    @Override
-                    public void onError() {}
-                });
+        if (episode.getThumbURL() == null || episode.getThumbURL().isEmpty()) {
+            playerActivity.findViewById(R.id.top_thumb_progress).setVisibility(View.GONE);
+        } else {
+            // Load the image using Picasso
+            Picasso.with(playerActivity.getBaseContext())
+                    .load(episode.getThumbURL())
+                    .into(thumb, new com.squareup.picasso.Callback() {
+                        @Override
+                        public void onSuccess() {
+                            playerActivity.findViewById(R.id.top_thumb_progress).setVisibility(View.GONE);
+                        }
+                        @Override
+                        public void onError() {
+                            // Optionally, you can set a placeholder or error image here as well
+                            thumb.setVisibility(View.GONE);
+                        }
+                    });
+        }
         TextView title = playerActivity.findViewById(R.id.top_title);
         title.setText(episode.getTitle());
         TextView date = playerActivity.findViewById(R.id.top_date);

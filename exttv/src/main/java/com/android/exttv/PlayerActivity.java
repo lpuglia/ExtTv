@@ -17,6 +17,7 @@ package com.android.exttv;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -68,11 +69,15 @@ import com.squareup.picasso.Picasso;
 import org.conscrypt.Conscrypt;
 
 import java.security.Security;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+
+import okhttp3.OkHttpClient;
 
 import static com.android.exttv.util.AppLinkHelper.getEpisodeCursor;
 import static com.android.exttv.util.AppLinkHelper.setEpisodeCursor;
@@ -105,6 +110,9 @@ public class PlayerActivity extends Activity {
     }
 
     public void preparePlayer(Map<String, String> mediaSource){
+        for (Map.Entry<String, String> entry : mediaSource.entrySet()) {
+            Log.d("mediasource", entry.getKey() + ": " + entry.getValue());
+        }
         if(player != null){
             player.stop(true);
             if(!paused)
@@ -127,6 +135,7 @@ public class PlayerActivity extends Activity {
 
             MediaSource ms = null;
             MediaItem mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.get("Source")));
+
             if(mediaSource.containsKey("StreamType")){
                 switch (mediaSource.get("StreamType")) {
                     case "Dash":
@@ -176,20 +185,73 @@ public class PlayerActivity extends Activity {
         setContentView(R.layout.activity_player);
         playerView = findViewById(R.id.video_view);
 
-        Program currentProgram = setCurrentProgramFromIntent(getIntent().getData());
-        if(currentProgram==null){ //for sync program
-            finish();
-            return;
-        }
-        initializePlayer(currentProgram.isLive());
+        Intent intent = getIntent();
+        Uri data = intent.getData();
+//        Bundle extras = intent.getExtras();
 
-        startScraper(currentProgram);
+//        if (extras != null) {
+//            for (String key : extras.keySet()) {
+//                Object value = extras.get(key);
+//                Log.d("IntentExtras", String.format("%s %s (%s)", key,
+//                        value.toString(), value.getClass().getName()));
+//            }
+//        }
 
-        if(currentProgram.isLive()){
-            for(Program p : ProgramDatabase.programs.values()){
-                Picasso.with(getBaseContext()).load(p.getLogo()).fetch(); // pre-fetch all the logo images
+        // Check if the intent and data are not null
+        if (intent != null && data != null) {
+            String uriString = data.toString();
+            Log.d("PlayerActivity", "Full Intent: " + intent.toString());
+            Log.d("PlayerActivity", "Video URI: " + uriString);
+            if(uriString.startsWith("tvrecommendation")){
+                Program currentProgram = setCurrentProgramFromIntent(data);
+                if(currentProgram==null){ //for sync program
+                    finish();
+                    return;
+                }
+                initializePlayer(currentProgram.isLive());
+
+                startScraper(currentProgram);
+
+                if(currentProgram.isLive()){
+                    for(Program p : ProgramDatabase.programs.values()){
+                        Picasso.with(getBaseContext()).load(p.getLogo()).fetch(); // pre-fetch all the logo images
+                    }
+                }
+            }else{
+                Log.d("PlayerActivity", "No intent or data available");
+                initializePlayer(false);
+//                if(mediaSource.containsKey("Source")) toastOnUi("Media source: " + mediaSource.get("Source"));
+//                else toastOnUi("Null media source");
+                Map<String, String> mediaSource = new HashMap<>();
+                String extension = uriString.substring(uriString.lastIndexOf(".") + 1);
+                switch (extension.toLowerCase()) {
+                    case "mp4":
+                        // Handle .mp4 files
+                        mediaSource.put("StreamType", "Default");
+                        mediaSource.put("Source", uriString);
+                        break;
+                    case "mpd":
+                        // Handle .mpd files
+                        mediaSource.put("StreamType", "Dash");
+                        mediaSource.put("Source", uriString);
+                        break;
+                    case "m3u8":
+                        // TODO Handle .m3u8 files (notice there is no break)
+                    default: // not idea, need to improve
+                        mediaSource.put("StreamType", "Hls");
+                        mediaSource.put("Source", uriString);
+                        break;
+                }
+                Program program = new Program().setType("OnDemand");
+                Episode episode = new Episode().setTitle("External Video Stream").setDescription(uriString).setAirDate(new GregorianCalendar());
+                remoteKeyEvent = new RemoteKeyEvent(this, program.isLive(), program.hashCode());
+                scraper = new ScraperManager(this, program, episode);
+                scraper.postFinished();
+                scraper.displayerManager.setTopContainer(episode);
+                preparePlayer(mediaSource);
             }
         }
+
     }
 
     @Override
