@@ -39,7 +39,7 @@ public class ScraperManager extends ScriptEngine{
             webView.evaluateJavascript("getLiveStream('"+currentProgram.getVideoUrl()+"')", null);
         }else{
             webView.evaluateJavascript("scrapeEpisodes('"+currentProgram.getVideoUrl()+"')", null);
-            Log.d("asd","Finished Calling scrapeEpisodes");
+            Log.d("ScraperManager","Finished Calling scrapeEpisodes");
         }
         if(currentProgram.requiresProxy())
             toastOnUi("Using " + client.proxy().address() + " as proxy");

@@ -102,6 +102,8 @@ public class PlayerActivity extends Activity {
     private Long getCurrentEpisodeCursor(){
         Long position = getEpisodeCursor(currentEpisode, getBaseContext());
         Long duration = currentEpisode.getDurationLong();
+        if(duration==0)
+            return position;
         if(position < duration-(duration/99)) return position; // if cursor is before 99% of the duration
         return Long.valueOf(0);
     }
@@ -226,6 +228,7 @@ public class PlayerActivity extends Activity {
                 String extension = uriString.substring(uriString.lastIndexOf(".") + 1);
                 switch (extension.toLowerCase()) {
                     case "mp4":
+                    case "mkv":
                         // Handle .mp4 files
                         mediaSource.put("StreamType", "Default");
                         mediaSource.put("Source", uriString);
@@ -242,12 +245,12 @@ public class PlayerActivity extends Activity {
                         mediaSource.put("Source", uriString);
                         break;
                 }
-                Program program = new Program().setType("OnDemand").setVideoUrl(uriString);
-                Episode episode = new Episode().setTitle("External Video Stream").setDescription(uriString).setAirDate(new GregorianCalendar());
+                currentEpisode = new Episode().setPageURL(uriString).setTitle("External Video Stream").setDescription(uriString).setAirDate(new GregorianCalendar());
+                Program program = new Program().setType("OnDemand").setVideoUrl(uriString).setEpisode(currentEpisode);
                 remoteKeyEvent = new RemoteKeyEvent(this, program.isLive(), program.hashCode());
-                scraper = new ScraperManager(this, program, episode);
+                scraper = new ScraperManager(this, program, currentEpisode);
                 scraper.postFinished();
-                scraper.displayerManager.setTopContainer(episode);
+                scraper.displayerManager.setTopContainer(currentEpisode);
                 preparePlayer(mediaSource);
             }
         }
