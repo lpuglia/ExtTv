@@ -52,7 +52,6 @@ public abstract class ScriptEngine {
         this.webView = new WebView(context);
         this.webView.getSettings().setJavaScriptEnabled(true);
         this.webView.addJavascriptInterface(this, "android");
-
         plugin = new Plugin(scraperURL, context);
     }
 

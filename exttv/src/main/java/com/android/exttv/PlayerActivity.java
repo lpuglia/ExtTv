@@ -31,6 +31,7 @@ import android.os.Looper;
 import android.os.PersistableBundle;
 import android.os.StrictMode;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,9 +59,14 @@ import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
+import com.google.android.exoplayer2.ui.CaptionStyleCompat;
 import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.ui.SubtitleView;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -85,6 +91,9 @@ import static com.android.exttv.util.AppLinkHelper.setEpisodeCursor;
 public class PlayerActivity extends Activity {
 
     private PlayerView playerView;
+    private DefaultTrackSelector trackSelector;
+    private boolean subtitlesEnabled = false;
+
     private RemoteKeyEvent remoteKeyEvent;
     private Episode currentEpisode;
     private boolean paused = false;
@@ -406,6 +415,69 @@ public class PlayerActivity extends Activity {
     int previousPlaybackState  = ExoPlayer.STATE_IDLE;
     boolean previousState = false;
 
+    private int findTextRendererIndex() {
+        for (int i = 0; i < player.getRendererCount(); i++) {
+            if (player.getRendererType(i) == C.TRACK_TYPE_TEXT) {
+                return i;
+            }
+        }
+        return -1; // Text renderer not found
+    }
+
+    private void enableSubtitlesByDefault() {
+        MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
+        if (mappedTrackInfo == null) {
+            return; // No tracks available
+        }
+
+        // Assuming the text renderer is at a conventional index (often 2, but this can vary)
+        int rendererIndex = findTextRendererIndex();
+        if (rendererIndex == -1) {
+            return; // No text renderer found
+        }
+        DefaultTrackSelector.Parameters params = trackSelector.getParameters();
+        params.buildUpon().setRendererDisabled(rendererIndex, true);
+    }
+
+    public void toggleSubtitles() {
+        // Obtain the current track selection parameters from the track selector
+        DefaultTrackSelector.Parameters params = trackSelector.getParameters();
+
+        // Identify the text (subtitle) renderer index
+        int textRendererIndex = -1;
+        for (int i = 0; i < player.getRendererCount(); i++) {
+            if (player.getRendererType(i) == C.TRACK_TYPE_TEXT) {
+                textRendererIndex = i;
+                break;
+            }
+        }
+
+        if (textRendererIndex == -1) {
+            // No text renderer found, can't toggle subtitles
+            return;
+        }
+
+        // Toggle the enabling state of the text renderer
+        boolean isDisabled = params.getRendererDisabled(textRendererIndex);
+        DefaultTrackSelector.ParametersBuilder parametersBuilder = params.buildUpon()
+                .setRendererDisabled(textRendererIndex, !isDisabled);
+        parametersBuilder.clearSelectionOverrides();
+
+        // Apply the changes to the track selector
+        trackSelector.setParameters(parametersBuilder);
+    }
+
+    private void customizeSubtitlesAppearance() {
+        // Example customization: White text, semi-transparent black background
+        CaptionStyleCompat style = new CaptionStyleCompat(Color.YELLOW, Color.TRANSPARENT, Color.TRANSPARENT,
+                CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null);
+
+        SubtitleView subtitleView = playerView.getSubtitleView();
+        if (subtitleView != null) {
+            subtitleView.setStyle(style);
+        }
+    }
+
     private void initializePlayer(boolean isLive) {
 
         ProgressBar progressBar = findViewById(R.id.progress_bar);
@@ -423,8 +495,11 @@ public class PlayerActivity extends Activity {
         drawable = pause.getDrawable();
         drawable.setTintList(ColorStateList.valueOf(Color.parseColor("#222222")));
 
+        trackSelector = new DefaultTrackSelector(this);
         player = new SimpleExoPlayer.Builder(this)
+                .setTrackSelector(trackSelector)
                 .build();
+
         playerView.setControllerShowTimeoutMs(0);
 
         player.addListener(new ExoPlayer.EventListener() {
@@ -469,6 +544,7 @@ public class PlayerActivity extends Activity {
                     }
                 }, 3000);
             }
+
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
                 ImageView watermark = findViewById(R.id.watermark);
@@ -528,6 +604,16 @@ public class PlayerActivity extends Activity {
                 previousPlaybackState = playbackState;
             }
         });
+        enableSubtitlesByDefault();
+        findViewById(R.id.btnToggleSubtitles).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleSubtitles();
+            }
+        });
+
+        customizeSubtitlesAppearance();
+
         playerView.setPlayer(player);
 
     }

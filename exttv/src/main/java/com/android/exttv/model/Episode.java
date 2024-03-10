@@ -87,6 +87,9 @@ public class Episode implements Comparable<Episode> {
     }
 
     public GregorianCalendar getAirDate() {
+        if (airDate == null) {
+            return new GregorianCalendar(); // Returns the current date and time
+        }
         return airDate;
     }
 

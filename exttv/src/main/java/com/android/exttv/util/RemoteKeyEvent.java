@@ -64,6 +64,11 @@ public class RemoteKeyEvent {
 //        android.widget.TextView texto = playerActivity.findViewById(R.id.texto);
 //        texto.setText(String.valueOf(keyCode));
         if (action == 1) {
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_S:
+                    playerActivity.toggleSubtitles();
+                    return true; // Indicate we've handled this key
+            }
             View bottomPanel = playerActivity.findViewById(R.id.bottom_panel);
             if (!isLive && playerActivity.cardsReady) {
                 switch (keyCode) {
