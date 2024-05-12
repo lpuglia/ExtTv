@@ -475,6 +475,7 @@ public class PlayerActivity extends Activity {
         SubtitleView subtitleView = playerView.getSubtitleView();
         if (subtitleView != null) {
             subtitleView.setStyle(style);
+            subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.subtitle_font_size));
         }
     }
 
