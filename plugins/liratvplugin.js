@@ -8,7 +8,7 @@ var programs = [
         "Type" : "Live",
         "Logo" : "https://pbs.twimg.com/profile_images/1370923532/logo_lira_400x400.gif",
         "VideoUrl" : "https://a928c0678d284da5b383f29ecc5dfeec.msvdn.net/live/S57315730/8kTBWibNteJA/playlist.m3u8",
-        "CardImageUrl" : "https://www.liratv.it/wp-content/uploads/2023/04/1681648200_LIRATG-Cronaca-16042023_1681648492-585x329.jpg"
+        "CardImageUrl" : "https://webtools-a928c0678d284da5b383f29ecc5dfeec.msvdn.net/image/8kTBWibNteJA/poster"
     },{
         "Title" : "LiraTG",
         "Description" : "liratv",
