@@ -53,7 +53,7 @@ public class SyncProgramsJobService extends JobService {
         add(host+"/plugins/raiplugin.js");
 //        add(host+"/plugins/mediasetplugin.js");
 //        add(host+"/plugins/discoveryplugin.js");
-        add(host+"/plugins/liratvplugin.js");
+//        add(host+"/plugins/liratvplugin.js");
     }};
 
     public class SyncProgramManager extends ScriptEngine{
@@ -176,6 +176,7 @@ public class SyncProgramsJobService extends JobService {
         @SuppressLint("RestrictedApi")
         private void setPrograms() {
             List<Program> onDemandPrograms = new ArrayList<>(onDemand.values());
+            onDemandPrograms.removeIf(program -> program.getEpisode() == null);
             Collections.sort(onDemandPrograms);
             for(Program p : onDemandPrograms) programMap.put(p.hashCode(), p);
 

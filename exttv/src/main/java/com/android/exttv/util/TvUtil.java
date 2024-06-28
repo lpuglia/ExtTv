@@ -145,7 +145,6 @@ public class TvUtil {
         return (int) (CHANNEL_JOB_ID_OFFSET + channelId);
     }
 
-
     public static void scheduleSyncingProgramsForChannel(Context context, List<Long> channelIds) {
         ComponentName componentName = new ComponentName(context, SyncProgramsJobService.class);
         JobInfo.Builder builder = new JobInfo.Builder(1, componentName);

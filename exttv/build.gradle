@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'com.chaquo.python'
 }
 
 android {
@@ -12,7 +13,20 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+        sourceSets{
+            main{
+                python.srcDir "src/main/python"
+            }
+        }
+        python {
+            buildPython "C:/Python311/python.exe"
+            pip {
+                install "-r", "src/main/python/requirements.txt"
+            }
+        }
     }
 
     buildTypes {
@@ -26,7 +40,6 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
-
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])

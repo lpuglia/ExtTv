@@ -5,8 +5,13 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.util.Log;
 
 import androidx.tvprovider.media.tv.TvContractCompat;
+
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 
 import com.android.exttv.model.Subscription;
 import com.android.exttv.util.AppLinkHelper;
@@ -26,10 +31,18 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
 
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-        new AddChannelTask(this).execute();
-        finish();
+//        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+//        StrictMode.setThreadPolicy(policy);
+        if (!Python.isStarted()) {
+            Python.start(new AndroidPlatform(this));
+        }
+        Python py = Python.getInstance();
+        PyObject pyObject = py.getModule("kodi");
+//        PyObject result = pyObject.callAttr("your_python_function", "ciao");
+//        String output = result.toString();
+//        Log.d("Python Output", output);
+////        new AddChannelTask(this).execute();
+//        finish();
     }
 
     private class AddChannelTask extends AsyncTask<Subscription, Void, Long> {
