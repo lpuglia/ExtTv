@@ -1,5 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
+import utils
 
 def parse_addon_xml(xml_path):
     tree = ET.parse(xml_path)
@@ -85,12 +86,12 @@ def parse_po_file(file_path):
 class Addon():
 
     def __init__(self, id):
-        self.localizedStrings = parse_po_file(os.path.join(os.getcwd(), 'home/addons/plugin.video.kod/resources/language/resource.language.it_it/strings.po'))
-        self.settings = parse_settings_from_xml(os.path.join(os.getcwd(), 'home/addons/plugin.video.kod/resources/settings.xml'))
-        self.addon = parse_addon_xml(os.path.join(os.getcwd(), 'home/addons/plugin.video.kod/addon.xml'))
+        self.localizedStrings = parse_po_file(os.path.join(utils.full_addons_path(),'plugin.video.kod/resources/language/resource.language.it_it/strings.po'))
+        self.settings = parse_settings_from_xml(os.path.join(utils.full_addons_path(),'plugin.video.kod/resources/settings.xml'))
+        self.addon = parse_addon_xml(os.path.join(utils.full_addons_path(),'plugin.video.kod/addon.xml'))
 
-        self.addon['path'] = os.path.join(os.getcwd(), 'home/addons/plugin.video.kod')
-        self.addon['Profile'] = os.path.join(os.getcwd(), 'userdata/addon_data/plugin.video.kod')
+        self.addon['path'] = os.path.join(utils.full_addons_path(),'plugin.video.kod')
+        self.addon['Profile'] = os.path.join(utils.full_addondata_path(),'plugin.video.kod')
 
         self.addon['Path'] = self.addon['path']
         # self.addon['Profile'] = self.addon['profile']

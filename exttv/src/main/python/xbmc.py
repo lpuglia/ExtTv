@@ -2,6 +2,7 @@ import os
 import platform
 from datetime import datetime
 import time
+import utils
 
 # Redefine the constants with their values
 LOGDEBUG = 0
@@ -21,14 +22,16 @@ def executebuiltin(command):
 
 def translatePath(path):
     if 'special://' in path:
-        return path.replace('special:/', os.getcwd())
+        if path.startswith('special://profile/'):
+            return path.replace('special://profile/', utils.full_userdata_path())
+        else:
+            return path.replace('special://', utils.full_home_path())
     else:
         return path
 
 def getSkinDir():
     # Dummy implementation to return a fixed skin directory
-    skin_dir = "/path/to/skin/directory"
-    return skin_dir
+    return 'skin.estuary'
 
 def getInfoLabel(label):
     # Dummy implementation to return a fixed value based on the label
@@ -37,9 +40,17 @@ def getInfoLabel(label):
     }
     return info_labels.get(label, "Unknown Label")
 
+def executeJSONRPC(jsonrpc_request):
+    response_dict = {}
+    response_dict['{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params": {"setting": "lookandfeel.skin"}, "id": 1 }'] = '{"id":1,"jsonrpc":"2.0","result":{"value":"skin.estuary"}\}'
+    if jsonrpc_request in response_dict:
+        return response_dict[jsonrpc_request]
+    else:
+        return None
+
 class Logger:
     def __init__(self):
-        self.log_file = os.path.join(os.getcwd(), 'kodi.log')
+        self.log_file = os.path.join(utils.full_home_path(), 'kodi.log')
         # Ensure the log directory exists
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
     

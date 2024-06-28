@@ -2,15 +2,13 @@ import os
 import sys
 import utils
 
-utils.addons_path = os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../addons')) # very important to normalize
-if not os.path.exists(utils.addons_path):
-    os.mkdir(utils.addons_path)
+utils.init(os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../'))) # very important to normalize
 
 kod_folder_name = 'plugin.video.kod'
 url = 'https://github.com/kodiondemand/addon/archive/refs/heads/master.zip'
-utils.download_and_extract_plugin(url, kod_folder_name, False)
+utils.download_and_extract_plugin(url, kod_folder_name, True)
 
-sys.path.append(os.path.join(utils.addons_path, kod_folder_name))
+sys.path.append(os.path.join(utils.full_addons_path(), kod_folder_name))
 
 sys.argv = [None,3,""]
 import default
