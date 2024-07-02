@@ -5,6 +5,8 @@ import base64
 import zipfile
 import urllib.parse
 import json
+import xbmc
+from xbmc import Logger
 
 workspace = None
 home_path = 'kodi_home/'
@@ -89,3 +91,5 @@ def init(path):
     os.makedirs(full_addons_path(), exist_ok=True)
     os.makedirs(full_addondata_path(), exist_ok=True)
     os.makedirs(full_database_path(), exist_ok=True)
+    xbmc.log = Logger()
+

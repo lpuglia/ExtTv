@@ -1,10 +1,11 @@
 package com.android.exttv;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.util.Log;
 
 import androidx.tvprovider.media.tv.TvContractCompat;
@@ -20,29 +21,48 @@ import com.android.exttv.util.TvUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /*
  * Displays subscriptions that can be added to the main launcher's channels.
  */
 public class MainActivity extends Activity {
 
+    private static MainActivity instance;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
-
+        instance = this;
 //        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 //        StrictMode.setThreadPolicy(policy);
         if (!Python.isStarted()) {
             Python.start(new AndroidPlatform(this));
         }
-        Python py = Python.getInstance();
-        PyObject pyObject = py.getModule("kodi");
-//        PyObject result = pyObject.callAttr("your_python_function", "ciao");
-//        String output = result.toString();
-//        Log.d("Python Output", output);
-////        new AddChannelTask(this).execute();
+
+        MainActivity activity = this;
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                // Your code here
+                Python py = Python.getInstance();
+                PyObject xbmcgui = py.getModule("xbmcgui");
+                PyObject pyObject = py.getModule("kodi");
+//                PyObject pyDialogClass = pyObject.callAttr("main");
+//                PyObject value = pyDialogClass.callAttr("create", "title");
+//                Log.d("Python", String.valueOf(value));
+            }
+        };
+        getApplicationContext();
+        Thread thread = new Thread(runnable);
+        thread.start();
+        new AddChannelTask(this).execute();
 //        finish();
+    }
+
+    public static MainActivity getInstance() {
+        return instance;
     }
 
     private class AddChannelTask extends AsyncTask<Subscription, Void, Long> {

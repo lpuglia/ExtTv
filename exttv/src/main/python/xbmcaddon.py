@@ -104,9 +104,15 @@ class Addon():
     def getLocalizedString(self, id):
         return self.localizedStrings[str(id)]
 
+    def setSetting(self, name, value):
+        self.settings[name] = value
+
     def getSetting(self, name):
         if name == 'show_once': return 'true'
-        return self.settings[name]
+        if name in self.settings:
+            return self.settings[name]
+        else:
+            return None
 
     def getAddonInfo(self, info):
         return self.addon[info]        

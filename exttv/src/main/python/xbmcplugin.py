@@ -1,4 +1,9 @@
 import sys
+from typing import List, Tuple
+from xbmc import KodiNavigationStack
+import xbmcgui
+
+nav_stack = KodiNavigationStack()
 
 # Dummy constants for sorting methods
 SORT_METHOD_DATE = 1
@@ -10,26 +15,28 @@ class PluginRecorder:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.calls = {}
+            cls._instance.closed = True
+            
         return cls._instance
 
     def record_call(self, func_name, to_record):
-        self.calls[func_name] = to_record
-
-    def get_calls(self, func_name=None):
-        if func_name:
-            return self.calls.get(func_name, [])
-        return self.calls
-    
-    def __getitem__(self, key):
-        return self.calls[key]
+        if 'directory_item' in func_name:
+            if self.closed: # if we're starting a new directory, reset the items list
+                nav_stack.items.append([])
+                self.closed = False
+            if func_name == 'directory_items':
+                nav_stack.items[-1].extend(to_record)
+            elif func_name == 'directory_item':
+                nav_stack.items[-1].append(to_record)
+        elif func_name == 'end_of_directory':
+            self.closed = True
 
 # Create a singleton instance of PluginRecorder
 plugin_recorder = PluginRecorder()
 
 # Replace the original functions with wrapped versions that record calls
-def addDirectoryItems(handle, dirItems):
-    plugin_recorder.record_call('directory_item', dirItems)
+def addDirectoryItems(handle, items: List[Tuple[str, xbmcgui.ListItem, bool]], totalItems: int = 0):
+    plugin_recorder.record_call('directory_items', items)
     # print(f"Called addDirectoryItems with handle: {handle} and dirItems: {dirItems}")
 
 def setContent(handle, content):

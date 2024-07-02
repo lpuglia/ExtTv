@@ -107,7 +107,6 @@ public class PlayerActivity extends Activity {
         return remoteKeyEvent.dispatchKeyEvent(event);
     }
 
-
     private Long getCurrentEpisodeCursor(){
         Long position = getEpisodeCursor(currentEpisode, getBaseContext());
         Long duration = currentEpisode.getDurationLong();
