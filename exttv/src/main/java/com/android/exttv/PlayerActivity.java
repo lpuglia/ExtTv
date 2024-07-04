@@ -124,7 +124,7 @@ public class PlayerActivity extends Activity {
             Log.d("mediasource", entry.getKey() + ": " + entry.getValue());
         }
         if(player != null){
-            player.stop(true);
+            player.stop();
             if(!paused)
                 player.setPlayWhenReady(true);
             else
@@ -132,7 +132,7 @@ public class PlayerActivity extends Activity {
 
             if(mediaSource == null) return;
 
-            DefaultDrmSessionManager drmManager = null;
+            DefaultDrmSessionManager drmManager;
             if(mediaSource.containsKey("DRM") && mediaSource.containsKey("License")){
                 HttpMediaDrmCallback playreadyCallback = new HttpMediaDrmCallback( mediaSource.get("License"), (HttpDataSource.Factory) scraper.dataSourceFactory);
                 if(mediaSource.containsKey("Preauthorization"))
@@ -141,6 +141,8 @@ public class PlayerActivity extends Activity {
                 drmManager = new DefaultDrmSessionManager.Builder()
                         .setUuidAndExoMediaDrmProvider(mediaSource.get("DRM").equals("widevine") ? C.WIDEVINE_UUID : C.CLEARKEY_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
                         .build(playreadyCallback);
+            } else {
+                drmManager = null;
             }
 
             MediaSource ms = null;
@@ -149,9 +151,10 @@ public class PlayerActivity extends Activity {
             if(mediaSource.containsKey("StreamType")){
                 switch (mediaSource.get("StreamType")) {
                     case "Dash":
-                        DashMediaSource.Factory dashMediaSource = new DashMediaSource.Factory(scraper.dataSourceFactory);
-                        if (drmManager != null)
-                            dashMediaSource.setDrmSessionManager(drmManager);
+                        DashMediaSource.Factory dashMediaSource = new DashMediaSource.Factory(scraper.dataSourceFactory).setDrmSessionManagerProvider(unusedMediaItem -> drmManager);;
+//                        if (drmManager != null) {
+//                            dashMediaSource.setDrmSessionManager(drmManager);
+//                        }
                         if (mediaSource.containsKey("Source")) {
                             ms = dashMediaSource.createMediaSource(mediaItem);
                         }
@@ -227,6 +230,41 @@ public class PlayerActivity extends Activity {
                         Picasso.with(getBaseContext()).load(p.getLogo()).fetch(); // pre-fetch all the logo images
                     }
                 }
+            }else if(uriString.startsWith("kodi://")){
+                HashMap<String, String> queryParams = new HashMap<>();
+                Set<String> paramNames = data.getQueryParameterNames();
+                for (String paramName : paramNames) {
+                    String paramValue = data.getQueryParameter(paramName);
+                    queryParams.put(paramName, paramValue);
+                }
+                initializePlayer(false);
+                Program program = new Program().setType("OnDemand").setVideoUrl(queryParams.get("path")).setEpisode(currentEpisode);
+                Map<String, String> mediaSource = new HashMap<>();
+                String extension = uriString.substring(uriString.lastIndexOf(".") + 1);
+                switch (queryParams.get("mimetype")) {
+                    case "mp4":
+                    case "mkv":
+                        // Handle .mp4 files
+                        mediaSource.put("StreamType", "Default");
+                        mediaSource.put("Source", uriString);
+                        break;
+                    case "application/dash+xml":
+                        // Handle .mpd files
+                        mediaSource.put("StreamType", "Dash");
+                        if(queryParams.containsKey("inputstream.adaptive.license_type") & queryParams.get("inputstream.adaptive.license_type")=="com.widevine.alpha"){
+                            mediaSource.put("DRM", "widevine");
+                        }
+                        mediaSource.put("Source", uriString);
+                        break;
+                    case "m3u8":
+                        // TODO Handle .m3u8 files (notice there is no break)
+                    default: // not idea, need to improve
+                        mediaSource.put("StreamType", "Hls");
+                        mediaSource.put("Source", uriString);
+                        break;
+                }
+
+                initializePlayer(program.isLive());
             }else{
                 Log.d("PlayerActivity", "No intent or data available");
                 initializePlayer(false);
@@ -358,7 +396,7 @@ public class PlayerActivity extends Activity {
     }
 
     private void scrape(Program currentProgram, Episode episode){
-        player.stop(true);
+        player.stop();
         if(scraper!=null){
             scraper.cancel();
             scraper = null;
@@ -458,7 +496,7 @@ public class PlayerActivity extends Activity {
 
         // Toggle the enabling state of the text renderer
         boolean isDisabled = params.getRendererDisabled(textRendererIndex);
-        DefaultTrackSelector.ParametersBuilder parametersBuilder = params.buildUpon()
+        DefaultTrackSelector.Parameters.Builder parametersBuilder = params.buildUpon()
                 .setRendererDisabled(textRendererIndex, !isDisabled);
         parametersBuilder.clearSelectionOverrides();
 
@@ -502,7 +540,7 @@ public class PlayerActivity extends Activity {
 
         playerView.setControllerShowTimeoutMs(0);
 
-        player.addListener(new ExoPlayer.EventListener() {
+        player.addListener(new ExoPlayer.Listener() {
             private void showUI(){
                 if(handler != null)
                     handler.removeCallbacksAndMessages(null);

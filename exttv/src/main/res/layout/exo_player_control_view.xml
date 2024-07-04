@@ -11,12 +11,12 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:visibility="invisible">
-    <ImageButton android:id="@id/exo_play"
+    <ImageButton android:id="@+id/exo_play"
         android:layout_width="39dp"
         android:layout_height="39dp"
         style="@style/ExoMediaButton.Play"/>
 
-    <ImageButton android:id="@id/exo_pause"
+    <ImageButton android:id="@+id/exo_pause"
         android:layout_width="39dp"
         android:layout_height="39dp"
         style="@style/ExoMediaButton.Pause"/>

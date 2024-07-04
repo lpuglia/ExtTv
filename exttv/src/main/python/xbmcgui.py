@@ -5,6 +5,16 @@ try:
     from android.content import DialogInterface
     import threading
     main_activity = jclass("com.android.exttv.MainActivity").getInstance()
+
+    def run_on_ui_thread(func):
+        def wrapper():
+            class R(dynamic_proxy(Runnable)):
+                def run(self):
+                    func()
+
+            main_activity.runOnUiThread(R())
+        return wrapper
+
 except ImportError:
     main_activity = None
 
@@ -16,18 +26,6 @@ DLG_YESNO_CUSTOM_BTN = "Custom"
 def getCurrentWindowId():
     return 1
 
-def set_callback(class_, name, callback):
-    print(class_, name, callback)
-    setattr(eval(class_), name, callback)
-
-def run_on_ui_thread(func):
-    def wrapper():
-        class R(dynamic_proxy(Runnable)):
-            def run(self):
-                func()
-
-        main_activity.runOnUiThread(R())
-    return wrapper
 
 class MockGUI:
     _instance = None
@@ -53,6 +51,7 @@ class MockGUI:
 
 class DialogProgressBG:
     def __init__(self):
+        if main_activity is None: return
         self.progress_percent = 0
         state_done = threading.Event()
         @run_on_ui_thread
@@ -122,6 +121,7 @@ class DialogProgressBG:
 
 class DialogProgress:
     def __init__(self):
+        if main_activity is None: return
         state_done = threading.Event()
         @run_on_ui_thread
         def instantiate_dialog():
@@ -199,7 +199,6 @@ class Dialog:
         self.mock_gui.register_widget(self)
         self.heading = ''
         self.lines = []
-
 
     def ok(self, heading, message):
         if main_activity is None:

@@ -3,9 +3,11 @@ import platform
 from datetime import datetime
 import time
 import utils
+import urllib.parse
 
 try:
     from android.content import Intent
+    from android.net import Uri
     from java import jclass
     main_activity = jclass("com.android.exttv.MainActivity").getInstance()
 except ImportError:
@@ -90,7 +92,16 @@ class Player():
 
     def play(self, playlist, xlistitem):
         print(playlist, xlistitem)
+        base_url = "kodi://app/?"
+        video_info = playlist.playlist_items[0][1].properties.copy()
+        video_info['mimetype'] = playlist.playlist_items[0][1].mimetype
+        video_info['art'] = playlist.playlist_items[0][1].art
+        video_info['path'] = playlist.playlist_items[0][1].path
+        query_string = urllib.parse.urlencode(video_info)
+        full_url = base_url + query_string
         intent = Intent(main_activity.getApplicationContext(), jclass("com.android.exttv.PlayerActivity"))
+        intent.setData(Uri.parse(full_url))
+
         main_activity.startActivity(intent)
 
     def isPlaying(self):
