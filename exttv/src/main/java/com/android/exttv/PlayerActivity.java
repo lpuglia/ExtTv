@@ -56,6 +56,7 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
+import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
@@ -103,83 +104,6 @@ public class PlayerActivity extends Activity {
     public boolean cardsReady = false;
 
     @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        return remoteKeyEvent.dispatchKeyEvent(event);
-    }
-
-    private Long getCurrentEpisodeCursor(){
-        Long position = getEpisodeCursor(currentEpisode, getBaseContext());
-        Long duration = currentEpisode.getDurationLong();
-        if(duration==0)
-            return position;
-        if(position < duration-(duration/99)) return position; // if cursor is before 99% of the duration
-        return Long.valueOf(0);
-    }
-    public void setCurrentEpisodeCursor(){
-        setEpisodeCursor(player.getCurrentPosition(), currentEpisode, getBaseContext());
-    }
-
-    public void preparePlayer(Map<String, String> mediaSource){
-        for (Map.Entry<String, String> entry : mediaSource.entrySet()) {
-            Log.d("mediasource", entry.getKey() + ": " + entry.getValue());
-        }
-        if(player != null){
-            player.stop();
-            if(!paused)
-                player.setPlayWhenReady(true);
-            else
-                paused = false;
-
-            if(mediaSource == null) return;
-
-            DefaultDrmSessionManager drmManager;
-            if(mediaSource.containsKey("DRM") && mediaSource.containsKey("License")){
-                HttpMediaDrmCallback playreadyCallback = new HttpMediaDrmCallback( mediaSource.get("License"), (HttpDataSource.Factory) scraper.dataSourceFactory);
-                if(mediaSource.containsKey("Preauthorization"))
-                    playreadyCallback.setKeyRequestProperty("preauthorization", mediaSource.get("Preauthorization"));
-
-                drmManager = new DefaultDrmSessionManager.Builder()
-                        .setUuidAndExoMediaDrmProvider(mediaSource.get("DRM").equals("widevine") ? C.WIDEVINE_UUID : C.CLEARKEY_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
-                        .build(playreadyCallback);
-            } else {
-                drmManager = null;
-            }
-
-            MediaSource ms = null;
-            MediaItem mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.get("Source")));
-
-            if(mediaSource.containsKey("StreamType")){
-                switch (mediaSource.get("StreamType")) {
-                    case "Dash":
-                        DashMediaSource.Factory dashMediaSource = new DashMediaSource.Factory(scraper.dataSourceFactory).setDrmSessionManagerProvider(unusedMediaItem -> drmManager);;
-//                        if (drmManager != null) {
-//                            dashMediaSource.setDrmSessionManager(drmManager);
-//                        }
-                        if (mediaSource.containsKey("Source")) {
-                            ms = dashMediaSource.createMediaSource(mediaItem);
-                        }
-                        break;
-                    case "Hls":
-                        ms = new HlsMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(mediaItem);
-                        break;
-                    case "Extractor":
-                        ms = new ProgressiveMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(mediaItem);
-                        break;
-                    case "Default":
-                        ms = new DefaultMediaSourceFactory(scraper.dataSourceFactory).createMediaSource(mediaItem);
-                        break;
-                }
-                player.setMediaSource(ms);
-                player.prepare();
-            }
-            if(currentEpisode!=null) {
-                Long position = getCurrentEpisodeCursor();
-                if (position != 0) player.seekTo(position);
-            }
-        }
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -200,15 +124,6 @@ public class PlayerActivity extends Activity {
 
         Intent intent = getIntent();
         Uri data = intent.getData();
-//        Bundle extras = intent.getExtras();
-
-//        if (extras != null) {
-//            for (String key : extras.keySet()) {
-//                Object value = extras.get(key);
-//                Log.d("IntentExtras", String.format("%s %s (%s)", key,
-//                        value.toString(), value.getClass().getName()));
-//            }
-//        }
 
         // Check if the intent and data are not null
         if (intent != null && data != null) {
@@ -237,8 +152,6 @@ public class PlayerActivity extends Activity {
                     String paramValue = data.getQueryParameter(paramName);
                     queryParams.put(paramName, paramValue);
                 }
-                initializePlayer(false);
-                Program program = new Program().setType("OnDemand").setVideoUrl(queryParams.get("path")).setEpisode(currentEpisode);
                 Map<String, String> mediaSource = new HashMap<>();
                 String extension = uriString.substring(uriString.lastIndexOf(".") + 1);
                 switch (queryParams.get("mimetype")) {
@@ -251,10 +164,18 @@ public class PlayerActivity extends Activity {
                     case "application/dash+xml":
                         // Handle .mpd files
                         mediaSource.put("StreamType", "Dash");
-                        if(queryParams.containsKey("inputstream.adaptive.license_type") & queryParams.get("inputstream.adaptive.license_type")=="com.widevine.alpha"){
+                        if(queryParams.containsKey("inputstream.adaptive.license_type") && queryParams.get("inputstream.adaptive.license_type").equals("com.widevine.alpha")){
                             mediaSource.put("DRM", "widevine");
                         }
-                        mediaSource.put("Source", uriString);
+                        if(queryParams.containsKey("preAuthorization")){
+                            mediaSource.put("Preauthorization", queryParams.get("preAuthorization"));
+                        }
+                        if(queryParams.containsKey("inputstream.adaptive.license_key")){
+                            mediaSource.put("License", queryParams.get("inputstream.adaptive.license_key"));
+                        }
+                        if(queryParams.containsKey("path")) {
+                            mediaSource.put("Source", queryParams.get("path"));
+                        }
                         break;
                     case "m3u8":
                         // TODO Handle .m3u8 files (notice there is no break)
@@ -264,7 +185,14 @@ public class PlayerActivity extends Activity {
                         break;
                 }
 
-                initializePlayer(program.isLive());
+                initializePlayer(true);
+                currentEpisode = new Episode().setPageURL(uriString).setTitle("External Video Stream").setDescription(uriString).setAirDate(new GregorianCalendar());
+                Program program = new Program().setType("OnDemand").setVideoUrl(uriString).setEpisode(currentEpisode);
+                remoteKeyEvent = new RemoteKeyEvent(this, program.isLive(), program.hashCode());
+                scraper = new ScraperManager(this, program, currentEpisode);
+                scraper.postFinished();
+                scraper.displayerManager.setTopContainer(currentEpisode);
+                preparePlayer(mediaSource);
             }else{
                 Log.d("PlayerActivity", "No intent or data available");
                 initializePlayer(false);
@@ -318,8 +246,87 @@ public class PlayerActivity extends Activity {
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return remoteKeyEvent.dispatchKeyEvent(event);
+    }
+
+    private Long getCurrentEpisodeCursor(){
+        Long position = getEpisodeCursor(currentEpisode, getBaseContext());
+        Long duration = currentEpisode.getDurationLong();
+        if(duration==0)
+            return position;
+        if(position < duration-(duration/99)) return position; // if cursor is before 99% of the duration
+        return Long.valueOf(0);
+    }
+
+    public void setCurrentEpisodeCursor(){
+        setEpisodeCursor(player.getCurrentPosition(), currentEpisode, getBaseContext());
+    }
+
+    public void preparePlayer(Map<String, String> mediaSource){
+        for (Map.Entry<String, String> entry : mediaSource.entrySet()) {
+            Log.d("mediasource", entry.getKey() + ": " + entry.getValue());
+        }
+
+
+        Log.d("preparePlayer", "preparePlayer: " + mediaSource.get("License"));
+        Log.d("preparePlayer", "preparePlayer: " + mediaSource.get("Preauthorization"));
+
+        if(player != null){
+            player.stop();
+            if(!paused)
+                player.setPlayWhenReady(true);
+            else
+                paused = false;
+
+            if(mediaSource == null) return;
+
+            DefaultDrmSessionManager drmManager;
+            if(mediaSource.containsKey("DRM") && mediaSource.containsKey("License")){
+                HttpMediaDrmCallback playreadyCallback = new HttpMediaDrmCallback( mediaSource.get("License"), (HttpDataSource.Factory) scraper.dataSourceFactory);
+
+                if(mediaSource.containsKey("Preauthorization"))
+                    playreadyCallback.setKeyRequestProperty("preauthorization", mediaSource.get("Preauthorization"));
+
+                drmManager = new DefaultDrmSessionManager.Builder()
+                        .setUuidAndExoMediaDrmProvider(mediaSource.get("DRM").equals("widevine") ? C.WIDEVINE_UUID : C.CLEARKEY_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
+                        .build(playreadyCallback);
+            } else {
+                drmManager = null;
+            }
+
+            MediaSource ms = null;
+            MediaItem mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.get("Source")));
+
+            if(mediaSource.containsKey("StreamType")){
+                switch (mediaSource.get("StreamType")) {
+                    case "Dash":
+                        DashMediaSource.Factory dashMediaSource = new DashMediaSource.Factory(scraper.dataSourceFactory).setDrmSessionManagerProvider(unusedMediaItem -> drmManager);;
+//                        if (drmManager != null) {
+//                            dashMediaSource.setDrmSessionManager(drmManager);
+//                        }
+                        if (mediaSource.containsKey("Source")) {
+                            ms = dashMediaSource.createMediaSource(mediaItem);
+                        }
+                        break;
+                    case "Hls":
+                        ms = new HlsMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(mediaItem);
+                        break;
+                    case "Extractor":
+                        ms = new ProgressiveMediaSource.Factory(scraper.dataSourceFactory).createMediaSource(mediaItem);
+                        break;
+                    case "Default":
+                        ms = new DefaultMediaSourceFactory(scraper.dataSourceFactory).createMediaSource(mediaItem);
+                        break;
+                }
+                player.setMediaSource(ms);
+                player.prepare();
+            }
+            if(currentEpisode!=null) {
+                Long position = getCurrentEpisodeCursor();
+                if (position != 0) player.seekTo(position);
+            }
+        }
     }
 
     private Program setCurrentProgramFromIntent(Uri intentUri){
@@ -418,7 +425,6 @@ public class PlayerActivity extends Activity {
         }
 
     }
-
 
     @Override
     protected void onUserLeaveHint() { // this function is only called on home button press, not called on standby

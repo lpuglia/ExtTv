@@ -97,7 +97,16 @@ class Player():
         video_info['mimetype'] = playlist.playlist_items[0][1].mimetype
         video_info['art'] = playlist.playlist_items[0][1].art
         video_info['path'] = playlist.playlist_items[0][1].path
+        if 'inputstream.adaptive.license_key' in video_info:
+            parsed_query = urllib.parse.parse_qs(urllib.parse.urlparse(video_info['inputstream.adaptive.license_key']).query)
+            for key, value in parsed_query.items():
+                if isinstance(value, list) and len(value) == 1:
+                    video_info[key] = value[0]
+                else:
+                    video_info[key] = value
+            video_info['inputstream.adaptive.license_key'] = video_info['inputstream.adaptive.license_key'].split('|')[0]
         query_string = urllib.parse.urlencode(video_info)
+        print(query_string)
         full_url = base_url + query_string
         intent = Intent(main_activity.getApplicationContext(), jclass("com.android.exttv.PlayerActivity"))
         intent.setData(Uri.parse(full_url))

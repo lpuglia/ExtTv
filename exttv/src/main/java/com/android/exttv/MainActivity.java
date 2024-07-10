@@ -1,28 +1,24 @@
 package com.android.exttv;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.StrictMode;
 
+import androidx.fragment.app.FragmentActivity;
 import androidx.tvprovider.media.tv.TvContractCompat;
-
-import com.chaquo.python.PyObject;
-import com.chaquo.python.Python;
-import com.chaquo.python.android.AndroidPlatform;
 
 import com.android.exttv.model.Subscription;
 import com.android.exttv.util.AppLinkHelper;
 import com.android.exttv.util.TvUtil;
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-
 /*
  * Displays subscriptions that can be added to the main launcher's channels.
  */
@@ -35,13 +31,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         instance = this;
-//        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-//        StrictMode.setThreadPolicy(policy);
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
         if (!Python.isStarted()) {
             Python.start(new AndroidPlatform(this));
         }
 
-        MainActivity activity = this;
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
