@@ -53,3 +53,4 @@ obj/
 .externalNativeBuild
 /exttv/src/main/python/kodi.log
 /exttv/src/main/python/userdata/addon_data/*
+/exttv/src/main/python/kodi_home/*
