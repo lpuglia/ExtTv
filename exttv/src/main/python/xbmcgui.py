@@ -1,4 +1,5 @@
 try:
+
     from java import dynamic_proxy, jclass
     from java.lang import Runnable
     from android.app import AlertDialog, ProgressDialog
@@ -15,9 +16,9 @@ try:
             main_activity.runOnUiThread(R())
         return wrapper
 
-except ImportError:
-    main_activity = None
-
+except ImportError as e:
+     print("Could not import MainActivity", e)
+     main_activity = None
 
 DLG_YESNO_NO_BTN = "No"
 DLG_YESNO_YES_BTN = "Yes"
@@ -118,9 +119,10 @@ class DialogProgressBG:
 
         return self.dialog is None or not self.dialog.isShowing()
 
-
 class DialogProgress:
     def __init__(self):
+        self.progress_percent = 0
+        self.is_canceled = False
         if main_activity is None: return
         state_done = threading.Event()
         @run_on_ui_thread
@@ -128,8 +130,6 @@ class DialogProgress:
             self.dialog = ProgressDialog(main_activity)
             state_done.set()
         instantiate_dialog()
-        self.progress_percent = 0
-        self.is_canceled = False
         state_done.wait()
 
     def create(self, heading, message=''):
@@ -154,7 +154,6 @@ class DialogProgress:
             self.dialog.setOnCancelListener(OnCancelListener())
 
             self.dialog.show()
-
         show_dialog()
 
     def update(self, percent, message=None):
@@ -165,16 +164,19 @@ class DialogProgress:
         if self.dialog is None or not self.dialog.isShowing():
             return
 
+        state_done = threading.Event()
         @run_on_ui_thread
         def update_progress():
-            if self.dialog:
+            if self.dialog is not None and self.dialog.isShowing():
                 self.progress_percent = percent
                 self.dialog.setProgress(self.progress_percent)
 
                 if message is not None:
                     self.dialog.setMessage(message)
+            state_done.set()
 
         update_progress()
+        state_done.wait()
 
     def close(self):
         if main_activity is None:
@@ -344,7 +346,7 @@ class Dialog:
             builder.setItems(items, OnClickListener());
             dialog = builder.create()
             dialog.show()
-        
+
         show_dialog()
 
         state_done.wait()
@@ -409,6 +411,9 @@ class ListItem:
     def setSubtitles(self, subtitleFiles):
         self.subtitles.extend(subtitleFiles)
         self.mock_gui.log(f"ListItem - SetSubtitles - Subtitles: {subtitleFiles}")
+
+    def __str__(self):
+        return f"ListItem: label={self.label}, label2={self.label2}, path={self.path}, offscreen={self.offscreen}, info={self.info}, art={self.art}, context_menu_items={self.context_menu_items}, properties={self.properties}, mimetype={self.mimetype}, subtitles={self.subtitles}"
 
 
 class Window():

@@ -1,9 +1,6 @@
 import sys
 from typing import List, Tuple
-from xbmc import KodiNavigationStack
 import xbmcgui
-
-nav_stack = KodiNavigationStack()
 
 # Dummy constants for sorting methods
 SORT_METHOD_DATE = 1
@@ -16,18 +13,19 @@ class PluginRecorder:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.closed = True
+            cls._instance._to_return_items = []
             
         return cls._instance
 
     def record_call(self, func_name, to_record):
         if 'directory_item' in func_name:
             if self.closed: # if we're starting a new directory, reset the items list
-                nav_stack.items.append([])
+                self._to_return_items = []
                 self.closed = False
             if func_name == 'directory_items':
-                nav_stack.items[-1].extend(to_record)
+                self._to_return_items.extend(to_record)
             elif func_name == 'directory_item':
-                nav_stack.items[-1].append(to_record)
+                self._to_return_items.append(to_record)
         elif func_name == 'end_of_directory':
             self.closed = True
 

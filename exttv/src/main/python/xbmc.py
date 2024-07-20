@@ -10,8 +10,9 @@ try:
     from android.net import Uri
     from java import jclass
     main_activity = jclass("com.android.exttv.MainActivity").getInstance()
-except ImportError:
-    main_activity = None
+except ImportError as e:
+     print("Could not import MainActivity", e)
+     main_activity = None
 
 # Redefine the constants with their values
 LOGDEBUG = 0
@@ -26,26 +27,11 @@ LOGNONE = 6
 PLAYLIST_MUSIC = 0
 PLAYLIST_VIDEO = 1
 
-class KodiNavigationStack:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._path_stack = []
-            cls._instance.items = []
-            
-        return cls._instance
-
-    def __getitem__(self, key):
-        return self.items[key]
-
-
 def sleep(milliseconds):
     time.sleep(milliseconds / 1000)
 
 def executebuiltin(command, wait=False):
-    print(f"Pretending to execute builtin: {command}")
+    print(f"executebuiltin: pretending to execute builtin: {command}")
     return True
 
 def translatePath(path):

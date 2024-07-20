@@ -1,12 +1,16 @@
 import os
+import sys
 import shutil
 import requests
 import base64
 import zipfile
 import urllib.parse
 import json
+import importlib
 import xbmc
 from xbmc import Logger
+from xbmcplugin import PluginRecorder
+plugin = PluginRecorder()
 
 workspace = None
 home_path = 'kodi_home/'
@@ -93,3 +97,13 @@ def init(path):
     os.makedirs(full_database_path(), exist_ok=True)
     xbmc.log = Logger()
 
+def reload_module(module_name):
+    if module_name in globals():
+        importlib.reload(globals()[module_name])
+    else:
+        globals()[module_name] = importlib.import_module(module_name)
+
+def run(argv):
+    sys.argv = argv#[f'plugin://{kod_folder_name}/', '3', argv2]
+    reload_module('default')
+    return plugin._to_return_items
