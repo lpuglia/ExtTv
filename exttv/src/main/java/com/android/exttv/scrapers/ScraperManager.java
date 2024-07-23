@@ -57,7 +57,7 @@ public class ScraperManager extends ScriptEngine{
             }
             displayerManager.addData(episode);
         });
-        playerActivity.cardsReady = true;
+        playerActivity.setCardsReady(true);
     }
     
     @JavascriptInterface

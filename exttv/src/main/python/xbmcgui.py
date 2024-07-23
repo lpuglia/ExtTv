@@ -343,7 +343,13 @@ class Dialog:
                     selected_position[0] = which
                     state_done.set()
 
+            class OnCancelListener(dynamic_proxy(DialogInterface.OnCancelListener)):
+                def onCancel(self, dialog):
+                    selected_position[0] = -1  # Dialog cancelled
+                    state_done.set()
+
             builder.setItems(items, OnClickListener());
+            builder.setOnCancelListener(OnCancelListener())
             dialog = builder.create()
             dialog.show()
 

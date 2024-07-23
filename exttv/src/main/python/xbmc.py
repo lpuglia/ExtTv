@@ -76,7 +76,7 @@ class Logger:
 
 class Player():
 
-    def play(self, playlist, xlistitem):
+    def play(self, playlist, xlistitem, windowed = False, startpos = -1):
         print(playlist, xlistitem)
         base_url = "kodi://app/?"
         video_info = playlist.playlist_items[0][1].properties.copy()

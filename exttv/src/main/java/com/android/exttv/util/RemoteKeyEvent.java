@@ -70,7 +70,7 @@ public class RemoteKeyEvent {
                     return true; // Indicate we've handled this key
             }
             View bottomPanel = playerActivity.findViewById(R.id.bottom_panel);
-            if (!isLive && playerActivity.cardsReady) {
+            if (!isLive && playerActivity.getCardsReady()) {
                 switch (keyCode) {
                     case 19: //up
                         if (!bottomPanel.isShown()) {
@@ -97,19 +97,19 @@ public class RemoteKeyEvent {
                         return true;
                     case 21: //left
                         if(bottomPanel.isShown()) {
-                            playerActivity.scraper.displayerManager.selectPrevious();
+                            playerActivity.getScraper().displayerManager.selectPrevious();
                             return true;
                         }
                     case 22: //right
                         if(bottomPanel.isShown()) {
-                            playerActivity.scraper.displayerManager.selectNext();
+                            playerActivity.getScraper().displayerManager.selectNext();
                             return true;
                         }
                     case 66: // enter
                     case 160: // enter
                         if (bottomPanel.isShown()) {
                             playerActivity.findViewById(R.id.progress_bar).setVisibility(View.VISIBLE);
-                            playerActivity.scraper.displayerManager.playSelectedEpisode();
+                            playerActivity.getScraper().displayerManager.playSelectedEpisode();
                             return true;
                         }
                     default:
@@ -143,7 +143,7 @@ public class RemoteKeyEvent {
                     break;
                 case 19: //up
                     if (isLive) {
-//                        playerActivity.scraper.cancel();
+//                        playerActivity.getScraper().cancel();
                         Program next = null;
                         boolean breakNow = false;
                         for (Map.Entry<Integer, Program> e : ProgramDatabase.programs.entrySet()) {
@@ -177,7 +177,7 @@ public class RemoteKeyEvent {
                     break;
                 case 20: //down
                     if (isLive) {
-//                        playerActivity.scraper.cancel();
+//                        playerActivity.getScraper().cancel();
 
                         Program previous = null;
                         //get last
@@ -207,19 +207,19 @@ public class RemoteKeyEvent {
                 case 21: //left
                     if (!isLive) {
                         leftKeyUpTime = System.currentTimeMillis();
-                        playerActivity.player.seekTo((long) (playerActivity.player.getCurrentPosition() - 30000 * leftAccelerator));
+                        playerActivity.getPlayer().seekTo((long) (playerActivity.getPlayer().getCurrentPosition() - 30000 * leftAccelerator));
                     }
                     break;
                 case 22: //right
                     if (!isLive) {
                         rightKeyUpTime = System.currentTimeMillis();
-                        playerActivity.player.seekTo((long) (playerActivity.player.getCurrentPosition() + 30000 * rightAccelerator));
+                        playerActivity.getPlayer().seekTo((long) (playerActivity.getPlayer().getCurrentPosition() + 30000 * rightAccelerator));
                     }
                     break;
                 case 62:
                 case 66: // enter
                 case 160: // enter
-                    playerActivity.player.setPlayWhenReady(!playerActivity.player.isPlaying());
+                    playerActivity.getPlayer().setPlayWhenReady(!playerActivity.getPlayer().isPlaying());
                 default:
                     // code block
             }

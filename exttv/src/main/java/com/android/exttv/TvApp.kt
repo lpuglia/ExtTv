@@ -4,6 +4,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -48,6 +49,7 @@ import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
+import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.DrawerValue
@@ -138,25 +140,22 @@ data class Section(
     val movieList: List<CardView>,
 )
 
-class SectionManager(
-) {
+class SectionManager() {
     private val sections = LinkedHashMap<String, Section>()
     private val selectedIndices: MutableList<Int?> = mutableListOf()
-
-    fun addSection(key: String, section: Section) {
-        sections[key] = section
-        // Update the selectedIndices list to match the number of sections
-        if (selectedIndices.size < sections.size) {
-            selectedIndices.add(null)
-        }
-    }
 
     fun removeAndAdd(index: Int, key: String, newSection: Section) {
         // Convert the map keys to a list to easily access by index
         val keys = sections.keys.toList()
 
+        // Compare newSection with the section at index-1 if index is greater than 0
+        if (index > 0 && sections[keys[index - 1]]?.movieList == newSection.movieList) {
+            return // Ignore the addition if the newSection is equal to the last added section
+        }
+
         // Ensure the index is within the bounds
         if (index in keys.indices) {
+
             // Remove all entries after the given index
             for (i in keys.size - 1 downTo index + 1) {
                 sections.remove(keys[i])
@@ -231,15 +230,16 @@ object PythonInitializer {
         thread.start()
         thread.join()
 
-        SetSection("plugin://plugin.video.kod/", -1, 0)
-//            SetSection("?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D", sectionList)
-//            SetSection("?ewogICAgImFjdGlvbiI6ICJmaW5kdmlkZW9zIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImZvcmNldGh1bWIiOiB0cnVlLAogICAgImZ1bGx0aXRsZSI6ICJMYTciLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAibm9fcmV0dXJuIjogdHJ1ZSwKICAgICJ0aHVtYm5haWwiOiAiaHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2tvZGlvbmRlbWFuZC9tZWRpYS9tYXN0ZXIvbGl2ZS9sYTcucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1MYTdbL0JdIiwKICAgICJ1cmwiOiAiaHR0cHM6Ly93d3cubGE3Lml0L2RpcmV0dGUtdHYiCn0%3D", sectionList)
-//            SetSection("?ewogICAgImFjdGlvbiI6ICJub3ZlZGFkZXMiLAogICAgImNhdGVnb3J5IjogIk5vdml0XHUwMGUwIGluIEZpbG0iLAogICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAiY29udGV4dCI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJhY3Rpb24iOiAic2V0dGluZ19jaGFubmVsIiwKICAgICAgICAgICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAgICAgICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgICAgICAgICAidGl0bGUiOiAiQ2FuYWxpIGluY2x1c2kgaW46IEZpbG0iCiAgICAgICAgfQogICAgXSwKICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX21vdmllLnBuZyIsCiAgICAidGl0bGUiOiAiRmlsbSIKfQ%3D%3D", sectionList)
+        SetSection("plugin://plugin.video.kod/")
+//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D")
+//        SetSection("?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D", sectionList)
+//        SetSection("?ewogICAgImFjdGlvbiI6ICJmaW5kdmlkZW9zIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImZvcmNldGh1bWIiOiB0cnVlLAogICAgImZ1bGx0aXRsZSI6ICJMYTciLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAibm9fcmV0dXJuIjogdHJ1ZSwKICAgICJ0aHVtYm5haWwiOiAiaHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2tvZGlvbmRlbWFuZC9tZWRpYS9tYXN0ZXIvbGl2ZS9sYTcucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1MYTdbL0JdIiwKICAgICJ1cmwiOiAiaHR0cHM6Ly93d3cubGE3Lml0L2RpcmV0dGUtdHYiCn0%3D", sectionList)
+//        SetSection("?ewogICAgImFjdGlvbiI6ICJub3ZlZGFkZXMiLAogICAgImNhdGVnb3J5IjogIk5vdml0XHUwMGUwIGluIEZpbG0iLAogICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAiY29udGV4dCI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJhY3Rpb24iOiAic2V0dGluZ19jaGFubmVsIiwKICAgICAgICAgICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAgICAgICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgICAgICAgICAidGl0bGUiOiAiQ2FuYWxpIGluY2x1c2kgaW46IEZpbG0iCiAgICAgICAgfQogICAgXSwKICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX21vdmllLnBuZyIsCiAgICAidGl0bGUiOiAiRmlsbSIKfQ%3D%3D", sectionList)
 
         return kodi
     }
 
-    fun SetSection(argv2: String, sectionIndex: Int, cardIndex: Int) {
+    fun SetSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
         isLoading.value = true // Start loading indicator
         val runnable = Runnable {
             val title : String = titleMap.getOrDefault(argv2, "")
@@ -247,9 +247,6 @@ object PythonInitializer {
             titleMap.putAll(newSection.movieList.associate { it.id to it.title })
 
             val lastKey = manager.getLastSectionKey()
-            if (lastKey != null && lastKey != argv2) {
-                manager.addSection(argv2, newSection)
-            }
             manager.removeAndAdd(sectionIndex+1, argv2, newSection)
             if(sectionIndex>=0) {
                 manager.updateSelectedIndex(sectionIndex, cardIndex)
@@ -361,7 +358,7 @@ fun CatalogBrowser(
                     )
                 )
         ) {
-            itemsIndexed(PythonInitializer.sectionList.value)  { index,section ->
+            itemsIndexed(PythonInitializer.sectionList.value) { index, section ->
                 Section(
                     section = section,
                     sectionIndex = index
@@ -413,7 +410,6 @@ fun Section(
             )
         }
     }
-    Spacer(modifier = Modifier.height(50.dp))
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -426,9 +422,15 @@ fun Card(
 ) {
 
     val bgModifier = if (isSelected) {
-        Modifier.background(Color.Red)
+        Modifier.background(Color(0x44BB0000))
     } else {
-        Modifier.background(Color.DarkGray)
+        Modifier.background(Color(0x00000000))
+    }
+
+    val border = if (isSelected) {
+        Border(border = BorderStroke(width = 2.dp, color = Color(0xFFBB0000)))
+    } else {
+        Border(border = BorderStroke(width = 0.dp, color = Color(0x00000000)))
     }
 
     Column(
@@ -446,18 +448,24 @@ fun Card(
                 },
             onClick = onClick,
             colors = CardDefaults.colors(containerColor = Color(0x00000000)),
-    //        border = CardDefaults.border(focusedBorder = Border(border = BorderStroke(width = 0.dp, color = Color(0x00000000))))
+            border = CardDefaults.border(
+//                focusedBorder = Border(border = BorderStroke(width = 3.dp, color = Color(0xFFFF0000))),
+//                pressedBorder = Border(border = BorderStroke(width = 10.dp, color = Color(0xFFFF0000))),
+            )
 
         ) {
-            Box(
-                modifier = Modifier
-                    .then(bgModifier)
-            ) {
+            Box() {
                 AsyncImage(
                     model = movie.thumbnailUrl,
                     contentDescription = movie.title,
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+//                        .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent overlay
+                        .then(bgModifier)
                 )
             }
         }
@@ -468,6 +476,7 @@ fun Card(
             modifier = Modifier.padding(8.dp).width(200.dp).basicMarquee(iterations = if (isFocused) 100 else 0),
             overflow = TextOverflow.Ellipsis
         )
+        Spacer(modifier = Modifier.height(50.dp))
     }
 
 }
