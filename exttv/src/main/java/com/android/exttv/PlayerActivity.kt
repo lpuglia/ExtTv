@@ -16,8 +16,6 @@
 package com.android.exttv
 
 import android.app.Activity
-import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ShapeDrawable
@@ -35,14 +33,13 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
 import com.android.exttv.model.Episode
 import com.android.exttv.model.Program
 import com.android.exttv.model.ProgramDatabase
-import com.android.exttv.scrapers.ScraperManager
+import com.android.exttv.scrapers.DisplayerManager
 import com.android.exttv.util.AppLinkHelper
 import com.android.exttv.util.AppLinkHelper.PlaybackAction
 import com.android.exttv.util.RemoteKeyEvent
@@ -54,6 +51,7 @@ import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -66,10 +64,13 @@ import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.picasso.Picasso
+import okhttp3.JavaNetCookieJar
+import okhttp3.OkHttpClient
 import org.conscrypt.Conscrypt
+import java.net.CookieManager
 import java.security.Security
 import java.util.GregorianCalendar
-import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class PlayerActivity : Activity() {
     private var playerView: PlayerView? = null
@@ -81,7 +82,7 @@ class PlayerActivity : Activity() {
     private var paused = false
 
     var player: SimpleExoPlayer? = null
-    var scraper: ScraperManager? = null
+//    var scraper: ScraperManager? = null
     var cardsReady: Boolean = false
 
 
@@ -111,23 +112,7 @@ class PlayerActivity : Activity() {
             val uriString = data.toString()
             Log.d("PlayerActivity", "Full Intent: $intent")
             Log.d("PlayerActivity", "Video URI: $uriString")
-            if (uriString.startsWith("tvrecommendation")) {
-                val currentProgram = setCurrentProgramFromIntent(data)
-                if (currentProgram == null) { //for sync program
-                    finish()
-                    return
-                }
-                initializePlayer(currentProgram.isLive)
-
-                startScraper(currentProgram)
-
-                if (currentProgram.isLive) {
-                    for (p in ProgramDatabase.programs.values) {
-                        Picasso.with(baseContext).load(p.logo)
-                            .fetch() // pre-fetch all the logo images
-                    }
-                }
-            } else if (uriString.startsWith("kodi://")) {
+            if (uriString.startsWith("kodi://")) {
                 val queryParams = HashMap<String, String?>()
                 val paramNames = data.queryParameterNames
                 for (paramName in paramNames) {
@@ -135,7 +120,6 @@ class PlayerActivity : Activity() {
                     queryParams[paramName] = paramValue
                 }
                 val mediaSource: MutableMap<String, String?> = HashMap()
-                val extension = uriString.substring(uriString.lastIndexOf(".") + 1)
                 when (queryParams["mimetype"]) {
                     "mp4", "mkv" -> {
                         // Handle .mp4 files
@@ -177,51 +161,10 @@ class PlayerActivity : Activity() {
                     )
                 val program =
                     Program().setType("OnDemand").setVideoUrl(uriString).setEpisode(currentEpisode)
-                remoteKeyEvent = RemoteKeyEvent(this, program.isLive, program.hashCode().toLong())
-                scraper = ScraperManager(this, program, currentEpisode)
-                scraper!!.postFinished()
-                scraper!!.displayerManager.setTopContainer(currentEpisode)
-                preparePlayer(mediaSource)
-            } else {
-                Log.d("PlayerActivity", "No intent or data available")
-                initializePlayer(false)
-                //                if(mediaSource.containsKey("Source")) toastOnUi("Media source: " + mediaSource.get("Source"));
-//                else toastOnUi("Null media source");
-                val mediaSource: MutableMap<String, String?> = HashMap()
-                val extension = uriString.substring(uriString.lastIndexOf(".") + 1)
-                when (extension.lowercase(Locale.getDefault())) {
-                    "mp4", "mkv" -> {
-                        // Handle .mp4 files
-                        mediaSource["StreamType"] = "Default"
-                        mediaSource["Source"] = uriString
-                    }
+                RemoteKeyEvent(this, program.isLive, program.hashCode().toLong())
 
-                    "mpd" -> {
-                        // Handle .mpd files
-                        mediaSource["StreamType"] = "Dash"
-                        mediaSource["Source"] = uriString
-                    }
-
-                    "m3u8" -> {
-                        mediaSource["StreamType"] = "Hls"
-                        mediaSource["Source"] = uriString
-                    }
-
-                    else -> {
-                        mediaSource["StreamType"] = "Hls"
-                        mediaSource["Source"] = uriString
-                    }
-                }
-                currentEpisode = Episode().setPageURL(uriString).setTitle("External Video Stream")
-                    .setDescription(uriString).setAirDate(
-                        GregorianCalendar()
-                    )
-                val program =
-                    Program().setType("OnDemand").setVideoUrl(uriString).setEpisode(currentEpisode)
-                remoteKeyEvent = RemoteKeyEvent(this, program.isLive, program.hashCode().toLong())
-                scraper = ScraperManager(this, program, currentEpisode)
-                scraper!!.postFinished()
-                scraper!!.displayerManager.setTopContainer(currentEpisode)
+                val displayerManager = DisplayerManager(this, false)
+                displayerManager.setTopContainer(currentEpisode)
                 preparePlayer(mediaSource)
             }
         }
@@ -236,8 +179,6 @@ class PlayerActivity : Activity() {
         val currentProgram = setCurrentProgramFromIntent(intent.data)
         paused = false
         initializePlayer(currentProgram!!.isLive)
-
-        startScraper(currentProgram, currentEpisode)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -266,6 +207,13 @@ class PlayerActivity : Activity() {
             Log.d("mediasource", "$key: $value")
         }
 
+        val clientb: OkHttpClient.Builder = OkHttpClient.Builder()
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS);
+//        if (requiresProxy) initClientProxy(clientb)
+        clientb.cookieJar(JavaNetCookieJar(CookieManager()))
+        val dataSourceFactory = OkHttpDataSource.Factory(clientb.build())
 
         Log.d("preparePlayer", "preparePlayer: " + mediaSource["License"])
         Log.d("preparePlayer", "preparePlayer: " + mediaSource["Preauthorization"])
@@ -280,8 +228,7 @@ class PlayerActivity : Activity() {
             val drmManager: DefaultDrmSessionManager?
             if (mediaSource.containsKey("DRM") && mediaSource.containsKey("License")) {
                 val playreadyCallback = HttpMediaDrmCallback(
-                    mediaSource["License"],
-                    (scraper!!.dataSourceFactory as HttpDataSource.Factory)
+                    mediaSource["License"], (dataSourceFactory as HttpDataSource.Factory)
                 )
 
                 if (mediaSource.containsKey("Preauthorization")) playreadyCallback.setKeyRequestProperty(
@@ -310,7 +257,7 @@ class PlayerActivity : Activity() {
                 when (mediaSource["StreamType"]) {
                     "Dash" -> {
                         val dashMediaSource = DashMediaSource.Factory(
-                            scraper!!.dataSourceFactory
+                            dataSourceFactory
                         )
                             .setDrmSessionManagerProvider { unusedMediaItem: MediaItem? -> drmManager!! }
 
@@ -322,14 +269,14 @@ class PlayerActivity : Activity() {
                         }
                     }
 
-                    "Hls" -> ms = HlsMediaSource.Factory(scraper!!.dataSourceFactory)
+                    "Hls" -> ms = HlsMediaSource.Factory(dataSourceFactory)
                         .createMediaSource(mediaItem)
 
-                    "Extractor" -> ms = ProgressiveMediaSource.Factory(scraper!!.dataSourceFactory)
+                    "Extractor" -> ms = ProgressiveMediaSource.Factory(dataSourceFactory)
                         .createMediaSource(mediaItem)
 
                     "Default" -> ms =
-                        DefaultMediaSourceFactory(scraper!!.dataSourceFactory).createMediaSource(
+                        DefaultMediaSourceFactory(dataSourceFactory).createMediaSource(
                             mediaItem
                         )
                 }
@@ -365,67 +312,49 @@ class PlayerActivity : Activity() {
             plugin_files.add(p.scraperURL)
             bundle.putLong(p.type, p.channelId)
         }
-        val syncProgramsJobService = SyncProgramsJobService()
+//        val syncProgramsJobService = SyncProgramsJobService()
 
-        for (p in plugin_files) syncProgramsJobService.idMap[p] = HashSet()
-        for (p in plugin_files) {
-            syncProgramsJobService.syncProgramManager.add(
-                syncProgramsJobService.SyncProgramManager(
-                    this, p, bundle
-                )
-            )
-        }
+//        for (p in plugin_files) syncProgramsJobService.idMap[p] = HashSet()
+//        for (p in plugin_files) {
+//            syncProgramsJobService.syncProgramManager.add(
+//                syncProgramsJobService.SyncProgramManager(
+//                    this, p, bundle
+//                )
+//            )
+//        }
         return program
     }
 
-    fun showLogIn(currentProgram: Program?) {
-        val builder = AlertDialog.Builder(this)
-        // Get the layout inflater
-        val inflater = this.layoutInflater
-
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        val dialogView = inflater.inflate(R.layout.popup_login, null)
-        builder.setView(dialogView) // Add action buttons
-            .setPositiveButton("SignIn") { dialog: DialogInterface?, id: Int ->
-                val prefs =
-                    applicationContext.getSharedPreferences("com.android.exttv", 0)
-                val editor = prefs.edit()
-                var editText = dialogView.findViewById<EditText>(R.id.username)
-                editor.putString("username", editText.text.toString())
-                editText = dialogView.findViewById(R.id.password)
-                editor.putString("password", editText.text.toString())
-                editor.apply()
-                scrape(currentProgram)
-            }
-            .setNegativeButton(
-                "cancel"
-            ) { dialog: DialogInterface?, id: Int ->
-                scrape(
-                    currentProgram
-                )
-            }
-        val alert = builder.create()
-        alert.show()
-    }
-
-    @JvmOverloads
-    fun startScraper(currentProgram: Program?, episode: Episode? = null) {
-        val prefs = applicationContext.getSharedPreferences("com.android.exttv", 0)
-        if (currentProgram!!.requiresProxy() && !(prefs.contains("username") && prefs.contains("password"))) {
-            showLogIn(currentProgram)
-        } else scrape(currentProgram, episode)
-    }
-
-    private fun scrape(currentProgram: Program?, episode: Episode? = null) {
-        player!!.stop()
-        if (scraper != null) {
-            scraper!!.cancel()
-            scraper = null
-        }
-
-        scraper = ScraperManager(this, currentProgram, episode)
-    }
+//    fun showLogIn(currentProgram: Program?) {
+//        val builder = AlertDialog.Builder(this)
+//        // Get the layout inflater
+//        val inflater = this.layoutInflater
+//
+//        // Inflate and set the layout for the dialog
+//        // Pass null as the parent view because its going in the dialog layout
+//        val dialogView = inflater.inflate(R.layout.popup_login, null)
+//        builder.setView(dialogView) // Add action buttons
+//            .setPositiveButton("SignIn") { dialog: DialogInterface?, id: Int ->
+//                val prefs =
+//                    applicationContext.getSharedPreferences("com.android.exttv", 0)
+//                val editor = prefs.edit()
+//                var editText = dialogView.findViewById<EditText>(R.id.username)
+//                editor.putString("username", editText.text.toString())
+//                editText = dialogView.findViewById(R.id.password)
+//                editor.putString("password", editText.text.toString())
+//                editor.apply()
+//                scrape(currentProgram)
+//            }
+//            .setNegativeButton(
+//                "cancel"
+//            ) { dialog: DialogInterface?, id: Int ->
+//                scrape(
+//                    currentProgram
+//                )
+//            }
+//        val alert = builder.create()
+//        alert.show()
+//    }
 
     fun setCurrentEpisode(episode: Episode?) {
         currentEpisode = episode
@@ -447,22 +376,22 @@ class PlayerActivity : Activity() {
     private var leaving = false
     fun returnHomeScreen() {
         leaving = true
-        scraper!!.cancel() // This ensure the release of all network resources;
+//        scraper!!.cancel() // This ensure the release of all network resources;
         finish()
     }
 
     public override fun onStop() {
         super.onStop()
-        if (scraper!!.isLive) {
-            player!!.release()
-            finish()
-        } else {
+//        if (scraper!!.isLive) {
+//            player!!.release()
+//            finish()
+//        } else {
             player!!.release()
             paused = true
             cardsReady = false
-            scraper!!.cancel()
-            scraper = null
-        }
+//            scraper!!.cancel()
+//            scraper = null
+//        }
     }
 
     var previousPlaybackState: Int = ExoPlayer.STATE_IDLE
@@ -623,7 +552,7 @@ class PlayerActivity : Activity() {
                     }
                 } else {
                     if (playbackState == ExoPlayer.STATE_ENDED) {
-                        scraper!!.displayerManager.playNextEpisode(currentEpisode)
+//                        scraper!!.displayerManager.playNextEpisode(currentEpisode)
                     } else if (!leaving) {
                         if ((previousState && previousPlaybackState == Player.STATE_READY) && playbackState == ExoPlayer.STATE_BUFFERING) {
                             showUI()

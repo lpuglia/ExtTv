@@ -97,19 +97,19 @@ public class RemoteKeyEvent {
                         return true;
                     case 21: //left
                         if(bottomPanel.isShown()) {
-                            playerActivity.getScraper().displayerManager.selectPrevious();
+//                            playerActivity.getScraper().displayerManager.selectPrevious();
                             return true;
                         }
                     case 22: //right
                         if(bottomPanel.isShown()) {
-                            playerActivity.getScraper().displayerManager.selectNext();
+//                            playerActivity.getScraper().displayerManager.selectNext();
                             return true;
                         }
                     case 66: // enter
                     case 160: // enter
                         if (bottomPanel.isShown()) {
                             playerActivity.findViewById(R.id.progress_bar).setVisibility(View.VISIBLE);
-                            playerActivity.getScraper().displayerManager.playSelectedEpisode();
+//                            playerActivity.getScraper().displayerManager.playSelectedEpisode();
                             return true;
                         }
                     default:
@@ -171,7 +171,7 @@ public class RemoteKeyEvent {
                         ProgressBar progressBar = playerActivity.findViewById(R.id.progress_bar);
                         progressBar.setVisibility(View.VISIBLE);
 
-                        playerActivity.startScraper(next);
+//                        playerActivity.startScraper(next);
                         currentHash = next.hashCode();
                     }
                     break;
@@ -187,7 +187,7 @@ public class RemoteKeyEvent {
                         }
                         for (Map.Entry<Integer, Program> e : ProgramDatabase.programs.entrySet()) {
                             if (e.getKey() == currentHash) {
-                                playerActivity.startScraper(previous);
+//                                playerActivity.startScraper(previous);
                                 currentHash = previous.hashCode();
 
                                 ProgressBar progressBar = playerActivity.findViewById(R.id.progress_bar);

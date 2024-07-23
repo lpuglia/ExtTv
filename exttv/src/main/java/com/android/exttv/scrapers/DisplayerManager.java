@@ -16,19 +16,21 @@ import com.android.exttv.R;
 import com.android.exttv.model.Episode;
 import com.squareup.picasso.Picasso;
 
+import org.apache.commons.lang3.ObjectUtils;
+
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
 
 public class DisplayerManager {
 
     private final PlayerActivity playerActivity;
-    private final ScraperManager scraperManager;
+//    private final ScraperManager scraperManager;
     private ItemArrayAdapter itemArrayAdapter;
     private RecyclerView.LayoutManager layoutManager;
 
-    public DisplayerManager(PlayerActivity playerActivity, ScraperManager scraperManager, boolean isLive) {
+    public DisplayerManager(PlayerActivity playerActivity, boolean isLive) {//, ScraperManager scraperManager, boolean isLive) {
         this.playerActivity = playerActivity;
-        this.scraperManager = scraperManager;
+//        this.scraperManager = scraperManager;
         if(!isLive){
             // Initializing list view with the custom adapter
             layoutManager = new LinearLayoutManager(playerActivity.getBaseContext(), LinearLayoutManager.HORIZONTAL, false);
@@ -83,14 +85,14 @@ public class DisplayerManager {
         layoutManager.scrollToPosition(itemArrayAdapter.selectNext());
     }
 
-    public void playSelectedEpisode() {
-        scraperManager._handleEpisode(itemArrayAdapter.getFocusedEpisode(), true, "");
-    }
+//    public void playSelectedEpisode() {
+//        scraperManager._handleEpisode(itemArrayAdapter.getFocusedEpisode(), true, "");
+//    }
 
     public void playNextEpisode(Episode episode) {
         Episode next_episode = itemArrayAdapter.getNextEpisode(episode);
-        if(next_episode!=null)
-            scraperManager._handleEpisode(next_episode, true, "");
+//        if(next_episode!=null)
+//            scraperManager._handleEpisode(next_episode, true, "");
     }
 
     LinkedList<String> messages = new LinkedList<>();
