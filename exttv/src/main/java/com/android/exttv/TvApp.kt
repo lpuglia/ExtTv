@@ -38,6 +38,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -131,6 +132,8 @@ data class CardView(
     val id: String,
     val title: String,
     val thumbnailUrl: String,
+    val posterUrl: String,
+    val fanartUrl: String,
     val backgroundImageUrl: String,
     val description: String,
 )
@@ -230,8 +233,11 @@ object PythonInitializer {
         thread.start()
         thread.join()
 
-//        SetSection("plugin://plugin.video.kod/")
-        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D")
+        SetSection("plugin://plugin.video.kod/")
+//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJkaXNjb3ZlcnlwbHVzIiwKICAgICJleHRyYSI6ICJtb3ZpZSIsCiAgICAiZm9sZGVyIjogdHJ1ZSwKICAgICJnbG9iYWxzZWFyY2giOiBmYWxzZSwKICAgICJpbmZvTGFiZWxzIjogewogICAgICAgICJtZWRpYXR5cGUiOiAibW92aWUiCiAgICB9LAogICAgIml0ZW1saXN0UG9zaXRpb24iOiAwLAogICAgInRodW1ibmFpbCI6ICJodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20va29kaW9uZGVtYW5kL21lZGlhL21hc3Rlci90aGVtZXMvZGVmYXVsdC90aHVtYl9vbl90aGVfYWlyLnBuZyIsCiAgICAidGl0bGUiOiAiW0JdRGlyZXR0ZVsvQl0iLAogICAgInVybCI6ICJodHRwczovL3d3dy5kaXNjb3ZlcnlwbHVzLmNvbSIKfQ%3D%3D")
+//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJub3ZlZGFkZXMiLAogICAgImNhdGVnb3J5IjogIk5vdml0XHUwMGUwIGluIEZpbG0iLAogICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAiY29udGV4dCI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJhY3Rpb24iOiAic2V0dGluZ19jaGFubmVsIiwKICAgICAgICAgICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAgICAgICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgICAgICAgICAidGl0bGUiOiAiQ2FuYWxpIGluY2x1c2kgaW46IEZpbG0iCiAgICAgICAgfQogICAgXSwKICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX21vdmllLnBuZyIsCiAgICAidGl0bGUiOiAiRmlsbSIKfQ%3D%3D")
+//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D")
+//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D")
 //        SetSection("?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D", sectionList)
 //        SetSection("?ewogICAgImFjdGlvbiI6ICJmaW5kdmlkZW9zIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImZvcmNldGh1bWIiOiB0cnVlLAogICAgImZ1bGx0aXRsZSI6ICJMYTciLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAibm9fcmV0dXJuIjogdHJ1ZSwKICAgICJ0aHVtYm5haWwiOiAiaHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2tvZGlvbmRlbWFuZC9tZWRpYS9tYXN0ZXIvbGl2ZS9sYTcucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1MYTdbL0JdIiwKICAgICJ1cmwiOiAiaHR0cHM6Ly93d3cubGE3Lml0L2RpcmV0dGUtdHYiCn0%3D", sectionList)
 //        SetSection("?ewogICAgImFjdGlvbiI6ICJub3ZlZGFkZXMiLAogICAgImNhdGVnb3J5IjogIk5vdml0XHUwMGUwIGluIEZpbG0iLAogICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAiY29udGV4dCI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJhY3Rpb24iOiAic2V0dGluZ19jaGFubmVsIiwKICAgICAgICAgICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAgICAgICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgICAgICAgICAidGl0bGUiOiAiQ2FuYWxpIGluY2x1c2kgaW46IEZpbG0iCiAgICAgICAgfQogICAgXSwKICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX21vdmllLnBuZyIsCiAgICAidGl0bGUiOiAiRmlsbSIKfQ%3D%3D", sectionList)
@@ -284,7 +290,7 @@ fun CatalogBrowser(
 
     // Create a DrawerState instance to manage the drawer state
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-
+    var backgroundImageState = remember { mutableStateOf("") }
     // Animate the width of the drawer
     val drawerWidth by animateDpAsState(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 255.dp else 0.dp
@@ -331,41 +337,52 @@ fun CatalogBrowser(
             listState.scrollToItem(sections.size - 1)
         }
     }
-    TvLazyColumn(
-            state= listState,
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x88167c6c), Color(0x0004282d)),
+                    center = Offset.Infinite,
+                    radius = 1200f
+                )
+            )
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x88167c6c), Color(0x0004282d)),
+                    center = Offset.Zero,
+                    radius = 1200f
+                )
+            )
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(Color(0x8801080a), Color(0x880b465f), Color(0xFF01080a)),
+                    start = Offset.Zero,
+                    end = Offset(0f, Float.POSITIVE_INFINITY)
+                )
+            )
+    ) {
+        AsyncImage(
+            model = backgroundImageState.value,
+            contentDescription = null,
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0x88167c6c), Color(0x0004282d)),
-                        center = Offset.Infinite,
-                        radius = 1200f
-                    )
-                )
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0x88167c6c), Color(0x0004282d)),
-                        center = Offset.Zero,
-                        radius = 1200f
-                    )
-                )
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color(0x8801080a), Color(0x880b465f), Color(0xFF01080a)),
-                        start = Offset.Zero,
-                        end = Offset(0f, Float.POSITIVE_INFINITY)
-                    )
-                )
+                .fillMaxSize()
+                .graphicsLayer(alpha = 0.3f)
+        )
+        TvLazyColumn(
+            state = listState,
         ) {
             itemsIndexed(PythonInitializer.sectionList.value) { index, section ->
                 Section(
                     section = section,
-                    sectionIndex = index
+                    sectionIndex = index,
+                    backgroundImageState = backgroundImageState
                 )
             }
         }
         LoadingWheel()
+    }
 //    }
 
 }
@@ -375,6 +392,7 @@ fun CatalogBrowser(
 fun Section(
     section: Section,
     sectionIndex: Int,
+    backgroundImageState: MutableState<String>,
 ) {
     val listState = rememberTvLazyListState()
 //    val focusRequester = remember { FocusRequester() }
@@ -400,13 +418,14 @@ fun Section(
         itemsIndexed(section.movieList) { cardIndex, card ->
             Card(
 //                modifier = if (cardIndex==0 && sectionIndex==PythonInitializer.sectionList.value.size - 1) {Modifier.focusRequester(focusRequester)} else {Modifier},
-                movie = card,
+                card = card,
                 isSelected = PythonInitializer.manager.getSelectedIndexForSection(sectionIndex)==cardIndex,
                 onClick = {
                     if(!PythonInitializer.isLoading.value) {
                         PythonInitializer.SetSection(card.id, sectionIndex, cardIndex)
                     }
-                }
+                },
+                backgroundImageState = backgroundImageState
             )
         }
     }
@@ -415,10 +434,11 @@ fun Section(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Card(
-    movie: CardView,
+    card: CardView,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    backgroundImageState: MutableState<String>,
 ) {
 
     val bgModifier = if (isSelected) {
@@ -445,6 +465,7 @@ fun Card(
                 .height(120.dp)
                 .onFocusChanged {
                     isFocused = it.isFocused
+                    backgroundImageState.value = card.fanartUrl
                 },
             onClick = onClick,
             colors = CardDefaults.colors(containerColor = Color(0x00000000)),
@@ -456,8 +477,8 @@ fun Card(
         ) {
             Box() {
                 AsyncImage(
-                    model = movie.thumbnailUrl,
-                    contentDescription = movie.title,
+                    model = card.thumbnailUrl,
+                    contentDescription = card.title,
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.Crop
                 )
@@ -470,7 +491,7 @@ fun Card(
             }
         }
         Text(
-            text = parseText(cleanText(movie.title)),
+            text = parseText(cleanText(card.title)),
             style = MaterialTheme.typography.bodyLarge,
             color = Color.White,
             modifier = Modifier.padding(8.dp).width(200.dp).basicMarquee(iterations = if (isFocused) 100 else 0),

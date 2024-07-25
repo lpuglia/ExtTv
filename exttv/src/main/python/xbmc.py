@@ -1,18 +1,28 @@
 import os
-import platform
-from datetime import datetime
+import re
 import time
+import json
 import utils
+import platform
 import urllib.parse
+from datetime import datetime
+from types import SimpleNamespace
+
+def serialize_namespace(obj):
+    if isinstance(obj, SimpleNamespace):
+        return obj.__dict__
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 try:
     from android.content import Intent
     from android.net import Uri
     from java import jclass
+    PlayerActivity = jclass("com.android.exttv.PlayerActivity")
     main_activity = jclass("com.android.exttv.MainActivity").getInstance()
 except ImportError as e:
      print("Could not import MainActivity", e)
      main_activity = None
+
 
 # Redefine the constants with their values
 LOGDEBUG = 0
@@ -31,7 +41,18 @@ def sleep(milliseconds):
     time.sleep(milliseconds / 1000)
 
 def executebuiltin(command, wait=False):
-    print(f"executebuiltin: pretending to execute builtin: {command}")
+    print(command)
+    pattern = r"PlayMedia\(plugin://plugin.video.xbmctorrent/play/(.*?)\)"
+    match = re.search(pattern, command)
+    if match:
+        magnet_encoded = match.group(1)
+        magnet_decoded = urllib.parse.unquote(magnet_encoded)
+        print("Magnet URI (Decoded):", magnet_decoded)
+        main_activity.fireMagnetIntent(magnet_decoded)
+    elif command.startswith('StartAndroidActivity'):
+        main_activity.executeStartActivity(command)
+    else:
+        print(f"executebuiltin: pretending to execute builtin: {command}")
     return True
 
 def translatePath(path):
@@ -74,48 +95,80 @@ class Logger:
             log_entry = f"{timestamp} - {level}: {message}\n"
             file.write(log_entry)
 
+def parse_piped_url(url):
+    if "|" in url:
+        url, headers = url.split("|",1)
+        headers = {k:v[0] for k,v in urllib.parse.parse_qs(headers).items()}
+        return url, headers
+    return url, {}
+
 class Player():
 
     def play(self, playlist, xlistitem, windowed = False, startpos = -1):
-        print(playlist, xlistitem)
+        import inspect
+
         base_url = "kodi://app/?"
-        video_info = playlist.playlist_items[0][1].properties.copy()
-        video_info['mimetype'] = playlist.playlist_items[0][1].mimetype
-        video_info['art'] = playlist.playlist_items[0][1].art
-        video_info['path'] = playlist.playlist_items[0][1].path
-        if 'inputstream.adaptive.license_key' in video_info:
-            parsed_query = urllib.parse.parse_qs(urllib.parse.urlparse(video_info['inputstream.adaptive.license_key']).query)
-            for key, value in parsed_query.items():
-                if isinstance(value, list) and len(value) == 1:
-                    video_info[key] = value[0]
-                else:
-                    video_info[key] = value
-            video_info['inputstream.adaptive.license_key'] = video_info['inputstream.adaptive.license_key'].split('|')[0]
-        query_string = urllib.parse.urlencode(video_info)
+        extra_info = playlist.playlist_items[0][1]
+        url = playlist.playlist_items[0][0]
+        media_source = SimpleNamespace()
+        print(extra_info)
+        media_source.streamType = extra_info.mimetype
+        media_source.source, media_source.headers = parse_piped_url(url)
+
+        if media_source.streamType == "application/dash+xml":
+            media_source.license = {}
+            properties = extra_info.properties
+            if "inputstream.adaptive.license_type" in properties:
+                media_source.license["licenseType"] = properties["inputstream.adaptive.license_type"]
+            if("preAuthorization" in properties):
+                media_source.license["preAuthorization"] = properties["preAuthorization"]
+            if("inputstream.adaptive.license_key" in properties):
+                media_source.license['licenseKey'], media_source.license['headers'] = parse_piped_url(properties['inputstream.adaptive.license_key'])
+
+        # video_info = extra_info.properties.copy()
+        media_source.art = extra_info.art
+
+        query_string = urllib.parse.urlencode({'media_source' : json.dumps(media_source, default=serialize_namespace)})
         print(query_string)
         full_url = base_url + query_string
-        intent = Intent(main_activity.getApplicationContext(), jclass("com.android.exttv.PlayerActivity"))
+        intent = Intent(main_activity.getApplicationContext(), PlayerActivity)
         intent.setData(Uri.parse(full_url))
-
         main_activity.startActivity(intent)
 
     def isPlaying(self):
         return True
 
 def getCondVisibility(condition):
-    parts = condition.split('.')
-    if len(parts) < 2:
-        return False  # Invalid condition format
-
-    if parts[0] == 'system' and parts[1] == 'platform':
-        if len(parts) > 2:
-            platform_name = parts[2]
-            current_platform = platform.system().lower()
-            return current_platform == platform_name.lower()
-        else:
-            return False  # Incomplete condition (missing platform name)
+    if condition.startswith('System.'):
+        if condition.startswith('System.HasAddon'):
+            pattern = r"System\.HasAddon\(['\"]([^'\"]+)['\"]\)"
+            match = re.search(pattern, condition)
+            if match:
+                print(match)
+                addon_name = match.group(1)
+                print(type(addon_name), type('plugin.video.xbmctorrent'), repr(addon_name), repr('plugin.video.xbmctorrent'), addon_name == 'plugin.video.xbmctorrent')
+                if addon_name == 'plugin.video.xbmctorrent':
+                    print(True)
+                    return True
+            return False
     else:
-        return False  # Unknown condition type
+        print(getCondVisibility, condition)
+        parts = condition.split('.')
+        if len(parts) < 2:
+            return False  # Invalid condition format
+
+        if parts[0] == 'system' and parts[1] == 'platform':
+            if len(parts) > 2:
+                platform_name = parts[2]
+                if platform_name == 'android': return True
+                if platform_name == 'linux': return True
+                else:
+                    current_platform = platform.system().lower()
+                    return current_platform == platform_name.lower()
+            else:
+                return False  # Incomplete condition (missing platform name)
+        else:
+            return False  # Unknown condition type
 
 
 class PlayList:

@@ -3,6 +3,7 @@ plugins {
     id 'com.chaquo.python'
     id 'org.jetbrains.kotlin.android'
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0" // Ensure this version matches your Kotlin version
 }
 
 android {
@@ -25,7 +26,7 @@ android {
             }
         }
         python {
-            buildPython "C:/Python311/python.exe"
+            buildPython "E:/Python311/python.exe"
             pip {
                 install "-r", "src/main/python/requirements.txt"
             }
@@ -55,6 +56,8 @@ android {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.android.support:leanback-v17:28.0.0'

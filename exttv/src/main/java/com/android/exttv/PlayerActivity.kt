@@ -64,6 +64,7 @@ import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.picasso.Picasso
+import kotlinx.serialization.Serializable
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
 import org.conscrypt.Conscrypt
@@ -71,18 +72,38 @@ import java.net.CookieManager
 import java.security.Security
 import java.util.GregorianCalendar
 import java.util.concurrent.TimeUnit
+import kotlinx.serialization.json.Json
+import okhttp3.ResponseBody
+import okio.GzipSource
+import okio.buffer
+
 
 class PlayerActivity : Activity() {
+
+    @Serializable
+    data class License(
+        val headers: Map<String, String> = emptyMap(),
+        val licenseType: String = "",
+        val licenseKey: String = ""
+    )
+
+    @Serializable
+    data class ExtTvMediaSource(
+        val headers: Map<String, String> = emptyMap(),
+        val source: String,
+        val streamType: String,
+        val license: License = License(),
+        val art: Map<String, String>
+    )
+
     private var playerView: PlayerView? = null
     private var trackSelector: DefaultTrackSelector? = null
-    private val subtitlesEnabled = false
 
     private var remoteKeyEvent: RemoteKeyEvent? = null
     private var currentEpisode: Episode? = null
     private var paused = false
 
     var player: SimpleExoPlayer? = null
-//    var scraper: ScraperManager? = null
     var cardsReady: Boolean = false
 
 
@@ -110,50 +131,10 @@ class PlayerActivity : Activity() {
         // Check if the intent and data are not null
         if (intent != null && data != null) {
             val uriString = data.toString()
-            Log.d("PlayerActivity", "Full Intent: $intent")
-            Log.d("PlayerActivity", "Video URI: $uriString")
             if (uriString.startsWith("kodi://")) {
-                val queryParams = HashMap<String, String?>()
-                val paramNames = data.queryParameterNames
-                for (paramName in paramNames) {
-                    val paramValue = data.getQueryParameter(paramName)
-                    queryParams[paramName] = paramValue
-                }
-                val mediaSource: MutableMap<String, String?> = HashMap()
-                when (queryParams["mimetype"]) {
-                    "mp4", "mkv" -> {
-                        // Handle .mp4 files
-                        mediaSource["StreamType"] = "Default"
-                        mediaSource["Source"] = uriString
-                    }
+                val mediaSource = data.getQueryParameter("media_source")
+                    ?.let { Json.decodeFromString<ExtTvMediaSource>(it) }
 
-                    "application/dash+xml" -> {
-                        // Handle .mpd files
-                        mediaSource["StreamType"] = "Dash"
-                        if (queryParams.containsKey("inputstream.adaptive.license_type") && queryParams["inputstream.adaptive.license_type"] == "com.widevine.alpha") {
-                            mediaSource["DRM"] = "widevine"
-                        }
-                        if (queryParams.containsKey("preAuthorization")) {
-                            mediaSource["Preauthorization"] = queryParams["preAuthorization"]
-                        }
-                        if (queryParams.containsKey("inputstream.adaptive.license_key")) {
-                            mediaSource["License"] = queryParams["inputstream.adaptive.license_key"]
-                        }
-                        if (queryParams.containsKey("path")) {
-                            mediaSource["Source"] = queryParams["path"]
-                        }
-                    }
-
-                    "m3u8" -> {
-                        mediaSource["StreamType"] = "Hls"
-                        mediaSource["Source"] = uriString
-                    }
-
-                    else -> {
-                        mediaSource["StreamType"] = "Hls"
-                        mediaSource["Source"] = uriString
-                    }
-                }
                 initializePlayer(true)
                 currentEpisode = Episode().setPageURL(uriString).setTitle("External Video Stream")
                     .setDescription(uriString).setAirDate(
@@ -161,11 +142,11 @@ class PlayerActivity : Activity() {
                     )
                 val program =
                     Program().setType("OnDemand").setVideoUrl(uriString).setEpisode(currentEpisode)
-                RemoteKeyEvent(this, program.isLive, program.hashCode().toLong())
+                remoteKeyEvent = RemoteKeyEvent(this, program.isLive, program.hashCode().toLong())
 
                 val displayerManager = DisplayerManager(this, false)
                 displayerManager.setTopContainer(currentEpisode)
-                preparePlayer(mediaSource)
+                preparePlayer(mediaSource!!)
             }
         }
     }
@@ -202,21 +183,43 @@ class PlayerActivity : Activity() {
         AppLinkHelper.setEpisodeCursor(player!!.currentPosition, currentEpisode, baseContext)
     }
 
-    fun preparePlayer(mediaSource: Map<String, String?>?) {
-        for ((key, value) in mediaSource!!) {
-            Log.d("mediasource", "$key: $value")
-        }
+    fun preparePlayer(mediaSource: ExtTvMediaSource) {
 
         val clientb: OkHttpClient.Builder = OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS);
+            .readTimeout(60, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val newRequestBuilder = chain.request().newBuilder()
+                for ((key, value) in mediaSource.headers) {
+                    newRequestBuilder.header(key, value)
+                }
+                chain.proceed(newRequestBuilder.build())
+            }
+            .addInterceptor { chain ->
+                val originalResponse = chain.proceed(chain.request())
+                val contentEncoding = originalResponse.header("Content-Encoding")
+
+                if (contentEncoding != null && contentEncoding.equals("gzip", ignoreCase = true)) {
+                    val responseBody = originalResponse.body
+                    val gzipSource = GzipSource(responseBody!!.source())
+                    val decompressedBody = ResponseBody.create(responseBody.contentType(), -1,
+                        gzipSource.buffer()
+                    )
+
+                    originalResponse.newBuilder()
+                        .header("Content-Encoding", "identity")
+                        .removeHeader("Content-Length")
+                        .body(decompressedBody)
+                        .build()
+                } else {
+                    originalResponse
+                }
+            }
+
 //        if (requiresProxy) initClientProxy(clientb)
         clientb.cookieJar(JavaNetCookieJar(CookieManager()))
         val dataSourceFactory = OkHttpDataSource.Factory(clientb.build())
-
-        Log.d("preparePlayer", "preparePlayer: " + mediaSource["License"])
-        Log.d("preparePlayer", "preparePlayer: " + mediaSource["Preauthorization"])
 
         if (player != null) {
             player!!.stop()
@@ -226,19 +229,18 @@ class PlayerActivity : Activity() {
             if (mediaSource == null) return
 
             val drmManager: DefaultDrmSessionManager?
-            if (mediaSource.containsKey("DRM") && mediaSource.containsKey("License")) {
+            if (mediaSource.license.licenseType!="" && mediaSource.license.licenseKey!="") {
                 val playreadyCallback = HttpMediaDrmCallback(
-                    mediaSource["License"], (dataSourceFactory as HttpDataSource.Factory)
+                    mediaSource.license.licenseKey, (dataSourceFactory as HttpDataSource.Factory)
                 )
 
-                if (mediaSource.containsKey("Preauthorization")) playreadyCallback.setKeyRequestProperty(
-                    "preauthorization",
-                    mediaSource["Preauthorization"]!!
-                )
+                mediaSource.license.headers["preAuthorization"]?.let {
+                    playreadyCallback.setKeyRequestProperty("preauthorization", it)
+                }
 
                 drmManager = DefaultDrmSessionManager.Builder()
                     .setUuidAndExoMediaDrmProvider(
-                        if (mediaSource["DRM"] == "widevine") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
+                        if (mediaSource.license.licenseType == "com.widevine.alpha") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
                         FrameworkMediaDrm.DEFAULT_PROVIDER
                     )
                     .build(playreadyCallback)
@@ -248,41 +250,25 @@ class PlayerActivity : Activity() {
 
             var ms: MediaSource? = null
             val mediaItem = MediaItem.fromUri(
-                Uri.parse(
-                    mediaSource["Source"]
-                )
+                Uri.parse(mediaSource.source)
             )
 
-            if (mediaSource.containsKey("StreamType")) {
-                when (mediaSource["StreamType"]) {
-                    "Dash" -> {
-                        val dashMediaSource = DashMediaSource.Factory(
-                            dataSourceFactory
-                        )
-                            .setDrmSessionManagerProvider { unusedMediaItem: MediaItem? -> drmManager!! }
-
-                        //                        if (drmManager != null) {
-//                            dashMediaSource.setDrmSessionManager(drmManager);
-//                        }
-                        if (mediaSource.containsKey("Source")) {
-                            ms = dashMediaSource.createMediaSource(mediaItem)
-                        }
-                    }
-
-                    "Hls" -> ms = HlsMediaSource.Factory(dataSourceFactory)
-                        .createMediaSource(mediaItem)
-
-                    "Extractor" -> ms = ProgressiveMediaSource.Factory(dataSourceFactory)
-                        .createMediaSource(mediaItem)
-
-                    "Default" -> ms =
-                        DefaultMediaSourceFactory(dataSourceFactory).createMediaSource(
-                            mediaItem
-                        )
+            when (mediaSource.streamType) {
+                "application/dash+xml" -> {
+                    val dashMediaSource = DashMediaSource.Factory(dataSourceFactory)
+                        .setDrmSessionManagerProvider { unusedMediaItem: MediaItem? -> drmManager!! }
+                    ms = dashMediaSource.createMediaSource(mediaItem)
                 }
-                player!!.setMediaSource(ms!!)
-                player!!.prepare()
+                "application/x-mpegURL" -> ms = HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+                "extractor" -> ms = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+                "mp4", "mkv", "" -> ms = DefaultMediaSourceFactory(dataSourceFactory).createMediaSource(mediaItem)
+                else -> {
+                    throw IllegalArgumentException("Unsupported media source type: ${mediaSource.streamType}")
+                }
             }
+            player!!.setMediaSource(ms!!)
+            player!!.prepare()
+
             if (currentEpisode != null) {
                 val position = currentEpisodeCursor
                 if (position != 0L) player!!.seekTo(position)
