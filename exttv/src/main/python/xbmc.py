@@ -96,6 +96,8 @@ class Logger:
             file.write(log_entry)
 
 def parse_piped_url(url):
+    if url.endswith("|R{SSM}|"):
+        url = url[:-8]
     if "|" in url:
         url, headers = url.split("|",1)
         headers = {k:v[0] for k,v in urllib.parse.parse_qs(headers).items()}
@@ -105,8 +107,6 @@ def parse_piped_url(url):
 class Player():
 
     def play(self, playlist, xlistitem, windowed = False, startpos = -1):
-        import inspect
-
         base_url = "kodi://app/?"
         extra_info = playlist.playlist_items[0][1]
         url = playlist.playlist_items[0][0]
@@ -120,13 +120,13 @@ class Player():
             properties = extra_info.properties
             if "inputstream.adaptive.license_type" in properties:
                 media_source.license["licenseType"] = properties["inputstream.adaptive.license_type"]
-            if("preAuthorization" in properties):
-                media_source.license["preAuthorization"] = properties["preAuthorization"]
             if("inputstream.adaptive.license_key" in properties):
                 media_source.license['licenseKey'], media_source.license['headers'] = parse_piped_url(properties['inputstream.adaptive.license_key'])
 
         # video_info = extra_info.properties.copy()
         media_source.art = extra_info.art
+
+        media_source.license['headers'] = {k.lower() :v for k,v in media_source.license['headers'].items()}
 
         query_string = urllib.parse.urlencode({'media_source' : json.dumps(media_source, default=serialize_namespace)})
         print(query_string)

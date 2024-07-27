@@ -56,6 +56,7 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
+import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.CaptionStyleCompat
@@ -197,29 +198,36 @@ class PlayerActivity : Activity() {
                 chain.proceed(newRequestBuilder.build())
             }
             .addInterceptor { chain ->
-                val originalResponse = chain.proceed(chain.request())
+                val request = chain.request()
+                val originalResponse = chain.proceed(request)
                 val contentEncoding = originalResponse.header("Content-Encoding")
 
                 if (contentEncoding != null && contentEncoding.equals("gzip", ignoreCase = true)) {
                     val responseBody = originalResponse.body
                     val gzipSource = GzipSource(responseBody!!.source())
-                    val decompressedBody = ResponseBody.create(responseBody.contentType(), -1,
-                        gzipSource.buffer()
-                    )
+                    val decompressedBody = ResponseBody.create(responseBody.contentType(), -1, gzipSource.buffer())
 
+//                    Log.d("DRM_RESPONSE", "URL: ${request.url}, Response Code: ${originalResponse.code}")
+//                    Log.d("DRM_RESPONSE", "Headers: ${request.headers} -> ${originalResponse.headers}")
+//                    Log.d("DRM_RESPONSE", "Body: $originalResponse")
+//                    Log.d("DRM_RESPONSE", "BodyDECOMP: ${decompressedBody}")
                     originalResponse.newBuilder()
                         .header("Content-Encoding", "identity")
                         .removeHeader("Content-Length")
                         .body(decompressedBody)
                         .build()
                 } else {
+//                    Log.d("DRM_RESPONSE", "URL: ${request.url}, Response Code: ${originalResponse.code}")
+//                    Log.d("DRM_RESPONSE", "Headers: ${request.headers} -> ${originalResponse.headers}")
+//                    Log.d("DRM_RESPONSE", "Body: $originalResponse")
                     originalResponse
                 }
-            }
 
+            }
 //        if (requiresProxy) initClientProxy(clientb)
         clientb.cookieJar(JavaNetCookieJar(CookieManager()))
-        val dataSourceFactory = OkHttpDataSource.Factory(clientb.build())
+//        val manifestDataSourceFactory = OkHttpDataSource.Factory(clientb.build())
+        val dataSourceFactory  = OkHttpDataSource.Factory(clientb.build())
 
         if (player != null) {
             player!!.stop()
@@ -228,26 +236,6 @@ class PlayerActivity : Activity() {
 
             if (mediaSource == null) return
 
-            val drmManager: DefaultDrmSessionManager?
-            if (mediaSource.license.licenseType!="" && mediaSource.license.licenseKey!="") {
-                val playreadyCallback = HttpMediaDrmCallback(
-                    mediaSource.license.licenseKey, (dataSourceFactory as HttpDataSource.Factory)
-                )
-
-                mediaSource.license.headers["preAuthorization"]?.let {
-                    playreadyCallback.setKeyRequestProperty("preauthorization", it)
-                }
-
-                drmManager = DefaultDrmSessionManager.Builder()
-                    .setUuidAndExoMediaDrmProvider(
-                        if (mediaSource.license.licenseType == "com.widevine.alpha") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
-                        FrameworkMediaDrm.DEFAULT_PROVIDER
-                    )
-                    .build(playreadyCallback)
-            } else {
-                drmManager = null
-            }
-
             var ms: MediaSource? = null
             val mediaItem = MediaItem.fromUri(
                 Uri.parse(mediaSource.source)
@@ -255,8 +243,26 @@ class PlayerActivity : Activity() {
 
             when (mediaSource.streamType) {
                 "application/dash+xml" -> {
-                    val dashMediaSource = DashMediaSource.Factory(dataSourceFactory)
-                        .setDrmSessionManagerProvider { unusedMediaItem: MediaItem? -> drmManager!! }
+                    val playreadyCallback = HttpMediaDrmCallback(
+                        mediaSource.license.licenseKey, (dataSourceFactory as HttpDataSource.Factory)
+                    )
+
+                    mediaSource.license.headers["preauthorization"]?.let {
+                        playreadyCallback.setKeyRequestProperty("preauthorization", it)
+                    }
+
+                    val drmManager = DefaultDrmSessionManager.Builder()
+                        .setUuidAndExoMediaDrmProvider(
+                            if (mediaSource.license.licenseType == "com.widevine.alpha") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
+                            FrameworkMediaDrm.DEFAULT_PROVIDER
+                        )
+                        .build(playreadyCallback)
+
+                    val dashMediaSource = DashMediaSource.Factory(dataSourceFactory
+//                        DefaultDashChunkSource.Factory(dataSourceFactory)
+//                        manifestDataSourceFactory
+                    ).setDrmSessionManagerProvider { unusedMediaItem: MediaItem? -> drmManager!! }
+
                     ms = dashMediaSource.createMediaSource(mediaItem)
                 }
                 "application/x-mpegURL" -> ms = HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
