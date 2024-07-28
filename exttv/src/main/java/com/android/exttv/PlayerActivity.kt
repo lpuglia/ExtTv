@@ -53,15 +53,12 @@ import com.google.android.exoplayer2.drm.FrameworkMediaDrm
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
-import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.CaptionStyleCompat
 import com.google.android.exoplayer2.ui.PlayerView
-import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.picasso.Picasso
@@ -184,15 +181,14 @@ class PlayerActivity : Activity() {
         AppLinkHelper.setEpisodeCursor(player!!.currentPosition, currentEpisode, baseContext)
     }
 
-    fun preparePlayer(mediaSource: ExtTvMediaSource) {
-
-        val clientb: OkHttpClient.Builder = OkHttpClient.Builder()
+    fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
+        val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val newRequestBuilder = chain.request().newBuilder()
-                for ((key, value) in mediaSource.headers) {
+                for ((key, value) in headers) {
                     newRequestBuilder.header(key, value)
                 }
                 chain.proceed(newRequestBuilder.build())
@@ -224,61 +220,49 @@ class PlayerActivity : Activity() {
                 }
 
             }
-//        if (requiresProxy) initClientProxy(clientb)
-        clientb.cookieJar(JavaNetCookieJar(CookieManager()))
-//        val manifestDataSourceFactory = OkHttpDataSource.Factory(clientb.build())
-        val dataSourceFactory  = OkHttpDataSource.Factory(clientb.build())
+//        if (requiresProxy) initClientProxy(clientBuilder)
+        clientBuilder.cookieJar(JavaNetCookieJar(CookieManager()))
+        return OkHttpDataSource.Factory(clientBuilder.build())
+    }
 
-        if (player != null) {
-            player!!.stop()
-            if (!paused) player!!.playWhenReady = true
-            else paused = false
+    fun preparePlayer(mediaSource: ExtTvMediaSource) {
 
-            if (mediaSource == null) return
+        player?.stop()
+        if (!paused) player?.playWhenReady = true
+        else paused = false
 
-            var ms: MediaSource? = null
-            val mediaItem = MediaItem.fromUri(
-                Uri.parse(mediaSource.source)
-            )
+        val mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.source))
 
-            when (mediaSource.streamType) {
-                "application/dash+xml" -> {
-                    val playreadyCallback = HttpMediaDrmCallback(
-                        mediaSource.license.licenseKey, (dataSourceFactory as HttpDataSource.Factory)
+        val mediaDataSourceFactory = clientFactory(mediaSource.headers)
+
+        val mediaSourceFactory = when (mediaSource.streamType) {
+            "application/dash+xml" -> {
+                val manifestDataSourceFactory = clientFactory(mediaSource.license.headers)
+                val playreadyCallback = HttpMediaDrmCallback(mediaSource.license.licenseKey, manifestDataSourceFactory)
+
+                val drmManager = DefaultDrmSessionManager.Builder()
+                    .setUuidAndExoMediaDrmProvider(
+                        if (mediaSource.license.licenseType == "com.widevine.alpha") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
+                        FrameworkMediaDrm.DEFAULT_PROVIDER
                     )
+                    .build(playreadyCallback)
 
-                    mediaSource.license.headers["preauthorization"]?.let {
-                        playreadyCallback.setKeyRequestProperty("preauthorization", it)
-                    }
-
-                    val drmManager = DefaultDrmSessionManager.Builder()
-                        .setUuidAndExoMediaDrmProvider(
-                            if (mediaSource.license.licenseType == "com.widevine.alpha") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
-                            FrameworkMediaDrm.DEFAULT_PROVIDER
-                        )
-                        .build(playreadyCallback)
-
-                    val dashMediaSource = DashMediaSource.Factory(dataSourceFactory
-//                        DefaultDashChunkSource.Factory(dataSourceFactory)
-//                        manifestDataSourceFactory
-                    ).setDrmSessionManagerProvider { unusedMediaItem: MediaItem? -> drmManager!! }
-
-                    ms = dashMediaSource.createMediaSource(mediaItem)
-                }
-                "application/x-mpegURL" -> ms = HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
-                "extractor" -> ms = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
-                "mp4", "mkv", "" -> ms = DefaultMediaSourceFactory(dataSourceFactory).createMediaSource(mediaItem)
-                else -> {
-                    throw IllegalArgumentException("Unsupported media source type: ${mediaSource.streamType}")
-                }
+                DashMediaSource.Factory(mediaDataSourceFactory).setDrmSessionManagerProvider { drmManager }
             }
-            player!!.setMediaSource(ms!!)
-            player!!.prepare()
-
-            if (currentEpisode != null) {
-                val position = currentEpisodeCursor
-                if (position != 0L) player!!.seekTo(position)
+            "application/x-mpegURL" -> HlsMediaSource.Factory(mediaDataSourceFactory)
+            "extractor" -> ProgressiveMediaSource.Factory(mediaDataSourceFactory)
+            "mp4", "mkv", "" -> DefaultMediaSourceFactory(mediaDataSourceFactory)
+            else -> {
+                throw IllegalArgumentException("Unsupported media source type: ${mediaSource.streamType}")
             }
+        }
+
+        player?.setMediaSource(mediaSourceFactory.createMediaSource(mediaItem))
+        player?.prepare()
+
+        if (currentEpisode != null) {
+            val position = currentEpisodeCursor
+            if (position != 0L) player?.seekTo(position)
         }
     }
 
