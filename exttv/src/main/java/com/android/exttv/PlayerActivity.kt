@@ -95,14 +95,14 @@ class PlayerActivity : Activity() {
         val art: Map<String, String>
     )
 
-    private var playerView: PlayerView? = null
+    private lateinit var playerView: PlayerView
     private var trackSelector: DefaultTrackSelector? = null
 
     private var remoteKeyEvent: RemoteKeyEvent? = null
     private var currentEpisode: Episode? = null
     private var paused = false
 
-    var player: ExoPlayer? = null
+    lateinit var player: ExoPlayer
     var cardsReady: Boolean = false
 
 
@@ -124,11 +124,10 @@ class PlayerActivity : Activity() {
         setContentView(R.layout.activity_player)
         playerView = findViewById(R.id.video_view)
 
-        val intent = intent
-        val data = intent!!.data
+        val data = intent.data
 
         // Check if the intent and data are not null
-        if (intent != null && data != null) {
+        if (data != null) {
             val uriString = data.toString()
             if (uriString.startsWith("kodi://")) {
                 val mediaSource = data.getQueryParameter("media_source")
@@ -179,7 +178,7 @@ class PlayerActivity : Activity() {
         }
 
     fun setCurrentEpisodeCursor() {
-        AppLinkHelper.setEpisodeCursor(player!!.currentPosition, currentEpisode, baseContext)
+        AppLinkHelper.setEpisodeCursor(player.currentPosition, currentEpisode, baseContext)
     }
 
     fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
@@ -228,8 +227,8 @@ class PlayerActivity : Activity() {
 
     fun preparePlayer(mediaSource: ExtTvMediaSource) {
 
-        player?.stop()
-        if (!paused) player?.playWhenReady = true
+        player.stop()
+        if (!paused) player.playWhenReady = true
         else paused = false
 
         val mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.source))
@@ -258,12 +257,12 @@ class PlayerActivity : Activity() {
             }
         }
 
-        player?.setMediaSource(mediaSourceFactory.createMediaSource(mediaItem))
-        player?.prepare()
+        player.setMediaSource(mediaSourceFactory.createMediaSource(mediaItem))
+        player.prepare()
 
         if (currentEpisode != null) {
             val position = currentEpisodeCursor
-            if (position != 0L) player?.seekTo(position)
+            if (position != 0L) player.seekTo(position)
         }
     }
 
@@ -339,7 +338,7 @@ class PlayerActivity : Activity() {
 
     public override fun onPause() {
         super.onPause()
-        player!!.playWhenReady = false
+        player.playWhenReady = false
         if (currentEpisode != null) { //if on-demand program
             setCurrentEpisodeCursor()
         }
@@ -363,7 +362,7 @@ class PlayerActivity : Activity() {
 //            player!!.release()
 //            finish()
 //        } else {
-            player!!.release()
+            player.release()
             paused = true
             cardsReady = false
 //            scraper!!.cancel()
@@ -375,8 +374,8 @@ class PlayerActivity : Activity() {
     var previousState: Boolean = false
 
     private fun findTextRendererIndex(): Int {
-        for (i in 0 until player!!.rendererCount) {
-            if (player!!.getRendererType(i) == C.TRACK_TYPE_TEXT) {
+        for (i in 0 until player.rendererCount) {
+            if (player.getRendererType(i) == C.TRACK_TYPE_TEXT) {
                 return i
             }
         }
@@ -402,8 +401,8 @@ class PlayerActivity : Activity() {
 
         // Identify the text (subtitle) renderer index
         var textRendererIndex = -1
-        for (i in 0 until player!!.rendererCount) {
-            if (player!!.getRendererType(i) == C.TRACK_TYPE_TEXT) {
+        for (i in 0 until player.rendererCount) {
+            if (player.getRendererType(i) == C.TRACK_TYPE_TEXT) {
                 textRendererIndex = i
                 break
             }
@@ -464,7 +463,7 @@ class PlayerActivity : Activity() {
             .build()
 
         val playPauseLayout = findViewById<View>(R.id.playpause)
-        player!!.addListener(object : Player.Listener {
+        player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 playPauseLayout.visibility = if (isPlaying) View.INVISIBLE else View.VISIBLE
                 playButton.visibility = if (isPlaying) View.GONE else View.VISIBLE
@@ -472,11 +471,12 @@ class PlayerActivity : Activity() {
             }
         })
 
-        playerView!!.controllerShowTimeoutMs = 0
+        playerView.controllerShowTimeoutMs = 0
 
-        player!!.addListener(object : Player.Listener {
+        player.addListener(object : Player.Listener {
             private fun showUI() {
-                if (handler != null) handler!!.removeCallbacksAndMessages(null)
+                val handler = Handler(Looper.getMainLooper())
+                handler.removeCallbacksAndMessages(null)
                 var hiddenPanel = findViewById<View>(R.id.top_container) as ViewGroup
                 if (hiddenPanel.visibility != View.VISIBLE) {
 //                    findViewById<View>(R.id.playpause).visibility = View.VISIBLE
@@ -497,10 +497,9 @@ class PlayerActivity : Activity() {
                 }
             }
 
-            var handler: Handler? = null
             private fun hideUI() {
-                handler = Handler(Looper.getMainLooper())
-                handler!!.postDelayed(Runnable {
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed(Runnable {
                     var hiddenPanel =
                         findViewById<View>(R.id.top_container) as ViewGroup
                     if (hiddenPanel.visibility == View.VISIBLE) {
@@ -584,6 +583,6 @@ class PlayerActivity : Activity() {
 
 //        customizeSubtitlesAppearance()
 
-        playerView!!.player = player
+        playerView.player = player
     }
 }

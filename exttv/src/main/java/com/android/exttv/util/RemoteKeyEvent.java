@@ -22,6 +22,9 @@ import java.util.Map;
 
 import static android.widget.Toast.LENGTH_SHORT;
 
+import androidx.media3.common.util.UnstableApi;
+
+@UnstableApi
 public class RemoteKeyEvent {
 
     private final PlayerActivity playerActivity;
