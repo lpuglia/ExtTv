@@ -126,8 +126,6 @@ class Player():
         # video_info = extra_info.properties.copy()
         media_source.art = extra_info.art
 
-        media_source.license['headers'] = {k.lower() :v for k,v in media_source.license['headers'].items()}
-
         query_string = urllib.parse.urlencode({'media_source' : json.dumps(media_source, default=serialize_namespace)})
         print(query_string)
         full_url = base_url + query_string

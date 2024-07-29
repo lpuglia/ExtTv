@@ -36,6 +36,23 @@ import android.view.animation.AnimationUtils
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.annotation.OptIn
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.FrameworkMediaDrm
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.ui.PlayerView
 import com.android.exttv.model.Episode
 import com.android.exttv.model.Program
 import com.android.exttv.model.ProgramDatabase
@@ -43,27 +60,10 @@ import com.android.exttv.scrapers.DisplayerManager
 import com.android.exttv.util.AppLinkHelper
 import com.android.exttv.util.AppLinkHelper.PlaybackAction
 import com.android.exttv.util.RemoteKeyEvent
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.drm.DefaultDrmSessionManager
-import com.google.android.exoplayer2.drm.FrameworkMediaDrm
-import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
-import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.source.dash.DashMediaSource
-import com.google.android.exoplayer2.source.hls.HlsMediaSource
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.ui.CaptionStyleCompat
-import com.google.android.exoplayer2.ui.PlayerView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.picasso.Picasso
 import kotlinx.serialization.Serializable
-import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
 import org.conscrypt.Conscrypt
 import java.net.CookieManager
@@ -76,6 +76,7 @@ import okio.GzipSource
 import okio.buffer
 
 
+@UnstableApi
 class PlayerActivity : Activity() {
 
     @Serializable
@@ -101,7 +102,7 @@ class PlayerActivity : Activity() {
     private var currentEpisode: Episode? = null
     private var paused = false
 
-    var player: SimpleExoPlayer? = null
+    var player: ExoPlayer? = null
     var cardsReady: Boolean = false
 
 
@@ -203,25 +204,25 @@ class PlayerActivity : Activity() {
                     val gzipSource = GzipSource(responseBody!!.source())
                     val decompressedBody = ResponseBody.create(responseBody.contentType(), -1, gzipSource.buffer())
 
-//                    Log.d("DRM_RESPONSE", "URL: ${request.url}, Response Code: ${originalResponse.code}")
-//                    Log.d("DRM_RESPONSE", "Headers: ${request.headers} -> ${originalResponse.headers}")
-//                    Log.d("DRM_RESPONSE", "Body: $originalResponse")
-//                    Log.d("DRM_RESPONSE", "BodyDECOMP: ${decompressedBody}")
                     originalResponse.newBuilder()
                         .header("Content-Encoding", "identity")
                         .removeHeader("Content-Length")
                         .body(decompressedBody)
                         .build()
                 } else {
-//                    Log.d("DRM_RESPONSE", "URL: ${request.url}, Response Code: ${originalResponse.code}")
-//                    Log.d("DRM_RESPONSE", "Headers: ${request.headers} -> ${originalResponse.headers}")
-//                    Log.d("DRM_RESPONSE", "Body: $originalResponse")
                     originalResponse
                 }
 
             }
 //        if (requiresProxy) initClientProxy(clientBuilder)
-        clientBuilder.cookieJar(JavaNetCookieJar(CookieManager()))
+//        val cookieManager = CookieManager()
+//        val cookieJar = object : CookieJar {override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+//            for (cookie in cookies) {
+//                cookieManager.cookieStore.add(url.toUri(), cookie)
+//            }
+//        }
+//        }
+//        clientBuilder.cookieJar(cookieJar)
         return OkHttpDataSource.Factory(clientBuilder.build())
     }
 
@@ -423,43 +424,53 @@ class PlayerActivity : Activity() {
         trackSelector!!.setParameters(parametersBuilder)
     }
 
-    private fun customizeSubtitlesAppearance() {
-        // Example customization: White text, semi-transparent black background
-        val style = CaptionStyleCompat(
-            Color.YELLOW, Color.TRANSPARENT, Color.TRANSPARENT,
-            CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null
-        )
+//    private fun customizeSubtitlesAppearance() {
+//        // Example customization: White text, semi-transparent black background
+//        val style = CaptionStyleCompat(
+//            Color.YELLOW, Color.TRANSPARENT, Color.TRANSPARENT,
+//            CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null
+//        )
+//
+//        val subtitleView = playerView!!.subtitleView
+//        if (subtitleView != null) {
+//            subtitleView.setStyle(style)
+//            subtitleView.setFixedTextSize(
+//                TypedValue.COMPLEX_UNIT_PX,
+//                resources.getDimension(R.dimen.subtitle_font_size)
+//            )
+//        }
+//    }
 
-        val subtitleView = playerView!!.subtitleView
-        if (subtitleView != null) {
-            subtitleView.setStyle(style)
-            subtitleView.setFixedTextSize(
-                TypedValue.COMPLEX_UNIT_PX,
-                resources.getDimension(R.dimen.subtitle_font_size)
-            )
-        }
-    }
-
+    @OptIn(UnstableApi::class)
     private fun initializePlayer(isLive: Boolean) {
         val progressBar = findViewById<ProgressBar>(R.id.progress_bar)
 
         val circle = ShapeDrawable(OvalShape())
         circle.paint.color = Color.parseColor("#DDDDDD")
 
-        val play = findViewById<ImageButton>(R.id.exo_play)
-        play.background = circle
-        var drawable = play.drawable
+        val playButton = findViewById<ImageButton>(R.id.exo_play)
+        playButton.background = circle
+        var drawable = playButton.drawable
         drawable.setTintList(ColorStateList.valueOf(Color.parseColor("#222222")))
 
-        val pause = findViewById<ImageButton>(R.id.exo_pause)
-        pause.background = circle
-        drawable = pause.drawable
+        val pauseButton = findViewById<ImageButton>(R.id.exo_pause)
+        pauseButton.background = circle
+        drawable = pauseButton.drawable
         drawable.setTintList(ColorStateList.valueOf(Color.parseColor("#222222")))
 
         trackSelector = DefaultTrackSelector(this)
-        player = SimpleExoPlayer.Builder(this)
+        player = ExoPlayer.Builder(this)
             .setTrackSelector(trackSelector!!)
             .build()
+
+        val playPauseLayout = findViewById<View>(R.id.playpause)
+        player!!.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                playPauseLayout.visibility = if (isPlaying) View.INVISIBLE else View.VISIBLE
+                playButton.visibility = if (isPlaying) View.GONE else View.VISIBLE
+                pauseButton.visibility = if (isPlaying) View.VISIBLE else View.GONE
+            }
+        })
 
         playerView!!.controllerShowTimeoutMs = 0
 
@@ -468,7 +479,7 @@ class PlayerActivity : Activity() {
                 if (handler != null) handler!!.removeCallbacksAndMessages(null)
                 var hiddenPanel = findViewById<View>(R.id.top_container) as ViewGroup
                 if (hiddenPanel.visibility != View.VISIBLE) {
-                    findViewById<View>(R.id.playpause).visibility = View.VISIBLE
+//                    findViewById<View>(R.id.playpause).visibility = View.VISIBLE
                     var bottomUp = AnimationUtils.loadAnimation(
                         baseContext,
                         R.anim.controls_pop_in_top
@@ -493,7 +504,7 @@ class PlayerActivity : Activity() {
                     var hiddenPanel =
                         findViewById<View>(R.id.top_container) as ViewGroup
                     if (hiddenPanel.visibility == View.VISIBLE) {
-                        findViewById<View>(R.id.playpause).visibility = View.INVISIBLE
+//                        findViewById<View>(R.id.playpause).visibility = View.INVISIBLE
                         var bottomUp =
                             AnimationUtils.loadAnimation(
                                 baseContext,
@@ -521,26 +532,26 @@ class PlayerActivity : Activity() {
                 val watermark = findViewById<ImageView>(R.id.watermark)
 
                 if (isLive) {
-                    if (!(playWhenReady && playbackState == Player.STATE_READY)) {
-                        findViewById<View>(R.id.playpause).visibility = View.VISIBLE
-                    } else {
-                        findViewById<View>(R.id.playpause).visibility = View.INVISIBLE
-                    }
+//                    if (!(playWhenReady && playbackState == ExoPlayer.STATE_READY)) {
+//                        findViewById<View>(R.id.playpause).visibility = View.VISIBLE
+//                    } else {
+//                        findViewById<View>(R.id.playpause).visibility = View.INVISIBLE
+//                    }
                 } else {
                     if (playbackState == ExoPlayer.STATE_ENDED) {
 //                        scraper!!.displayerManager.playNextEpisode(currentEpisode)
                     } else if (!leaving) {
-                        if ((previousState && previousPlaybackState == Player.STATE_READY) && playbackState == ExoPlayer.STATE_BUFFERING) {
+                        if ((previousState && previousPlaybackState == ExoPlayer.STATE_READY) && playbackState == ExoPlayer.STATE_BUFFERING) {
                             showUI()
-                        } else if (previousPlaybackState == ExoPlayer.STATE_BUFFERING && (playWhenReady && playbackState == Player.STATE_READY)) {
+                        } else if (previousPlaybackState == ExoPlayer.STATE_BUFFERING && (playWhenReady && playbackState == ExoPlayer.STATE_READY)) {
                             hideUI()
-                        } else if ((previousPlaybackState == Player.STATE_READY && playbackState == ExoPlayer.STATE_BUFFERING) ||
-                            (playbackState == Player.STATE_READY && previousPlaybackState == ExoPlayer.STATE_BUFFERING)
+                        } else if ((previousPlaybackState == ExoPlayer.STATE_READY && playbackState == ExoPlayer.STATE_BUFFERING) ||
+                            (playbackState == ExoPlayer.STATE_READY && previousPlaybackState == ExoPlayer.STATE_BUFFERING)
                         ) {
                             //DO NOTHING
-                        } else if (!(playWhenReady && playbackState == Player.STATE_READY) && playbackState != ExoPlayer.STATE_IDLE && playbackState != ExoPlayer.STATE_BUFFERING) {
+                        } else if (!(playWhenReady && playbackState == ExoPlayer.STATE_READY) && playbackState != ExoPlayer.STATE_IDLE && playbackState != ExoPlayer.STATE_BUFFERING) {
                             showUI()
-                        } else if (playWhenReady && playbackState == Player.STATE_READY) {
+                        } else if (playWhenReady && playbackState == ExoPlayer.STATE_READY) {
                             hideUI()
                         }
                     }
@@ -571,7 +582,7 @@ class PlayerActivity : Activity() {
         enableSubtitlesByDefault()
         findViewById<View>(R.id.btnToggleSubtitles).setOnClickListener { toggleSubtitles() }
 
-        customizeSubtitlesAppearance()
+//        customizeSubtitlesAppearance()
 
         playerView!!.player = player
     }

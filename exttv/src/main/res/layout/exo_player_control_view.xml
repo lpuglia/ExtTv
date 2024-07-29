@@ -5,21 +5,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
     <LinearLayout
         android:id="@+id/playpause"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:orientation="horizontal"
         android:visibility="invisible">
-    <ImageButton android:id="@+id/exo_play"
-        android:layout_width="39dp"
-        android:layout_height="39dp"
-        style="@style/ExoMediaButton.Play"/>
 
-    <ImageButton android:id="@+id/exo_pause"
-        android:layout_width="39dp"
-        android:layout_height="39dp"
-        style="@style/ExoMediaButton.Pause"/>
+        <ImageButton
+            android:id="@+id/exo_play"
+            android:layout_width="39dp"
+            android:layout_height="39dp"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            style="@style/ExoMediaButton.Play" />
+
+        <ImageButton
+            android:id="@+id/exo_pause"
+            android:layout_width="39dp"
+            android:layout_height="39dp"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            style="@style/ExoMediaButton.Pause" />
     </LinearLayout>
 
     <LinearLayout
@@ -29,7 +38,6 @@
         android:layout_gravity="bottom"
         android:layoutDirection="ltr"
         android:orientation="vertical"
-        tools:targetApi="28"
         android:paddingHorizontal="50dp"
         android:paddingBottom="50dp"
         android:paddingTop="100dp"
@@ -55,7 +63,7 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <com.google.android.exoplayer2.ui.DefaultTimeBar
+            <androidx.media3.ui.DefaultTimeBar
                 android:id="@id/exo_progress"
                 android:layout_width="0dp"
                 android:layout_height="26dp"
