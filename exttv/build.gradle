@@ -26,7 +26,7 @@ android {
             }
         }
         python {
-            buildPython "E:/Python311/python.exe"
+            buildPython "python.exe"
             pip {
                 install "-r", "src/main/python/requirements.txt"
             }

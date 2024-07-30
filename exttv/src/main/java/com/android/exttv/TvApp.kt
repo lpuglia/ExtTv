@@ -147,13 +147,13 @@ class SectionManager() {
     private val sections = LinkedHashMap<String, Section>()
     private val selectedIndices: MutableList<Int?> = mutableListOf()
 
-    fun removeAndAdd(index: Int, key: String, newSection: Section) {
+    fun removeAndAdd(index: Int, key: String, newSection: Section): Boolean {
         // Convert the map keys to a list to easily access by index
         val keys = sections.keys.toList()
 
         // Compare newSection with the section at index-1 if index is greater than 0
         if (index > 0 && sections[keys[index - 1]]?.movieList == newSection.movieList) {
-            return // Ignore the addition if the newSection is equal to the last added section
+            return false// Ignore the addition if the newSection is equal to the last added section
         }
 
         // Ensure the index is within the bounds
@@ -180,6 +180,7 @@ class SectionManager() {
             sections[key] = newSection
             selectedIndices.add(null)
         }
+        return true
     }
 
     fun getSectionsInOrder(): List<Section> {
@@ -253,8 +254,7 @@ object PythonInitializer {
             titleMap.putAll(newSection.movieList.associate { it.id to it.title })
 
             val lastKey = manager.getLastSectionKey()
-            manager.removeAndAdd(sectionIndex+1, argv2, newSection)
-            if(sectionIndex>=0) {
+            if(manager.removeAndAdd(sectionIndex+1, argv2, newSection)) {
                 manager.updateSelectedIndex(sectionIndex, cardIndex)
             }
             try {

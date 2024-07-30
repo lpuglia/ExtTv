@@ -125,9 +125,7 @@ class PlayerActivity : Activity() {
         playerView = findViewById(R.id.video_view)
 
         val data = intent.data
-
-        // Check if the intent and data are not null
-        if (data != null) {
+        data?.let {
             val uriString = data.toString()
             if (uriString.startsWith("kodi://")) {
                 val mediaSource = data.getQueryParameter("media_source")
