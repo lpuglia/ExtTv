@@ -107,7 +107,7 @@ def parse_piped_url(url):
 class Player():
 
     def play(self, playlist, xlistitem, windowed = False, startpos = -1):
-        base_url = "kodi://app/?"
+        base_url = "exttv://app/?"
         extra_info = playlist.playlist_items[0][1]
         url = playlist.playlist_items[0][0]
         media_source = SimpleNamespace()

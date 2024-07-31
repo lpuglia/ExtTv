@@ -13,11 +13,11 @@ from xbmcplugin import PluginRecorder
 plugin = PluginRecorder()
 
 workspace = None
-home_path = 'kodi_home/'
-addons_path = 'kodi_home/addons/'
-userdata_path = 'kodi_home/userdata/'
-addondata_path = 'kodi_home/userdata/addon_data/'
-database_path = 'kodi_home/userdata/Database/'
+home_path = 'exttv_home/'
+addons_path = 'exttv_home/addons/'
+userdata_path = 'exttv_home/userdata/'
+addondata_path = 'exttv_home/userdata/addon_data/'
+database_path = 'exttv_home/userdata/Database/'
 
 def full_home_path():
     return os.path.join(workspace, home_path)

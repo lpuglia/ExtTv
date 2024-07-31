@@ -51,6 +51,6 @@ output.json
 #NDK
 obj/
 .externalNativeBuild
-/exttv/src/main/python/kodi.log
+/exttv/src/main/python/*.log
 /exttv/src/main/python/userdata/addon_data/*
-/exttv/src/main/python/kodi_home/*
+/exttv/src/main/python/*_home/*

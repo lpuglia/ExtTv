@@ -130,7 +130,7 @@ class PlayerActivity : Activity() {
         val data = intent.data
         data?.let {
             val uriString = data.toString()
-            if (uriString.startsWith("kodi://")) {
+            if (uriString.startsWith("exttv://")) {
                 val mediaSource = data.getQueryParameter("media_source")
                     ?.let { Json.decodeFromString<ExtTvMediaSource>(it) }
 

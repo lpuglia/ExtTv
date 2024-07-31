@@ -2,7 +2,6 @@ import android.app.Activity
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -65,7 +64,7 @@ import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 
 object PythonInitializer {
-    private var kodi: PyObject? = null
+    private var exttv: PyObject? = null
     lateinit var sectionList: MutableState<List<Section>>
     lateinit var isLoading: MutableState<Boolean>
     var manager : SectionManager = SectionManager()
@@ -74,8 +73,8 @@ object PythonInitializer {
     fun init(context: Activity, sectionList: MutableState<List<Section>>, isLoading: MutableState<Boolean>): PyObject? {
         this.sectionList = sectionList
         this.isLoading = isLoading
-        if (kodi != null && sectionList.value.isNotEmpty()) {
-            return kodi
+        if (exttv != null && sectionList.value.isNotEmpty()) {
+            return exttv
         }
 
         if (!Python.isStarted()) {
@@ -85,7 +84,7 @@ object PythonInitializer {
         val runnable = Runnable {
             val py = Python.getInstance()
             py.getModule("xbmcgui")
-            kodi = py.getModule("kodi")
+            exttv = py.getModule("exttv")
         }
 
         val thread = Thread(runnable)
@@ -94,14 +93,14 @@ object PythonInitializer {
 
         SetSection("plugin://plugin.video.kod/")
 
-        return kodi
+        return exttv
     }
 
     fun SetSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
         isLoading.value = true
         val runnable = Runnable {
             val title : String = titleMap.getOrDefault(argv2, "")
-            val newSection = Section(title, kodi?.callAttr("run", argv2)?.toJava(List::class.java) as List<CardView>)
+            val newSection = Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<CardView>)
             titleMap.putAll(newSection.movieList.associate { it.id to it.label })
 
             val lastKey = manager.getLastSectionKey()
