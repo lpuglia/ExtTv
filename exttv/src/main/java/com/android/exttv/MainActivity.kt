@@ -81,8 +81,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() { //only called at standby thanks to onUserLeaveHint
-        super.onResume()
-    }
-
 }

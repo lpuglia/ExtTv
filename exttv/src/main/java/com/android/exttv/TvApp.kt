@@ -34,17 +34,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
@@ -58,153 +55,14 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import coil.compose.AsyncImage
+import com.android.exttv.model.CardView
+import com.android.exttv.model.Section
+import com.android.exttv.model.SectionManager
+import com.android.exttv.util.cleanText
+import com.android.exttv.util.parseText
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-
-fun parseText(input: String): AnnotatedString {
-    val annotatedString = AnnotatedString.Builder()
-    val regex = "\\[(B|I|LIGHT|UPPERCASE|LOWERCASE|CAPITALIZE)](.*?)\\[/\\1]".toRegex()
-
-    var currentIndex = 0
-    for (match in regex.findAll(input)) {
-        val (tag, content) = match.destructured
-        val startIndex = match.range.first
-
-        if (currentIndex < startIndex) {
-            annotatedString.append(AnnotatedString(input.substring(currentIndex, startIndex)))
-        }
-
-        when (tag) {
-            "B" -> {
-                annotatedString.withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                    annotatedString.append(parseText(content))
-                }
-            }
-            "I" -> {
-                annotatedString.withStyle(style = SpanStyle(fontStyle = FontStyle.Italic)) {
-                    annotatedString.append(parseText(content))
-                }
-            }
-            "LIGHT" -> {
-                annotatedString.withStyle(style = SpanStyle(fontWeight = FontWeight.Light)) {
-                    annotatedString.append(parseText(content))
-                }
-            }
-            "UPPERCASE" -> {
-                annotatedString.append(AnnotatedString(content.uppercase()))
-            }
-            "LOWERCASE" -> {
-                annotatedString.append(AnnotatedString(content.lowercase()))
-            }
-            "CAPITALIZE" -> {
-                annotatedString.append(AnnotatedString(content.split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }))
-            }
-        }
-
-        currentIndex = match.range.last + 1
-    }
-
-    if (currentIndex < input.length) {
-        annotatedString.append(AnnotatedString(input.substring(currentIndex)))
-    }
-
-    return annotatedString.toAnnotatedString()
-}
-
-fun cleanText(input: String): String {
-    // Remove color tags
-
-    // Remove carriage returns
-    var cleanedText = input.replace(Regex("\\[CR\\]"), "")
-
-    // Remove tabulators
-    cleanedText = cleanedText.replace(Regex("\\[TABS](\\d+)\\[/TABS]")) { match ->
-        val tabs = match.groupValues[1].toIntOrNull() ?: 0
-        "\t".repeat(tabs)
-    }
-    cleanedText = cleanedText.replace(Regex("\\[COLOR\\s+[^\\]]*](.*?)\\[/COLOR]"), "$1")
-
-    return cleanedText
-}
-
-data class CardView(
-    val id: String,
-    val title: String,
-    val thumbnailUrl: String,
-    val posterUrl: String,
-    val fanartUrl: String,
-    val backgroundImageUrl: String,
-    val description: String,
-)
-
-data class Section(
-    val title: String,
-    val movieList: List<CardView>,
-)
-
-class SectionManager() {
-    private val sections = LinkedHashMap<String, Section>()
-    private val selectedIndices: MutableList<Int?> = mutableListOf()
-
-    fun removeAndAdd(index: Int, key: String, newSection: Section): Boolean {
-        // Convert the map keys to a list to easily access by index
-        val keys = sections.keys.toList()
-
-        // Compare newSection with the section at index-1 if index is greater than 0
-        if (index > 0 && sections[keys[index - 1]]?.movieList == newSection.movieList) {
-            return false// Ignore the addition if the newSection is equal to the last added section
-        }
-
-        // Ensure the index is within the bounds
-        if (index in keys.indices) {
-
-            // Remove all entries after the given index
-            for (i in keys.size - 1 downTo index + 1) {
-                sections.remove(keys[i])
-                selectedIndices.removeAt(i)
-            }
-
-            // Replace the entry at the given index or add new if index is out of current bounds
-            if (index < keys.size) {
-                val keyAtIndex = keys[index]
-                sections[keyAtIndex] = newSection
-                selectedIndices[index] = null // Reset selected index for the new section
-            } else {
-                // If the index is out of bounds (greater than current size), add the new section
-                sections[key] = newSection
-                selectedIndices.add(null)
-            }
-        } else {
-            // If index is out of bounds, just add the new section
-            sections[key] = newSection
-            selectedIndices.add(null)
-        }
-        return true
-    }
-
-    fun getSectionsInOrder(): List<Section> {
-        return sections.values.toList()
-    }
-
-    fun getLastSectionKey(): String? {
-        return sections.keys.lastOrNull()
-    }
-
-    fun updateSelectedIndex(sectionIndex: Int, selectedIndex: Int?) {
-        if (sectionIndex in selectedIndices.indices) {
-            selectedIndices[sectionIndex] = selectedIndex
-        }
-    }
-
-    fun getSelectedIndexForSection(sectionIndex: Int): Int? {
-        return if (sectionIndex in selectedIndices.indices) {
-            selectedIndices[sectionIndex]
-        } else {
-            null
-        }
-    }
-}
 
 object PythonInitializer {
     private var kodi: PyObject? = null
@@ -216,7 +74,7 @@ object PythonInitializer {
     fun init(context: Activity, sectionList: MutableState<List<Section>>, isLoading: MutableState<Boolean>): PyObject? {
         this.sectionList = sectionList
         this.isLoading = isLoading
-        if (kodi != null) {
+        if (kodi != null && sectionList.value.isNotEmpty()) {
             return kodi
         }
 
@@ -235,13 +93,6 @@ object PythonInitializer {
         thread.join()
 
         SetSection("plugin://plugin.video.kod/")
-//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJkaXNjb3ZlcnlwbHVzIiwKICAgICJleHRyYSI6ICJtb3ZpZSIsCiAgICAiZm9sZGVyIjogdHJ1ZSwKICAgICJnbG9iYWxzZWFyY2giOiBmYWxzZSwKICAgICJpbmZvTGFiZWxzIjogewogICAgICAgICJtZWRpYXR5cGUiOiAibW92aWUiCiAgICB9LAogICAgIml0ZW1saXN0UG9zaXRpb24iOiAwLAogICAgInRodW1ibmFpbCI6ICJodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20va29kaW9uZGVtYW5kL21lZGlhL21hc3Rlci90aGVtZXMvZGVmYXVsdC90aHVtYl9vbl90aGVfYWlyLnBuZyIsCiAgICAidGl0bGUiOiAiW0JdRGlyZXR0ZVsvQl0iLAogICAgInVybCI6ICJodHRwczovL3d3dy5kaXNjb3ZlcnlwbHVzLmNvbSIKfQ%3D%3D")
-//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJub3ZlZGFkZXMiLAogICAgImNhdGVnb3J5IjogIk5vdml0XHUwMGUwIGluIEZpbG0iLAogICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAiY29udGV4dCI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJhY3Rpb24iOiAic2V0dGluZ19jaGFubmVsIiwKICAgICAgICAgICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAgICAgICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgICAgICAgICAidGl0bGUiOiAiQ2FuYWxpIGluY2x1c2kgaW46IEZpbG0iCiAgICAgICAgfQogICAgXSwKICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX21vdmllLnBuZyIsCiAgICAidGl0bGUiOiAiRmlsbSIKfQ%3D%3D")
-//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D")
-//        SetSection("plugin://plugin.video.kod/?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D")
-//        SetSection("?ewogICAgImFjdGlvbiI6ICJsaXZlIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX29uX3RoZV9haXIucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1EaXJldHRlWy9CXSIsCiAgICAidXJsIjogImh0dHBzOi8vd3d3LmxhNy5pdCIKfQ%3D%3D", sectionList)
-//        SetSection("?ewogICAgImFjdGlvbiI6ICJmaW5kdmlkZW9zIiwKICAgICJhcmdzIjogIiIsCiAgICAiY2hhbm5lbCI6ICJsYTciLAogICAgImV4dHJhIjogIm1vdmllIiwKICAgICJmb2xkZXIiOiB0cnVlLAogICAgImZvcmNldGh1bWIiOiB0cnVlLAogICAgImZ1bGx0aXRsZSI6ICJMYTciLAogICAgImdsb2JhbHNlYXJjaCI6IGZhbHNlLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAibm9fcmV0dXJuIjogdHJ1ZSwKICAgICJ0aHVtYm5haWwiOiAiaHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2tvZGlvbmRlbWFuZC9tZWRpYS9tYXN0ZXIvbGl2ZS9sYTcucG5nIiwKICAgICJ0aXRsZSI6ICJbQl1MYTdbL0JdIiwKICAgICJ1cmwiOiAiaHR0cHM6Ly93d3cubGE3Lml0L2RpcmV0dGUtdHYiCn0%3D", sectionList)
-//        SetSection("?ewogICAgImFjdGlvbiI6ICJub3ZlZGFkZXMiLAogICAgImNhdGVnb3J5IjogIk5vdml0XHUwMGUwIGluIEZpbG0iLAogICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAiY29udGV4dCI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJhY3Rpb24iOiAic2V0dGluZ19jaGFubmVsIiwKICAgICAgICAgICAgImNoYW5uZWwiOiAibmV3cyIsCiAgICAgICAgICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgICAgICAgICAidGl0bGUiOiAiQ2FuYWxpIGluY2x1c2kgaW46IEZpbG0iCiAgICAgICAgfQogICAgXSwKICAgICJleHRyYSI6ICJwZWxpY3VsYXMiLAogICAgImluZm9MYWJlbHMiOiB7CiAgICAgICAgIm1lZGlhdHlwZSI6ICJtb3ZpZSIKICAgIH0sCiAgICAiaXRlbWxpc3RQb3NpdGlvbiI6IDAsCiAgICAidGh1bWJuYWlsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rb2Rpb25kZW1hbmQvbWVkaWEvbWFzdGVyL3RoZW1lcy9kZWZhdWx0L3RodW1iX21vdmllLnBuZyIsCiAgICAidGl0bGUiOiAiRmlsbSIKfQ%3D%3D", sectionList)
 
         return kodi
     }
@@ -251,7 +102,7 @@ object PythonInitializer {
         val runnable = Runnable {
             val title : String = titleMap.getOrDefault(argv2, "")
             val newSection = Section(title, kodi?.callAttr("run", argv2)?.toJava(List::class.java) as List<CardView>)
-            titleMap.putAll(newSection.movieList.associate { it.id to it.title })
+            titleMap.putAll(newSection.movieList.associate { it.id to it.label })
 
             val lastKey = manager.getLastSectionKey()
             if(manager.removeAndAdd(sectionIndex+1, argv2, newSection)) {
@@ -406,7 +257,7 @@ fun Section(
         text = parseText(cleanText(section.title)),
         color = Color.White,
         style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.padding(start = 40.dp, top = 10.dp, bottom = 20.dp) // Add padding below the title
+        modifier = Modifier.padding(start = 40.dp, top = 10.dp, bottom = 10.dp) // Add padding below the title
     )
     TvLazyRow(
         state = listState,
@@ -461,7 +312,7 @@ fun Card(
 
         Card(
             modifier = modifier
-                .padding(start = 5.dp)
+                .padding(start = 10.dp)
                 .height(120.dp)
                 .onFocusChanged {
                     isFocused = it.isFocused
@@ -478,7 +329,7 @@ fun Card(
             Box() {
                 AsyncImage(
                     model = card.thumbnailUrl,
-                    contentDescription = card.title,
+                    contentDescription = card.label,
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.Crop
                 )
@@ -491,12 +342,26 @@ fun Card(
             }
         }
         Text(
-            text = parseText(cleanText(card.title)),
-            style = MaterialTheme.typography.bodyLarge,
+            text = parseText(cleanText(card.label)),
+            style = MaterialTheme.typography.bodyMedium,
             color = Color.White,
-            modifier = Modifier.padding(8.dp).width(200.dp).basicMarquee(iterations = if (isFocused) 100 else 0),
-            overflow = TextOverflow.Ellipsis
+            modifier = Modifier.padding(start=10.dp, top=20.dp, end=10.dp)
+                               .width(200.dp)
+                               .basicMarquee(iterations = if (isFocused) 100 else 0),
+            overflow = TextOverflow.Ellipsis,
         )
+        if(card.plot.isNotEmpty()){
+            Text(
+                text = parseText(cleanText(card.plot)),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White,
+                modifier = Modifier.alpha(if (isFocused) 1f else 0f)
+                    .padding(start=10.dp, top=5.dp, end=10.dp)
+                    .width(200.dp)
+                    .basicMarquee(iterations = if (isFocused) 100 else 0),
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Spacer(modifier = Modifier.height(50.dp))
     }
 

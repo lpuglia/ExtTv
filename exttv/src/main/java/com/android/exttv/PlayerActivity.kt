@@ -92,6 +92,9 @@ class PlayerActivity : Activity() {
         val source: String,
         val streamType: String,
         val license: License = License(),
+        val label: String,
+        val label2: String,
+        val plot: String,
         val art: Map<String, String>
     )
 

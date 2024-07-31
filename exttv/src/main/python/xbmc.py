@@ -124,10 +124,12 @@ class Player():
                 media_source.license['licenseKey'], media_source.license['headers'] = parse_piped_url(properties['inputstream.adaptive.license_key'])
 
         # video_info = extra_info.properties.copy()
+        media_source.label = extra_info.label
+        media_source.label2 = extra_info.label2
+        media_source.plot = extra_info.info['plot'] if 'plot' in extra_info.info else ''
         media_source.art = extra_info.art
 
         query_string = urllib.parse.urlencode({'media_source' : json.dumps(media_source, default=serialize_namespace)})
-        print(query_string)
         full_url = base_url + query_string
         intent = Intent(main_activity.getApplicationContext(), PlayerActivity)
         intent.setData(Uri.parse(full_url))
