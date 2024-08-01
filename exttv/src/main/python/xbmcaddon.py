@@ -1,6 +1,8 @@
 import os
 import xml.etree.ElementTree as ET
 import utils
+from xbmcplugin import PluginRecorder
+plugin = PluginRecorder()
 
 def parse_addon_xml(xml_path):
     tree = ET.parse(xml_path)
@@ -85,7 +87,9 @@ def parse_po_file(file_path):
 
 class Addon():
 
-    def __init__(self, id):
+    def __init__(self, id=""):
+        if id=='':
+            id = plugin.plugin_name
         self.localizedStrings = parse_po_file(os.path.join(utils.full_addons_path(),'plugin.video.kod/resources/language/resource.language.it_it/strings.po'))
         self.settings = parse_settings_from_xml(os.path.join(utils.full_addons_path(),'plugin.video.kod/resources/settings.xml'))
         self.addon = parse_addon_xml(os.path.join(utils.full_addons_path(),'plugin.video.kod/addon.xml'))

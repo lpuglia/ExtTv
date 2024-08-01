@@ -1,3 +1,4 @@
+import re
 import os
 import sys
 import shutil
@@ -7,6 +8,9 @@ import zipfile
 import urllib.parse
 import json
 import importlib
+
+import xml.etree.ElementTree as ET
+
 import xbmc
 from xbmc import Logger
 from xbmcplugin import PluginRecorder
@@ -40,7 +44,28 @@ class DownloadError(Exception):
 class ExtractionError(Exception):
     pass
 
-def download_and_extract_plugin(url, plugin_name, force=False):
+def get_default_branch(user, repo):
+    url = f"https://api.github.com/repos/{user}/{repo}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data.get('default_branch', None)
+    else:
+        print(f"Error: {response.status_code}")
+        print(response.json())
+        return None
+
+def download_and_extract_plugin(user, repo, force=False):
+    default_branch = get_default_branch(user, repo)
+    addon_xml_url = f"https://raw.githubusercontent.com/{user}/{repo}/{default_branch}/addon.xml"
+    url = f"https://github.com/{user}/{repo}/archive/refs/heads/{default_branch}.zip"
+    addon_xml = requests.get(addon_xml_url)
+    match = re.search(r'id="([^"]+)"', addon_xml.text)
+    if match:
+        plugin_name = match.group(1)
+    else:
+        raise Exception("Failed to get plugin id")
     try:
         if force or not os.path.exists(os.path.join(full_addons_path(), plugin_name)):
             zip_file = os.path.join(full_addons_path(), 'master.zip')
@@ -59,7 +84,8 @@ def download_and_extract_plugin(url, plugin_name, force=False):
                 with zipfile.ZipFile(zip_file, 'r') as zip_ref:
                     zip_ref.extractall(full_addons_path())
 
-                extracted_folder = os.path.join(full_addons_path(), 'addon-master')
+                extracted_folder = os.path.join(full_addons_path(), f'{repo}-master')
+                print(extracted_folder)
                 if os.path.exists(os.path.join(full_addons_path(), plugin_name)):
                     # Remove existing folder before renaming
                     shutil.rmtree(os.path.join(full_addons_path(), plugin_name))
@@ -70,9 +96,6 @@ def download_and_extract_plugin(url, plugin_name, force=False):
 
             except zipfile.BadZipFile as e:
                 raise ExtractionError(f"Failed to extract {zip_file}: {e}")
-            
-            
-
         else:
             print(f"Plugin {plugin_name} already exists. Skipping download.")
 
@@ -83,6 +106,8 @@ def download_and_extract_plugin(url, plugin_name, force=False):
         raise
 
     os.makedirs(os.path.join(full_addondata_path(), plugin_name), exist_ok=True)
+    plugin.plugin_name = plugin_name
+    return plugin_name
 
 def decode_plugin_path(plugin_path):
     parsed_url = urllib.parse.urlparse(plugin_path)
@@ -104,6 +129,20 @@ def reload_module(module_name):
         globals()[module_name] = importlib.import_module(module_name)
 
 def run(argv):
-    sys.argv = argv#[f'plugin://{kod_folder_name}/', '3', argv2]
-    reload_module('default')
+    #argv = [f'plugin://{kod_folder_name}/', '3', argv2]
+    plugin_name = argv[0].split("/")[2]
+    sys.path.append(os.path.join(full_addons_path(), plugin_name))
+    sys.argv = argv
+
+    tree = ET.parse(os.path.join(full_addons_path(), plugin_name)+'/addon.xml')
+    root = tree.getroot()
+    # Find the extension with the specific point attribute
+    for extension in root.findall('extension'):
+        if extension.get('point') == 'xbmc.python.pluginsource':
+            library = extension.get('library')
+            break
+    else:
+        raise Exception("Failed to find the library attribute in addon.xml")
+
+    reload_module(library.replace('.py',''))
     return plugin._to_return_items

@@ -1,4 +1,4 @@
-package com.android.exttv.scrapers;
+package com.android.exttv.model;
 
 import android.util.Log;
 import android.view.View;
@@ -13,10 +13,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 
 import com.android.exttv.PlayerActivity;
 import com.android.exttv.R;
-import com.android.exttv.model.Episode;
 import com.squareup.picasso.Picasso;
-
-import org.apache.commons.lang3.ObjectUtils;
 
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;

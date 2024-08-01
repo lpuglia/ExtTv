@@ -6,12 +6,6 @@ from java.util import Arrays
 
 utils.init(os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../'))) # very important to normalize
 
-kod_folder_name = 'plugin.video.kod'
-url = 'https://github.com/kodiondemand/addon/archive/refs/heads/master.zip'
-utils.download_and_extract_plugin(url, kod_folder_name, False)
-
-sys.path.append(os.path.join(utils.full_addons_path(), kod_folder_name))
-
 def run(argv=""):
     to_return = utils.run([argv.split("?")[0], '3', argv.split("?")[1] if "?" in argv else ""])
     cardView = jclass("com.android.exttv.model.CardView")

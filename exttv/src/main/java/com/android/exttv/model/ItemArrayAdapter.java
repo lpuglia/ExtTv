@@ -1,4 +1,4 @@
-package com.android.exttv.scrapers;
+package com.android.exttv.model;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -16,7 +16,6 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.exttv.R;
-import com.android.exttv.model.Episode;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 

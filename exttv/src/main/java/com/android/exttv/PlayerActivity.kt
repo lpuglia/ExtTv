@@ -28,7 +28,6 @@ import android.os.PersistableBundle
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
 import android.util.Log
-import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -49,14 +48,13 @@ import androidx.media3.exoplayer.drm.FrameworkMediaDrm
 import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import com.android.exttv.model.Episode
 import com.android.exttv.model.Program
 import com.android.exttv.model.ProgramDatabase
-import com.android.exttv.scrapers.DisplayerManager
+import com.android.exttv.model.DisplayerManager
 import com.android.exttv.util.AppLinkHelper
 import com.android.exttv.util.AppLinkHelper.PlaybackAction
 import com.android.exttv.util.RemoteKeyEvent
@@ -66,7 +64,6 @@ import com.squareup.picasso.Picasso
 import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 import org.conscrypt.Conscrypt
-import java.net.CookieManager
 import java.security.Security
 import java.util.GregorianCalendar
 import java.util.concurrent.TimeUnit
@@ -143,7 +140,8 @@ class PlayerActivity : Activity() {
                     Program().setType("OnDemand").setVideoUrl(uriString).setEpisode(currentEpisode)
                 remoteKeyEvent = RemoteKeyEvent(this, program.isLive, program.hashCode().toLong())
 
-                val displayerManager = DisplayerManager(this, false)
+                val displayerManager =
+                    DisplayerManager(this, false)
                 displayerManager.setTopContainer(currentEpisode)
                 preparePlayer(mediaSource!!)
             }

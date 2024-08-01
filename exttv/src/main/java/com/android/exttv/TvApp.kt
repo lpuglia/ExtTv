@@ -62,13 +62,17 @@ import com.android.exttv.util.parseText
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.net.HttpURLConnection
+import java.net.URL
 
 object PythonInitializer {
     private var exttv: PyObject? = null
     lateinit var sectionList: MutableState<List<Section>>
     lateinit var isLoading: MutableState<Boolean>
     var manager : SectionManager = SectionManager()
-    private val titleMap: MutableMap<String, String> = mutableMapOf(Pair("plugin://plugin.video.kod/","Menu"))
+    private val titleMap: MutableMap<String, String> = mutableMapOf()
 
     fun init(context: Activity, sectionList: MutableState<List<Section>>, isLoading: MutableState<Boolean>): PyObject? {
         this.sectionList = sectionList
@@ -80,18 +84,25 @@ object PythonInitializer {
         if (!Python.isStarted()) {
             Python.start(AndroidPlatform(context))
         }
-
+//        val owner = "kodiondemand"
+//        val repo = "addon"
+        val owner = "luivit"
+        val repo = "plugin.video.rivedila7"
+        var plugin_name: String = ""
         val runnable = Runnable {
             val py = Python.getInstance()
-            py.getModule("xbmcgui")
             exttv = py.getModule("exttv")
+            val utils = py.getModule("utils")
+            plugin_name = utils.callAttr("download_and_extract_plugin", owner, repo, true).toString()
         }
 
         val thread = Thread(runnable)
         thread.start()
         thread.join()
+        Log.d("Python", plugin_name)
 
-        SetSection("plugin://plugin.video.kod/")
+        titleMap["plugin://$plugin_name/"] = "Menu"
+        SetSection("plugin://$plugin_name/")
 
         return exttv
     }
