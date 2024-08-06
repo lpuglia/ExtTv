@@ -5,7 +5,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -36,7 +35,7 @@ object PyManager {
         }
     }
 
-    fun Init(context: Activity) {
+    fun init(context: Activity) {
         this.installedAddons = getInstalledAddons(context)
 
         if (exttv != null && sectionList.isNotEmpty()) {
@@ -82,7 +81,7 @@ object PyManager {
         Log.d("Python", pluginName)
 
         titleMap["plugin://$pluginName/"] = "Menu"
-        SetSection("plugin://$pluginName/")
+        setSection("plugin://$pluginName/")
     }
 
     fun selectPlugin(pluginName: String) {
@@ -103,10 +102,10 @@ object PyManager {
         thread.join()
 
         titleMap["plugin://$pluginName/"] = "Menu"
-        SetSection("plugin://$pluginName/")
+        setSection("plugin://$pluginName/")
     }
 
-    fun SetSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
+    fun setSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
         isLoadingSection = true
         val runnable = Runnable {
             val title : String = titleMap.getOrDefault(argv2, "")

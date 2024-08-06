@@ -71,9 +71,8 @@ import com.android.exttv.util.parseText
 fun CatalogBrowser(
     context: Activity,
 ) {
-    PyManager.Init(context)
+    PyManager.init(context)
     var selectedIndex by remember { mutableIntStateOf(-1) }
-
 
     val items = PyManager.installedAddons.map { it to Icons.Default.Star } + listOf(
         "Add from Repository" to Icons.Default.Add,
@@ -83,11 +82,12 @@ fun CatalogBrowser(
 
     // Create a DrawerState instance to manage the drawer state
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
-    var showGithubDialog = remember { mutableStateOf(false) }
-    var showRepositoryDialog = remember { mutableStateOf(false) }
-    var backgroundImageState = remember { mutableStateOf("") }
+    val showGithubDialog = remember { mutableStateOf(false) }
+    val showRepositoryDialog = remember { mutableStateOf(false) }
+    val backgroundImageState = remember { mutableStateOf("") }
     val drawerWidth by animateDpAsState(
-        targetValue = if (drawerState.currentValue == DrawerValue.Open) 280.dp else 60.dp
+        targetValue = if (drawerState.currentValue == DrawerValue.Open) 280.dp else 60.dp,
+        label = ""
     )
 
     ModalNavigationDrawer(
@@ -148,7 +148,6 @@ fun CatalogBrowser(
         Content(showGithubDialog, showRepositoryDialog, backgroundImageState, drawerState)
     }
     val view = LocalView.current
-
     // Move right when the first section is loaded
     LaunchedEffect(PyManager.isLoadingAddon) {
         if (!PyManager.isLoadingAddon) {
@@ -157,7 +156,7 @@ fun CatalogBrowser(
     }
     // Move down when the next section is loaded
     LaunchedEffect(PyManager.isLoadingSection) {
-        if (!PyManager.isLoadingSection) {
+        if (!PyManager.isLoadingSection && PyManager.sectionList.isNotEmpty()) {
             view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN))
         }
     }
@@ -180,14 +179,14 @@ fun Content(
         RepositoryDialog(showRepositoryDialog, drawerState);
     }
 
-    val listState = rememberTvLazyListState()
+//    val listState = rememberTvLazyListState()
     // Scroll to the last item when the list is first composed
-    val sections = PyManager.sectionList
-    LaunchedEffect(sections) {
-        if (sections.isNotEmpty()) {
-            listState.scrollToItem(sections.size - 1)
-        }
-    }
+//    val sections = PyManager.sectionList
+//    LaunchedEffect(sections) {
+//        if (sections.isNotEmpty()) {
+//            listState.scrollToItem(sections.size - 1)
+//        }
+//    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -223,7 +222,7 @@ fun Content(
             contentScale = ContentScale.Crop
         )
         TvLazyColumn(
-            state = listState,
+//            state = listState,
         ) {
             itemsIndexed(PyManager.sectionList) { index, section ->
                 Section(
@@ -276,7 +275,7 @@ fun Section(
                 isSelected = PyManager.manager.getSelectedIndexForSection(sectionIndex)==cardIndex,
                 onClick = {
                     if(!PyManager.isLoadingSection) {
-                        PyManager.SetSection(card.id, sectionIndex, cardIndex)
+                        PyManager.setSection(card.id, sectionIndex, cardIndex)
                     }
                 },
                 backgroundImageState = backgroundImageState
