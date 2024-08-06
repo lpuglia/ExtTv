@@ -44,23 +44,17 @@ class DownloadError(Exception):
 class ExtractionError(Exception):
     pass
 
-def get_default_branch(user, repo):
-    url = f"https://api.github.com/repos/{user}/{repo}"
-    response = requests.get(url)
+def download_and_extract_plugin(user, repo, branch='main', force=False):
+    addon_xml_url = f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/addon.xml"
 
-    if response.status_code == 200:
-        data = response.json()
-        return data.get('default_branch', None)
-    else:
-        print(f"Error: {response.status_code}")
-        print(response.json())
-        return None
+    url = f"https://github.com/{user}/{repo}/archive/refs/heads/{branch}.zip"
+    try:
+        response = requests.head(addon_xml_url)
+        response.raise_for_status()  # Raise an HTTPError if the HTTP request returned an unsuccessful status code
+        addon_xml = requests.get(addon_xml_url)
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error occurred while checking URL: {e}")
 
-def download_and_extract_plugin(user, repo, force=False):
-    default_branch = get_default_branch(user, repo)
-    addon_xml_url = f"https://raw.githubusercontent.com/{user}/{repo}/{default_branch}/addon.xml"
-    url = f"https://github.com/{user}/{repo}/archive/refs/heads/{default_branch}.zip"
-    addon_xml = requests.get(addon_xml_url)
     match = re.search(r'id="([^"]+)"', addon_xml.text)
     if match:
         plugin_name = match.group(1)
@@ -68,7 +62,7 @@ def download_and_extract_plugin(user, repo, force=False):
         raise Exception("Failed to get plugin id")
     try:
         if force or not os.path.exists(os.path.join(full_addons_path(), plugin_name)):
-            zip_file = os.path.join(full_addons_path(), 'master.zip')
+            zip_file = os.path.join(full_addons_path(), f'{branch}.zip')
             response = requests.get(url)
 
             if response.status_code == 200:
@@ -109,6 +103,9 @@ def download_and_extract_plugin(user, repo, force=False):
     plugin.plugin_name = plugin_name
     return plugin_name
 
+def set_plugin_name(plugin_name):
+    plugin.plugin_name = plugin_name
+
 def decode_plugin_path(plugin_path):
     parsed_url = urllib.parse.urlparse(plugin_path)
     query_params = urllib.parse.parse_qs(parsed_url.query)
@@ -129,7 +126,7 @@ def reload_module(module_name):
         globals()[module_name] = importlib.import_module(module_name)
 
 def run(argv):
-    #argv = [f'plugin://{kod_folder_name}/', '3', argv2]
+    print(argv)
     plugin_name = argv[0].split("/")[2]
     sys.path.append(os.path.join(full_addons_path(), plugin_name))
     sys.argv = argv

@@ -106,10 +106,14 @@ def parse_piped_url(url):
 
 class Player():
 
-    def play(self, playlist, xlistitem, windowed = False, startpos = -1):
+    def play(self, playlist, xlistitem = None, windowed = False, startpos = -1):
         base_url = "exttv://app/?"
-        extra_info = playlist.playlist_items[0][1]
-        url = playlist.playlist_items[0][0]
+        if hasattr(playlist, 'playlist_type'):
+            extra_info = playlist.playlist_items[0][1]
+            url = playlist.playlist_items[0][0]
+        else:
+            extra_info = playlist
+            url = playlist.path
         media_source = SimpleNamespace()
         print(extra_info)
         media_source.streamType = extra_info.mimetype

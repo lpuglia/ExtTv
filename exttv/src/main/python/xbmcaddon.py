@@ -88,17 +88,34 @@ def parse_po_file(file_path):
 class Addon():
 
     def __init__(self, id=""):
+        if id in ['inputstream.adaptive']:
+            return
         if id=='':
             id = plugin.plugin_name
-        self.localizedStrings = parse_po_file(os.path.join(utils.full_addons_path(),'plugin.video.kod/resources/language/resource.language.it_it/strings.po'))
-        self.settings = parse_settings_from_xml(os.path.join(utils.full_addons_path(),'plugin.video.kod/resources/settings.xml'))
-        self.addon = parse_addon_xml(os.path.join(utils.full_addons_path(),'plugin.video.kod/addon.xml'))
+        po_file_path = os.path.join(utils.full_addons_path(), f'{id}/resources/language/resource.language.it_it/strings.po')
+        settings_xml_path = os.path.join(utils.full_addons_path(), f'{id}/resources/settings.xml')
+        addon_xml_path = os.path.join(utils.full_addons_path(), f'{id}/addon.xml')
 
-        self.addon['path'] = os.path.join(utils.full_addons_path(),'plugin.video.kod')
-        self.addon['Profile'] = os.path.join(utils.full_addondata_path(),'plugin.video.kod')
+        if os.path.exists(po_file_path):
+            self.localizedStrings = parse_po_file(po_file_path)
+        else:
+            print(f"Warning: PO file '{po_file_path}' not found.")
+
+        if os.path.exists(settings_xml_path):
+            self.settings = parse_settings_from_xml(settings_xml_path)
+        else:
+            print(f"Warning: Settings XML file '{settings_xml_path}' not found.")
+
+        if os.path.exists(addon_xml_path):
+            self.addon = parse_addon_xml(addon_xml_path)
+        else:
+            print(f"Warning: Addon XML file '{addon_xml_path}' not found.")
+
+        self.addon['path'] = os.path.join(utils.full_addons_path(), id)
+        self.addon['Profile'] = os.path.join(utils.full_addondata_path(), id)
 
         self.addon['Path'] = self.addon['path']
-        # self.addon['Profile'] = self.addon['profile']
+        self.addon['profile'] = self.addon['Profile']
 
         if not os.path.exists(os.path.join(self.addon['Profile'],'settings_channels')):
             os.makedirs(os.path.join(self.addon['Profile'], 'settings_channels'), exist_ok=True)

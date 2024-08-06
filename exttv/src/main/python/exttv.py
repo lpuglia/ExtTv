@@ -1,24 +1,32 @@
 import os
-import sys
 import utils
+import traceback
+
 from java import jclass
 from java.util import Arrays
+main_activity = jclass("com.android.exttv.MainActivity").getInstance()
 
 utils.init(os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../'))) # very important to normalize
 
 def run(argv=""):
-    to_return = utils.run([argv.split("?")[0], '3', argv.split("?")[1] if "?" in argv else ""])
-    cardView = jclass("com.android.exttv.model.CardView")
+    print([argv.split("?")[0], '3', argv[argv.find("?"):] if "?" in argv else "?"])
     movie_list = []
-    for item in to_return:
-        movie_list.append(cardView(
-            item[0],
-            item[1].label,
-            item[1].label2,
-            item[1].info['video']['plot'] if 'plot' in item[1].info['video'] else '',
-            item[1].art['thumb'],
-            item[1].art['poster'],
-            item[1].art['fanart'],
-        ))
+    try:
+        to_return = utils.run([argv.split("?")[0], '3', argv[argv.find("?"):] if "?" in argv else ""])
+        cardView = jclass("com.android.exttv.model.CardView")
+        movie_list = []
+        for item in to_return:
+            movie_list.append(cardView(
+                item[0],
+                item[1].label,
+                item[1].label2,
+                item[1].info.get('video', {}).get('plot', ''),
+                item[1].art.get('thumb', ''),
+                item[1].art.get('poster', ''),
+                item[1].art.get('fanart', ''),
+            ))
+    except Exception as e:
+        traceback.print_exception(type(e), e, e.__traceback__)
+        main_activity.showToast(str(e), 1)
 
     return Arrays.asList(movie_list)

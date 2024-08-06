@@ -1,4 +1,6 @@
-package com.android.exttv.model
+package com.android.exttv.manager
+
+import com.android.exttv.model.Section
 
 class SectionManager() {
     private val sections = LinkedHashMap<String, Section>()

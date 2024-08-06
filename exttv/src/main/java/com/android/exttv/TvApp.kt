@@ -1,7 +1,5 @@
 import android.app.Activity
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
+import android.view.KeyEvent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -18,10 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +39,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.foundation.lazy.list.TvLazyColumn
@@ -49,150 +49,140 @@ import androidx.tv.foundation.lazy.list.rememberTvLazyListState
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.DrawerState
 import androidx.tv.material3.DrawerValue
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.ModalNavigationDrawer
+import androidx.tv.material3.NavigationDrawerItem
+import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import coil.compose.AsyncImage
 import com.android.exttv.model.CardView
 import com.android.exttv.model.Section
-import com.android.exttv.model.SectionManager
+import com.android.exttv.manager.PyManager
+import com.android.exttv.util.GithubDialog
+import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.parseText
-import com.chaquo.python.PyObject
-import com.chaquo.python.Python
-import com.chaquo.python.android.AndroidPlatform
-import org.json.JSONObject
-import java.io.BufferedReader
-import java.net.HttpURLConnection
-import java.net.URL
-
-object PythonInitializer {
-    private var exttv: PyObject? = null
-    lateinit var sectionList: MutableState<List<Section>>
-    lateinit var isLoading: MutableState<Boolean>
-    var manager : SectionManager = SectionManager()
-    private val titleMap: MutableMap<String, String> = mutableMapOf()
-
-    fun init(context: Activity, sectionList: MutableState<List<Section>>, isLoading: MutableState<Boolean>): PyObject? {
-        this.sectionList = sectionList
-        this.isLoading = isLoading
-        if (exttv != null && sectionList.value.isNotEmpty()) {
-            return exttv
-        }
-
-        if (!Python.isStarted()) {
-            Python.start(AndroidPlatform(context))
-        }
-//        val owner = "kodiondemand"
-//        val repo = "addon"
-        val owner = "luivit"
-        val repo = "plugin.video.rivedila7"
-        var plugin_name: String = ""
-        val runnable = Runnable {
-            val py = Python.getInstance()
-            exttv = py.getModule("exttv")
-            val utils = py.getModule("utils")
-            plugin_name = utils.callAttr("download_and_extract_plugin", owner, repo, true).toString()
-        }
-
-        val thread = Thread(runnable)
-        thread.start()
-        thread.join()
-        Log.d("Python", plugin_name)
-
-        titleMap["plugin://$plugin_name/"] = "Menu"
-        SetSection("plugin://$plugin_name/")
-
-        return exttv
-    }
-
-    fun SetSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
-        isLoading.value = true
-        val runnable = Runnable {
-            val title : String = titleMap.getOrDefault(argv2, "")
-            val newSection = Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<CardView>)
-            titleMap.putAll(newSection.movieList.associate { it.id to it.label })
-
-            val lastKey = manager.getLastSectionKey()
-            if(manager.removeAndAdd(sectionIndex+1, argv2, newSection)) {
-                manager.updateSelectedIndex(sectionIndex, cardIndex)
-            }
-            try {
-                Handler(Looper.getMainLooper()).post {
-                    Log.d("Python", newSection.toString())
-                    sectionList.value = manager.getSectionsInOrder()
-                    isLoading.value = false // Stop loading indicator
-                }
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }
-        Thread(runnable).start()
-    }
-}
 
 @Composable
 fun CatalogBrowser(
     context: Activity,
 ) {
-    PythonInitializer.init(
-        context = context,
-        sectionList = remember { mutableStateOf(listOf()) },
-        isLoading = remember { mutableStateOf(false) },
-    )
-    var selectedIndex by remember { mutableIntStateOf(0) }
+    PyManager.Init(context)
+    var selectedIndex by remember { mutableIntStateOf(-1) }
 
-    val items = listOf(
-        "Home" to Icons.Default.Home,
-        "Favourites" to Icons.Default.Favorite,
+
+    val items = PyManager.installedAddons.map { it to Icons.Default.Star } + listOf(
+        "Add from Repository" to Icons.Default.Add,
+        "Add from GitHub" to Icons.Default.Add,
         "Settings" to Icons.Default.Settings,
     )
 
     // Create a DrawerState instance to manage the drawer state
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
+    var showGithubDialog = remember { mutableStateOf(false) }
+    var showRepositoryDialog = remember { mutableStateOf(false) }
     var backgroundImageState = remember { mutableStateOf("") }
-    // Animate the width of the drawer
     val drawerWidth by animateDpAsState(
-        targetValue = if (drawerState.currentValue == DrawerValue.Open) 255.dp else 0.dp
+        targetValue = if (drawerState.currentValue == DrawerValue.Open) 280.dp else 60.dp
     )
 
-//    ModalNavigationDrawer(
-//        drawerState = drawerState,
-//        drawerContent = {
-//            Column(
-//                Modifier
-//                    .background(Color.Gray)
-//                    .width(drawerWidth) // Use animated width
-//                    .fillMaxHeight()
-//                    .padding(12.dp)
-//                    .selectableGroup(),
-//                horizontalAlignment = Alignment.Start,
-//                verticalArrangement = Arrangement.spacedBy(10.dp)
-//            ) {
-//                items.forEachIndexed { index, item ->
-//                    val (text, icon) = item
-//                    NavigationDrawerItem(
-//                        selected = selectedIndex == index,
-//                        onClick = {
-//                            selectedIndex = index
-//                        },
-//                        leadingContent = {
-//                            Icon(
-//                                imageVector = icon,
-//                                contentDescription = null,
-//                            )
-//                        }
-//                    ) {
-//                        Text(text)
-//                    }
-//                }
-//            }
-//        }
-//    ) {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            Column(
+                Modifier
+                    .background(Color(0xA30F2B31))
+                    .width(drawerWidth) // Use animated width
+                    .fillMaxHeight()
+                    .padding(12.dp)
+                    .selectableGroup(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items.forEachIndexed { index, item ->
+                    val (text, icon) = item
+                    NavigationDrawerItem(
+                        selected = selectedIndex == index,
+                        onClick = {
+                            if (!text.startsWith("Add from")) {
+                                selectedIndex = index
+                                if(text!="Settings"){
+                                    drawerState.setValue(DrawerValue.Closed)
+                                    PyManager.selectPlugin(text)
+                                }
+                            }
+
+                            if(text=="Add from Repository"){
+                                showRepositoryDialog.value = true
+                            }
+                            if(text=="Add from GitHub"){
+                                showGithubDialog.value = true
+                            }
+                        },
+                        colors = NavigationDrawerItemDefaults.colors(
+                            containerColor = Color(0xCB1D2E31),
+                            focusedContainerColor = Color(0xCB2B474D),
+                            pressedContentColor = Color(0xCB426C75),
+                        ),
+                        leadingContent = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = if (selectedIndex == index) Color.White else Color.LightGray
+                            )
+                        }
+                    ) {
+                        Text(
+                            text,
+                            color = if (selectedIndex == index) Color.White else Color.LightGray
+                            )
+                    }
+                }
+            }
+        }
+    ) {
+        Content(showGithubDialog, showRepositoryDialog, backgroundImageState, drawerState)
+    }
+    val view = LocalView.current
+
+    // Move right when the first section is loaded
+    LaunchedEffect(PyManager.isLoadingAddon) {
+        if (!PyManager.isLoadingAddon) {
+            view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT))
+        }
+    }
+    // Move down when the next section is loaded
+    LaunchedEffect(PyManager.isLoadingSection) {
+        if (!PyManager.isLoadingSection) {
+            view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN))
+        }
+    }
+
+}
+
+@Composable
+fun Content(
+    showGithubDialog: MutableState<Boolean>,
+    showRepositoryDialog: MutableState<Boolean>,
+    backgroundImageState: MutableState<String>,
+    drawerState: DrawerState
+) {
+
+    if (showGithubDialog.value) {
+        GithubDialog(showGithubDialog, drawerState);
+    }
+
+    if (showRepositoryDialog.value) {
+        RepositoryDialog(showRepositoryDialog, drawerState);
+    }
+
     val listState = rememberTvLazyListState()
     // Scroll to the last item when the list is first composed
-    val sections = PythonInitializer.sectionList.value
+    val sections = PyManager.sectionList
     LaunchedEffect(sections) {
         if (sections.isNotEmpty()) {
             listState.scrollToItem(sections.size - 1)
@@ -222,19 +212,20 @@ fun CatalogBrowser(
                     start = Offset.Zero,
                     end = Offset(0f, Float.POSITIVE_INFINITY)
                 )
-            )
+            ).padding(start=60.dp)
     ) {
         AsyncImage(
             model = backgroundImageState.value,
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer(alpha = 0.3f)
+                .graphicsLayer(alpha = 0.3f),
+            contentScale = ContentScale.Crop
         )
         TvLazyColumn(
             state = listState,
         ) {
-            itemsIndexed(PythonInitializer.sectionList.value) { index, section ->
+            itemsIndexed(PyManager.sectionList) { index, section ->
                 Section(
                     section = section,
                     sectionIndex = index,
@@ -242,12 +233,17 @@ fun CatalogBrowser(
                 )
             }
         }
-        LoadingWheel()
+        // Show a loading indicator if the data is still loading
+        if (PyManager.isLoadingSection) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
     }
-//    }
-
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Section(
@@ -256,11 +252,9 @@ fun Section(
     backgroundImageState: MutableState<String>,
 ) {
     val listState = rememberTvLazyListState()
-//    val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(section.movieList) {
         listState.scrollToItem(0)
-//        focusRequester.requestFocus()
     }
 
     Text(
@@ -278,12 +272,11 @@ fun Section(
     ) {
         itemsIndexed(section.movieList) { cardIndex, card ->
             Card(
-//                modifier = if (cardIndex==0 && sectionIndex==PythonInitializer.sectionList.value.size - 1) {Modifier.focusRequester(focusRequester)} else {Modifier},
                 card = card,
-                isSelected = PythonInitializer.manager.getSelectedIndexForSection(sectionIndex)==cardIndex,
+                isSelected = PyManager.manager.getSelectedIndexForSection(sectionIndex)==cardIndex,
                 onClick = {
-                    if(!PythonInitializer.isLoading.value) {
-                        PythonInitializer.SetSection(card.id, sectionIndex, cardIndex)
+                    if(!PyManager.isLoadingSection) {
+                        PyManager.SetSection(card.id, sectionIndex, cardIndex)
                     }
                 },
                 backgroundImageState = backgroundImageState
@@ -375,17 +368,4 @@ fun Card(
         Spacer(modifier = Modifier.height(50.dp))
     }
 
-}
-
-
-@Composable
-fun LoadingWheel() {
-    if (PythonInitializer.isLoading.value) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    }
 }

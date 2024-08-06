@@ -23,6 +23,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Method to show a Toast, callable from Python
+    fun showToast(message: String?, duration: Int) {
+        runOnUiThread {
+            Toast.makeText(this@MainActivity, message, duration).show()
+        }
+    }
+
     fun fireMagnetIntent(magnetUri: String) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse(magnetUri)
@@ -33,9 +40,7 @@ class MainActivity : ComponentActivity() {
         try {
             this.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
-            runOnUiThread {
-                Toast.makeText(this, "No application found to open the magnet.\nSupported applications: Amnis, Splayer, Stremio, ...", Toast.LENGTH_LONG).show()
-            }
+            showToast("No application found to open the magnet.\nSupported applications: Amnis, Splayer, Stremio, ...", Toast.LENGTH_LONG)
         }
     }
 
