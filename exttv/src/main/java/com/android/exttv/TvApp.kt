@@ -2,6 +2,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +45,7 @@ import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
+import androidx.tv.material3.Button
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.DrawerValue
@@ -86,7 +89,6 @@ fun CatalogBrowser(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 280.dp else 60.dp,
         label = ""
     )
-
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -111,12 +113,8 @@ fun CatalogBrowser(
                                 }
                             }
 
-                            if(text=="Add from Repository"){
-                                Status.showRepositoryDialog = true
-                            }
-                            if(text=="Add from GitHub"){
-                                Status.showGithubDialog = true
-                            }
+                            if(text=="Add from Repository") Status.showRepositoryDialog = true
+                            if(text=="Add from GitHub") Status.showGithubDialog = true
                         },
                         colors = NavigationDrawerItemDefaults.colors(
                             containerColor = Color(0xCB1D2E31),
@@ -191,22 +189,20 @@ fun Content(
             ).padding(start=60.dp)
     ) {
         AsyncImage(
-            model = Status.backgroundImageState,
+            model = Status.bgImage,
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer(alpha = 0.3f),
             contentScale = ContentScale.Crop
         )
-        val focusRequester = remember { FocusRequester() }
         TvLazyColumn(
 //            state = listState,
         ) {
             itemsIndexed(Status.sectionList) { index, section ->
                 Section(
                     section = section,
-                    sectionIndex = index,
-                    focusRequester = focusRequester
+                    sectionIndex = index
                 )
             }
         }
@@ -219,22 +215,13 @@ fun Content(
                 CircularProgressIndicator()
             }
         }
-//        if (PyManager.loadingState == isLoading.DONE) {
-//            if(PyManager.sectionList.isNotEmpty()) {
-//                DisposableEffect(Unit) {
-//                    focusRequester.requestFocus()
-//                    onDispose { }
-//                }
-//            }
-//        }
     }
 }
 
 @Composable
 fun Section(
     section: Section,
-    sectionIndex: Int,
-    focusRequester: FocusRequester,
+    sectionIndex: Int
 ) {
     val listState = rememberTvLazyListState()
     LaunchedEffect(section.movieList) {
@@ -263,8 +250,7 @@ fun Section(
                         Python.setSection(card.id, sectionIndex, cardIndex)
                     }
                 },
-                index = cardIndex,
-                focusRequester = focusRequester
+                index = cardIndex
             )
         }
     }
@@ -277,10 +263,8 @@ fun Card(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    index: Int,
-    focusRequester: FocusRequester
+    index: Int
 ) {
-
     val bgModifier = if (isSelected) {
         Modifier.background(Color(0x44BB0000))
     } else {
@@ -304,12 +288,9 @@ fun Card(
             .height(120.dp)
             .onFocusChanged {
                 isFocused = it.isFocused
-                Status.backgroundImageState = card.fanartUrl
+                Status.bgImage = card.fanartUrl
             }
 
-        if(index == 0){
-            mod.focusRequester(focusRequester)
-        }
         Card(
             modifier = mod,
             onClick = onClick,
