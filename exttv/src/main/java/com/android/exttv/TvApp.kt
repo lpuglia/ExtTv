@@ -55,9 +55,9 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import coil.compose.AsyncImage
 import com.android.exttv.MainActivity
-import com.android.exttv.model.CardView
-import com.android.exttv.model.Section
 import com.android.exttv.manager.LoadingStatus
+import com.android.exttv.manager.Section
+import com.android.exttv.manager.SectionManager.CardView
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.cleanText

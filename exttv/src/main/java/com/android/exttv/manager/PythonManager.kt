@@ -4,8 +4,7 @@ import android.app.Activity
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.android.exttv.model.CardView
-import com.android.exttv.model.Section
+import com.android.exttv.manager.SectionManager
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
@@ -94,7 +93,7 @@ object PythonManager {
         val runnable = Runnable {
             val title : String = Status.titleMap.getOrDefault(argv2, "")
             // returned value from exttv.py
-            val newSection = Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<CardView>)
+            val newSection = Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<SectionManager.CardView>)
             if(newSection.movieList.isEmpty()){
                 try {
                     Handler(Looper.getMainLooper()).post {

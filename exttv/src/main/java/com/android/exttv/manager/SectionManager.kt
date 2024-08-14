@@ -1,8 +1,24 @@
 package com.android.exttv.manager
 
-import com.android.exttv.model.Section
+import com.android.exttv.manager.SectionManager.CardView
+
+data class Section(
+    val title: String,
+    val movieList: List<CardView>,
+)
 
 object SectionManager {
+
+    data class CardView(
+        val id: String,
+        val label : String,
+        val label2 : String,
+        val plot : String,
+        val thumbnailUrl: String,
+        val posterUrl: String,
+        val fanartUrl: String,
+    )
+
     private val sections = LinkedHashMap<String, Section>()
     private val selectedIndices: MutableList<Int?> = mutableListOf()
 

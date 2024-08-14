@@ -13,7 +13,7 @@ def run(argv=""):
     movie_list = []
     try:
         to_return = utils.run([argv.split("?")[0], '3', argv[argv.find("?"):] if "?" in argv else ""])
-        cardView = jclass("com.android.exttv.model.CardView")
+        cardView = jclass("com.android.exttv.manager.SectionManager$CardView")
         movie_list = []
         for item in to_return:
             movie_list.append(cardView(

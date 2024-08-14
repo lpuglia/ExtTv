@@ -3,7 +3,6 @@ package com.android.exttv.manager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.android.exttv.model.Section
 
 enum class LoadingStatus {
     DONE,
