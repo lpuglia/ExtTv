@@ -2,7 +2,7 @@ package com.android.exttv.manager
 
 import com.android.exttv.model.Section
 
-class SectionManager() {
+object SectionManager {
     private val sections = LinkedHashMap<String, Section>()
     private val selectedIndices: MutableList<Int?> = mutableListOf()
 
@@ -42,6 +42,12 @@ class SectionManager() {
         return true
     }
 
+    fun removeAllSection(): List<Section> {
+        sections.clear()
+        selectedIndices.clear()
+        return sections.values.toList()
+    }
+
     fun getSectionsInOrder(): List<Section> {
         return sections.values.toList()
     }
@@ -50,13 +56,13 @@ class SectionManager() {
         return sections.keys.lastOrNull()
     }
 
-    fun updateSelectedIndex(sectionIndex: Int, selectedIndex: Int?) {
+    fun updateSelectedSection(sectionIndex: Int, selectedIndex: Int?) {
         if (sectionIndex in selectedIndices.indices) {
             selectedIndices[sectionIndex] = selectedIndex
         }
     }
 
-    fun getSelectedIndexForSection(sectionIndex: Int): Int? {
+    fun getSelectedSection(sectionIndex: Int): Int? {
         return if (sectionIndex in selectedIndices.indices) {
             selectedIndices[sectionIndex]
         } else {

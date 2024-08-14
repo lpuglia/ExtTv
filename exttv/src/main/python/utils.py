@@ -8,6 +8,7 @@ import zipfile
 import urllib.parse
 import json
 import importlib
+import traceback
 
 import xml.etree.ElementTree as ET
 
@@ -44,9 +45,8 @@ class DownloadError(Exception):
 class ExtractionError(Exception):
     pass
 
-def download_and_extract_plugin(user, repo, branch='main', force=False):
+def get_from_git(user, repo, branch='main', force=False):
     addon_xml_url = f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/addon.xml"
-
     url = f"https://github.com/{user}/{repo}/archive/refs/heads/{branch}.zip"
     try:
         response = requests.head(addon_xml_url)
@@ -54,16 +54,40 @@ def download_and_extract_plugin(user, repo, branch='main', force=False):
         addon_xml = requests.get(addon_xml_url)
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error occurred while checking URL: {e}")
-
     match = re.search(r'id="([^"]+)"', addon_xml.text)
     if match:
         plugin_name = match.group(1)
     else:
         raise Exception("Failed to get plugin id")
+    return download_and_extract_plugin(url, plugin_name, force)
+
+def get_from_repository(url, plugin_name, force=False):
+    return download_and_extract_plugin(url, plugin_name, force)
+
+def get_top_level_folder_name(zip_file):
+    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+        # List all files in the zip
+        all_files = zip_ref.namelist()
+
+        # Filter to get only the top-level directories
+        top_level_dirs = set()
+        for file in all_files:
+            parts = file.split('/')
+            if len(parts) > 1:
+                top_level_dirs.add(parts[0])
+
+        # Assuming the ZIP contains a single top-level directory
+        if len(top_level_dirs) == 1:
+            return top_level_dirs.pop()
+        else:
+            return None
+
+def download_and_extract_plugin(url, plugin_name, force=False):
+    filename = url.split('/')[-1]
     try:
         if force or not os.path.exists(os.path.join(full_addons_path(), plugin_name)):
-            zip_file = os.path.join(full_addons_path(), f'{branch}.zip')
             response = requests.get(url)
+            zip_file = os.path.join(full_addons_path(), filename)
 
             if response.status_code == 200:
                 # Write the contents to a file
@@ -75,14 +99,14 @@ def download_and_extract_plugin(user, repo, branch='main', force=False):
 
             # Extract the contents of the ZIP file
             try:
-                with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                    zip_ref.extractall(full_addons_path())
-
-                extracted_folder = os.path.join(full_addons_path(), f'{repo}-master')
-                print(extracted_folder)
                 if os.path.exists(os.path.join(full_addons_path(), plugin_name)):
                     # Remove existing folder before renaming
                     shutil.rmtree(os.path.join(full_addons_path(), plugin_name))
+
+                with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                    zip_ref.extractall(full_addons_path())
+                extracted_folder = os.path.join(full_addons_path(), get_top_level_folder_name(zip_file))
+                # print(extracted_folder)
 
                 os.rename(extracted_folder, os.path.join(full_addons_path(), plugin_name))
                 os.remove(zip_file)
@@ -96,7 +120,7 @@ def download_and_extract_plugin(user, repo, branch='main', force=False):
     except (requests.RequestException, DownloadError, ExtractionError, OSError) as e:
         # Handle specific exceptions
         print(f"Error occurred while downloading and extracting plugin: {e}")
-        # Optionally, raise the exception to propagate it further
+        traceback.print_exc()
         raise
 
     os.makedirs(os.path.join(full_addondata_path(), plugin_name), exist_ok=True)
@@ -128,6 +152,10 @@ def reload_module(module_name):
 def run(argv):
     print(argv)
     plugin_name = argv[0].split("/")[2]
+
+    # Remove paths starting with .//exttv_addon/
+    sys.path = [path for path in sys.path if not path.startswith(full_addons_path())]
+
     sys.path.append(os.path.join(full_addons_path(), plugin_name))
     sys.argv = argv
 

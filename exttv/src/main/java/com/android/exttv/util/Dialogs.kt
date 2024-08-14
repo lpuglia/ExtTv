@@ -1,26 +1,30 @@
 package com.android.exttv.util
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -30,59 +34,205 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.tv.foundation.lazy.list.TvLazyColumn
+import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.material3.Button
-import androidx.tv.material3.DrawerState
-import androidx.tv.material3.DrawerValue
+import androidx.tv.material3.Card
+import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
+import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
-import com.android.exttv.manager.PyManager
+import coil.compose.AsyncImage
+import com.android.exttv.MainActivity
+import com.android.exttv.manager.LoadingStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okio.IOException
+import org.json.JSONObject
+import com.android.exttv.manager.StatusManager as Status
+import com.android.exttv.manager.PythonManager as Python
+
+data class Addon(
+    val addonid: String,
+    val name: String,
+    val icon: String,
+    val description: String
+)
+
+fun fetchUrlContent(url: String): String? {
+    val client = OkHttpClient()
+    val request = Request.Builder().url(url).build()
+
+    return try {
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+            response.body?.string()
+        }
+    } catch (e: IOException) {
+        Log.e("RepositoryDialog", "Failed to fetch data", e)
+        null
+    }
+}
 
 @Composable
 fun RepositoryDialog(
-    showDialog: MutableState<Boolean>,
-    drawerState: DrawerState
+    context: MainActivity,
 ) {
-    val items = listOf("Item 1", "Item 2", "Item 3")
+    val videoAddons = mutableListOf<Addon>()
+    val url = "https://kodi.tv/page-data/addons/omega/search/page-data.json"
 
-    var selectedItem by remember { mutableStateOf<String?>(null) }
+    val jsonData = fetchUrlContent(url)
+    if (jsonData != null) {
+        val jsonObject = JSONObject(jsonData)
+        val result = jsonObject.getJSONObject("result").getJSONObject("data")
+        val allAddons = result.getJSONObject("allAddon").getJSONArray("nodes")
 
-    Dialog(onDismissRequest = { showDialog.value = false }) {
-        Surface(
-            modifier = Modifier.padding(16.dp),
-            tonalElevation = 8.dp
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Select an Item:", fontSize = 20.sp, modifier = Modifier.padding(bottom = 8.dp))
+        for (i in 0 until allAddons.length()) {
+            val addon = allAddons.getJSONObject(i)
+            val categories = addon.getJSONArray("categories")
 
-                items.forEach { item ->
-                    Text(
-                        text = item,
-                        fontSize = 18.sp,
-                        modifier = Modifier
-                            .padding(vertical = 4.dp)
-                            .focusable()
-                            .clickable {
-                                selectedItem = item
-                            }
+            for (j in 0 until categories.length()) {
+                val category = categories.getJSONObject(j).getString("name")
+                if (category == "Video addons") {
+                    val videoAddon = Addon(
+                        addonid = addon.getString("addonid"),
+                        name = addon.getString("name"),
+                        icon = addon.getString("icon"),
+                        description = addon.getString("description")
                     )
+                    videoAddons.add(videoAddon)
+                    break
+                }
+            }
+        }
+    } else {
+        context.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
+        Status.showRepositoryDialog = false
+    }
+
+    var selectedItem by remember { mutableStateOf<Addon?>(null) }
+
+    Dialog(onDismissRequest = { Status.showRepositoryDialog = false }) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier
+                .padding(16.dp)
+                .width(450.dp)
+                .height(500.dp),
+            tonalElevation = 8.dp,
+            colors = SurfaceDefaults.colors(containerColor = Color(0xA30F2B31))
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(), // Make sure the Box takes the full width
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Select an Addon:",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            var isFocused by remember { mutableStateOf(false) }
+
+            TvLazyColumn(
+                modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xA30F2B31))
+                            .padding(top = 38.dp)
+                            .padding(horizontal = 23.dp)
+            ) {
+                itemsIndexed(videoAddons) { index, addon ->
+                    Card(
+                        onClick = {
+                            Status.showRepositoryDialog = false
+                            Status.loadingState = LoadingStatus.SECTION
+                            val jsonData = fetchUrlContent("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
+                            if (jsonData != null) {
+                                val jsonObject = JSONObject(jsonData)
+                                val result = jsonObject.getJSONObject("result")
+                                val data = result.getJSONObject("data")
+                                val addonj = data.getJSONObject("addon")
+                                val platforms = addonj.getJSONArray("platforms")
+                                val zipPath = platforms.getJSONObject(0).getString("path")
+                                Python.addPluginFromRepository(zipPath, addon.addonid)
+                            } else {
+                                context.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
+                            }
+                        },
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .fillMaxWidth()
+                            .height(100.dp),
+//                            .clickable {
+//                                selectedItem = addon
+//                            },
+                        colors = CardDefaults.colors(containerColor = Color(0xCB2B474D)),
+                    ){
+                        AddonBox(addon)
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+fun AddonBox(addon: Addon) {
+    Box(
+        modifier = Modifier
+            .size(width = 400.dp, height = 100.dp)
+            .padding(8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            AsyncImage(
+                model = "https://kodi.tv/${addon.icon}",
+                contentDescription = addon.description,
+                modifier = Modifier
+                    .size(95.dp) // Set a fixed size for the image
+                    .padding(2.dp),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                Text(
+                    text = addon.name,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text = addon.description,
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    maxLines = 2, // Limit to 2 lines to fit in the space
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
+        }
+    }
+}
 
 
 @Composable
-fun GithubDialog(showDialog: MutableState<Boolean>, drawerState: DrawerState) {
+fun GithubDialog() {
     var username by remember { mutableStateOf("") }
     var repoName by remember { mutableStateOf("") }
     var branchName by remember { mutableStateOf("") }
@@ -97,7 +247,7 @@ fun GithubDialog(showDialog: MutableState<Boolean>, drawerState: DrawerState) {
     val saveButtonRequester = FocusRequester()
     val coroutineScope = rememberCoroutineScope()
 
-    Dialog(onDismissRequest = { showDialog.value = false }) {
+    Dialog(onDismissRequest = { Status.showGithubDialog = false }) {
         Surface(
             modifier = Modifier.background(Color.White),
             shape = MaterialTheme.shapes.medium,
@@ -158,18 +308,17 @@ fun GithubDialog(showDialog: MutableState<Boolean>, drawerState: DrawerState) {
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Button(onClick = { showDialog.value = false }) {
+                    Button(onClick = { Status.showGithubDialog = false }) {
                         Text("Cancel")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            showDialog.value = false
-                            drawerState.setValue(DrawerValue.Closed)
+                            Status.showGithubDialog = false
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
-                                    PyManager.isLoadingSection = true
-                                    PyManager.addPlugin() // This might be a long operation
+                                    Status.loadingState = LoadingStatus.ADDON
+                                    Python.addPluginFromGit() // This might be a long operation
                                 }
                             }
                         },
