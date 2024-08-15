@@ -317,7 +317,6 @@ fun GithubDialog() {
                             Status.showGithubDialog = false
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
-                                    Status.loadingState = LoadingStatus.ADDON
                                     Python.addPluginFromGit() // This might be a long operation
                                 }
                             }

@@ -34,7 +34,6 @@ object PythonManager {
     }
 
     fun addPluginFromGit() {//owner: String, repo: String, branch: String) {
-//        loadingState = isLoading.LOADING
         val owner = "kodiondemand"
         val repo = "addon"
         val branch = "master"
@@ -54,7 +53,6 @@ object PythonManager {
     }
 
     fun addPluginFromRepository(url: String, pluginName: String){
-//        loadingState = isLoading.LOADING
         val runnable = Runnable {
             val py = Python.getInstance()
             val utils = py.getModule("utils")
@@ -85,36 +83,27 @@ object PythonManager {
 
         Addons.selectAddon(pluginName)
         Status.titleMap["plugin://$pluginName/"] = "Menu"
-        setSection("plugin://$pluginName/")
+        selectSection("plugin://$pluginName/")
     }
 
-    fun setSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
+    fun selectSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SECTION
         val runnable = Runnable {
             val title : String = Status.titleMap.getOrDefault(argv2, "")
             // returned value from exttv.py
             val newSection = Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<SectionManager.CardView>)
-            if(newSection.movieList.isEmpty()){
-                try {
-                    Handler(Looper.getMainLooper()).post {
-                        if(sectionIndex==-1){
-                            Status.sectionList = Sections.removeAllSection()
-                        }
-                        Status.loadingState = LoadingStatus.SECTION_DONE
-                    }
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
-                return@Runnable
-            }
             Status.titleMap.putAll(newSection.movieList.associate { it.id to it.label })
 
-            if(Sections.removeAndAdd(sectionIndex+1, argv2, newSection)) {
+            if(newSection.movieList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, argv2, newSection)) {
                 Sections.updateSelectedSection(sectionIndex, cardIndex)
             }
+
             try {
                 Handler(Looper.getMainLooper()).post {
-                    Log.d("Python", newSection.toString())
+                    if(sectionIndex==-1 && newSection.movieList.isEmpty()){
+                        Sections.removeAllSection()
+                        Status.bgImage = ""
+                    }
                     Status.sectionList = Sections.getSectionsInOrder()
                     Status.loadingState = LoadingStatus.SECTION_DONE
                 }

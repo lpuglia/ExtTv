@@ -7,7 +7,6 @@ import androidx.compose.ui.focus.FocusRequester
 
 enum class LoadingStatus {
     DONE,
-    LOADING,
     ADDON,
     SECTION,
     SECTION_DONE,
