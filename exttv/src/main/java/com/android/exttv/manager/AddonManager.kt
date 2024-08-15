@@ -1,15 +1,17 @@
 package com.android.exttv.manager
 
 import android.content.Context
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import java.io.File
 import java.util.SortedSet
 import java.util.TreeSet
 
 object AddonManager {
     private lateinit var addons : SortedSet<String>
-    private val selectedIndex: MutableState<Int> = mutableIntStateOf(-1)
+    var focusedIndex by mutableIntStateOf(0)
+    var selectedIndex by mutableIntStateOf(-1)
 
     fun init(context: Context){
         val addonsPath = File(context.filesDir, "exttv_home/addons")
@@ -22,11 +24,11 @@ object AddonManager {
     }
 
     fun getSelectedAddon(): Int {
-        return selectedIndex.value
+        return selectedIndex
     }
 
     fun isSelected(index: Int): Boolean {
-        return selectedIndex.value == index
+        return selectedIndex == index
     }
 
     fun getAllAddons(): SortedSet<String> {
@@ -38,7 +40,7 @@ object AddonManager {
     }
 
     fun selectAddon(pluginName: String) {
-        selectedIndex.value = addons.indexOf(pluginName)
+        selectedIndex = addons.indexOf(pluginName)
     }
 
 }

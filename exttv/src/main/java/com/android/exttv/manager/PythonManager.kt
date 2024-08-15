@@ -100,7 +100,7 @@ object PythonManager {
                         if(sectionIndex==-1){
                             Status.sectionList = Sections.removeAllSection()
                         }
-                        Status.loadingState = LoadingStatus.DONE
+                        Status.loadingState = LoadingStatus.SECTION_DONE
                     }
                 } catch (e: InterruptedException) {
                     e.printStackTrace()
@@ -116,7 +116,7 @@ object PythonManager {
                 Handler(Looper.getMainLooper()).post {
                     Log.d("Python", newSection.toString())
                     Status.sectionList = Sections.getSectionsInOrder()
-                    Status.loadingState = LoadingStatus.DONE
+                    Status.loadingState = LoadingStatus.SECTION_DONE
                 }
             } catch (e: InterruptedException) {
                 e.printStackTrace()

@@ -1,8 +1,8 @@
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,14 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,13 +40,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
-import androidx.tv.material3.Button
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.DrawerValue
@@ -58,6 +60,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import coil.compose.AsyncImage
 import com.android.exttv.MainActivity
+import com.android.exttv.manager.AddonManager
 import com.android.exttv.manager.LoadingStatus
 import com.android.exttv.manager.Section
 import com.android.exttv.manager.SectionManager.CardView
@@ -89,6 +92,7 @@ fun CatalogBrowser(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 280.dp else 60.dp,
         label = ""
     )
+    val focusRequesters = remember { items.map { FocusRequester() } }
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -105,6 +109,7 @@ fun CatalogBrowser(
                 items.forEachIndexed { addonIndex, item ->
                     val (text, icon) = item
                     NavigationDrawerItem(
+                        modifier = Modifier.focusRequester(focusRequesters[addonIndex]),
                         selected = Addons.isSelected(addonIndex),
                         onClick = {
                             if (!text.startsWith("Add from")) {
@@ -141,18 +146,11 @@ fun CatalogBrowser(
     ) {
         Content(context)
     }
-    val view = LocalView.current
-    // Move right when the first section is loaded
-//    LaunchedEffect(PyManager.loadingState == isLoading.ADDON) {
-//        view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT))
-//    }
-//    // Move down when the next section is loaded
-//    LaunchedEffect(PyManager.loadingState == isLoading.SECTION) {
-//        if (PyManager.sectionList.isNotEmpty()) {
-//            view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN))
-//        }
-//    }
-
+    LaunchedEffect(drawerState.currentValue) {
+        if (drawerState.currentValue == DrawerValue.Open)
+            if (AddonManager.selectedIndex>=0)
+                focusRequesters[AddonManager.selectedIndex].requestFocus()
+    }
 }
 
 @Composable
@@ -196,9 +194,7 @@ fun Content(
                 .graphicsLayer(alpha = 0.3f),
             contentScale = ContentScale.Crop
         )
-        TvLazyColumn(
-//            state = listState,
-        ) {
+        TvLazyColumn{
             itemsIndexed(Status.sectionList) { index, section ->
                 Section(
                     section = section,
@@ -250,7 +246,7 @@ fun Section(
                         Python.setSection(card.id, sectionIndex, cardIndex)
                     }
                 },
-                index = cardIndex
+                requestFocus = cardIndex==0 && sectionIndex == Status.sectionList.size-1
             )
         }
     }
@@ -260,10 +256,9 @@ fun Section(
 @Composable
 fun Card(
     card: CardView,
-    modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    index: Int
+    requestFocus: Boolean
 ) {
     val bgModifier = if (isSelected) {
         Modifier.background(Color(0x44BB0000))
@@ -271,28 +266,20 @@ fun Card(
         Modifier.background(Color(0x00000000))
     }
 
-//    val border = if (isSelected) {
-//        Border(border = BorderStroke(width = 2.dp, color = Color(0xFFBB0000)))
-//    } else {
-//        Border(border = BorderStroke(width = 0.dp, color = Color(0x00000000)))
-//    }
-
     Column(
         modifier = Modifier
             .width(200.dp)
     ){
         var isFocused by remember { mutableStateOf(false) }
 
-        val mod = modifier
-            .padding(start = 10.dp)
-            .height(120.dp)
-            .onFocusChanged {
-                isFocused = it.isFocused
-                Status.bgImage = card.fanartUrl
-            }
-
         Card(
-            modifier = mod,
+            modifier = Modifier
+                .padding(start = 10.dp)
+                .height(120.dp)
+                .onFocusChanged {
+                    isFocused = it.isFocused
+                    Status.bgImage = card.fanartUrl
+                }.let { if (requestFocus) it.focusRequester(Status.focusRequester) else it },
             onClick = onClick,
             colors = CardDefaults.colors(containerColor = Color(0x00000000)),
         ) {
@@ -334,5 +321,10 @@ fun Card(
         }
         Spacer(modifier = Modifier.height(50.dp))
     }
-
+    LaunchedEffect(Status.loadingState) {
+        if (requestFocus && Status.sectionList.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_DONE) {
+            Status.loadingState = LoadingStatus.DONE
+            Status.focusRequester.requestFocus()
+        }
+    }
 }
