@@ -45,9 +45,10 @@ class DownloadError(Exception):
 class ExtractionError(Exception):
     pass
 
-def get_from_git(user, repo, branch='main', force=False):
+def get_from_git(url, force=False):
+    user, repo, branch = url.split('/')
     addon_xml_url = f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/addon.xml"
-    url = f"https://github.com/{user}/{repo}/archive/refs/heads/{branch}.zip"
+    zip_path = f"https://github.com/{user}/{repo}/archive/refs/heads/{branch}.zip"
     try:
         response = requests.head(addon_xml_url)
         response.raise_for_status()  # Raise an HTTPError if the HTTP request returned an unsuccessful status code
@@ -59,10 +60,19 @@ def get_from_git(user, repo, branch='main', force=False):
         plugin_name = match.group(1)
     else:
         raise Exception("Failed to get plugin id")
-    return download_and_extract_plugin(url, plugin_name, force)
+    return download_and_extract_plugin(zip_path, plugin_name, force)
 
-def get_from_repository(url, plugin_name, force=False):
-    return download_and_extract_plugin(url, plugin_name, force)
+def get_from_repository(url, force=False):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        zip_path = data.get('result').get('data').get('addon').get('platforms')[0].get('path')
+        plugin_name = data.get('result').get('data').get('addon').get('addonid')
+    except (requests.RequestException, json.JSONDecodeError) as e:
+        raise Exception("Failed to fetch or decode JSON data")
+        # main_activity.showToast(str(e), 1)
+    return download_and_extract_plugin(zip_path, plugin_name, force)
 
 def get_top_level_folder_name(zip_file):
     with zipfile.ZipFile(zip_file, 'r') as zip_ref:

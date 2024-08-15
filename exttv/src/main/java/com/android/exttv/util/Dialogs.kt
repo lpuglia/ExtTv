@@ -88,6 +88,7 @@ fun fetchUrlContent(url: String): String? {
 fun RepositoryDialog(
     context: MainActivity,
 ) {
+    Status.loadingState = LoadingStatus.FETCHING_ADDON
     val videoAddons = mutableListOf<Addon>()
     val url = "https://kodi.tv/page-data/addons/omega/search/page-data.json"
 
@@ -156,19 +157,8 @@ fun RepositoryDialog(
                     Card(
                         onClick = {
                             Status.showRepositoryDialog = false
-                            Status.loadingState = LoadingStatus.SECTION
-                            val jsonData = fetchUrlContent("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
-                            if (jsonData != null) {
-                                val jsonObject = JSONObject(jsonData)
-                                val result = jsonObject.getJSONObject("result")
-                                val data = result.getJSONObject("data")
-                                val addonj = data.getJSONObject("addon")
-                                val platforms = addonj.getJSONArray("platforms")
-                                val zipPath = platforms.getJSONObject(0).getString("path")
-                                Python.addPluginFromRepository(zipPath, addon.addonid)
-                            } else {
-                                context.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
-                            }
+                            Status.loadingState = LoadingStatus.SELECTING_SECTION
+                            Python.addAddon("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
                         },
                         modifier = Modifier
                             .padding(vertical = 8.dp)
@@ -317,7 +307,12 @@ fun GithubDialog() {
                             Status.showGithubDialog = false
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
-                                    Python.addPluginFromGit() // This might be a long operation
+                                    val owner = "kodiondemand"
+                                    val repo = "addon"
+                                    val branch = "master"
+                                    val url = "$owner/$repo/$branch"
+
+                                    Python.addAddon(url, isOfficial = false) // This might be a long operation
                                 }
                             }
                         },

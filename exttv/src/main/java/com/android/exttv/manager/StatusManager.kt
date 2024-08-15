@@ -7,9 +7,11 @@ import androidx.compose.ui.focus.FocusRequester
 
 enum class LoadingStatus {
     DONE,
-    ADDON,
-    SECTION,
-    SECTION_DONE,
+    FETCHING_ADDON,
+    INSTALLING_ADDON,
+    SELECTING_ADDON,
+    SELECTING_SECTION,
+    SECTION_LOADED,
 }
 
 object StatusManager {

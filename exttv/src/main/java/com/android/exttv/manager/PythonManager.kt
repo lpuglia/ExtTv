@@ -16,78 +16,38 @@ object PythonManager {
     private var exttv: PyObject? = null
 
     fun init(context: Activity) {
-        if (exttv != null && Status.sectionList.isNotEmpty()) {
-            return
-        }
-
-        if (!Python.isStarted()) {
-            Python.start(AndroidPlatform(context))
-        }
-        val runnable = Runnable {
-            val py = Python.getInstance()
-            exttv = py.getModule("exttv") // this initialize the workspace
-        }
-
-        val thread = Thread(runnable)
-        thread.start()
-        thread.join()
+        if (exttv != null && Status.sectionList.isNotEmpty()) return
+        if (!Python.isStarted()) Python.start(AndroidPlatform(context))
+        Thread {
+            exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
+        }.apply { start(); join() }
     }
 
-    fun addPluginFromGit() {//owner: String, repo: String, branch: String) {
-        val owner = "kodiondemand"
-        val repo = "addon"
-        val branch = "master"
-
+    fun addAddon(url: String, isOfficial : Boolean = true) {
+        Status.loadingState = LoadingStatus.INSTALLING_ADDON
         var pluginName = ""
-        val runnable = Runnable {
-            val py = Python.getInstance()
-            val utils = py.getModule("utils")
-            pluginName = utils.callAttr("get_from_git", owner, repo, branch, true).toString()
+        Thread {
+            val utils = Python.getInstance().getModule("utils")
+            pluginName = utils.callAttr(if(isOfficial)"get_from_repository" else "get_from_git", url, true).toString()
             Addons.add(pluginName)
-        }
-
-        val thread = Thread(runnable)
-        thread.start()
-        thread.join()
-        selectAddon(pluginName)
-    }
-
-    fun addPluginFromRepository(url: String, pluginName: String){
-        val runnable = Runnable {
-            val py = Python.getInstance()
-            val utils = py.getModule("utils")
-            utils.callAttr("get_from_repository", url, pluginName, true)
-            Addons.add(pluginName)
-        }
-
-        val thread = Thread(runnable)
-        thread.start()
-        thread.join()
+        }.apply { start(); join() }
         selectAddon(pluginName)
     }
 
     fun selectAddon(pluginName: String) {
-        Log.d("Python", pluginName)
+        Status.loadingState = LoadingStatus.SELECTING_ADDON
         Sections.removeAllSection()
         Status.titleMap.clear()
-
-        val runnable = Runnable {
-            val py = Python.getInstance()
-            val utils = py.getModule("utils")
-            utils.callAttr("set_plugin_name", pluginName)
-        }
-
-        val thread = Thread(runnable)
-        thread.start()
-        thread.join()
-
+        Thread {
+            Python.getInstance().getModule("utils").callAttr("set_plugin_name", pluginName)
+        }.apply { start(); join() }
         Addons.selectAddon(pluginName)
         Status.titleMap["plugin://$pluginName/"] = "Menu"
         selectSection("plugin://$pluginName/")
     }
 
     fun selectSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
-        Status.loadingState = LoadingStatus.SECTION
+        Status.loadingState = LoadingStatus.SELECTING_SECTION
         val runnable = Runnable {
             val title : String = Status.titleMap.getOrDefault(argv2, "")
             // returned value from exttv.py
@@ -103,9 +63,11 @@ object PythonManager {
                     if(sectionIndex==-1 && newSection.movieList.isEmpty()){
                         Sections.removeAllSection()
                         Status.bgImage = ""
+                        Status.loadingState = LoadingStatus.DONE
+                    }else{
+                        Status.loadingState = LoadingStatus.SECTION_LOADED
                     }
                     Status.sectionList = Sections.getSectionsInOrder()
-                    Status.loadingState = LoadingStatus.SECTION_DONE
                 }
             } catch (e: InterruptedException) {
                 e.printStackTrace()

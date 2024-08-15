@@ -319,7 +319,7 @@ fun Card(
         Spacer(modifier = Modifier.height(50.dp))
     }
     LaunchedEffect(Status.loadingState) {
-        if (requestFocus && Status.sectionList.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_DONE) {
+        if (requestFocus && Status.sectionList.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_LOADED) {
             Status.loadingState = LoadingStatus.DONE
             Status.focusRequester.requestFocus()
         }
