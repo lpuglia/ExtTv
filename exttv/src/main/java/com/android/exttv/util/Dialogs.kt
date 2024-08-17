@@ -123,7 +123,10 @@ fun RepositoryDialog(
 
     var selectedItem by remember { mutableStateOf<Addon?>(null) }
 
-    Dialog(onDismissRequest = { Status.showRepositoryDialog = false }) {
+    Dialog(onDismissRequest = {
+        Status.loadingState = LoadingStatus.DONE
+        Status.showRepositoryDialog = false
+    }) {
         Surface(
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier
@@ -237,7 +240,10 @@ fun GithubDialog() {
     val saveButtonRequester = FocusRequester()
     val coroutineScope = rememberCoroutineScope()
 
-    Dialog(onDismissRequest = { Status.showGithubDialog = false }) {
+    Dialog(onDismissRequest = {
+        Status.loadingState = LoadingStatus.DONE
+        Status.showGithubDialog = false
+    }) {
         Surface(
             modifier = Modifier.background(Color.White),
             shape = MaterialTheme.shapes.medium,

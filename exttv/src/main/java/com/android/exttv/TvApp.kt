@@ -36,9 +36,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.res.ResourcesCompat
 import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
@@ -54,7 +58,9 @@ import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.android.exttv.MainActivity
+import com.android.exttv.R
 import com.android.exttv.manager.AddonManager
 import com.android.exttv.manager.LoadingStatus
 import com.android.exttv.manager.Section
@@ -76,7 +82,9 @@ fun CatalogBrowser(
     Addons.init(context)
     Python.init(context)
 
-    val items = Addons.getAllAddons().map { it to Icons.Default.Star } + listOf(
+    val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
+
+    val items = Addons.getAllAddons().map { it to myIcon } + listOf(
         "Add from Repository" to Icons.Default.Add,
         "Add from GitHub" to Icons.Default.Add,
         "Settings" to Icons.Default.Settings,
@@ -95,7 +103,7 @@ fun CatalogBrowser(
         drawerContent = {
             Column(
                 Modifier
-                    .background(Color(0xA30F2B31))
+                    .background(Color(0xF30F2B31))
                     .width(drawerWidth) // Use animated width
                     .fillMaxHeight()
                     .padding(12.dp)
@@ -157,40 +165,48 @@ fun Content(
     if (Status.showGithubDialog) GithubDialog();
     if (Status.showRepositoryDialog) RepositoryDialog(context);
 
+    val placeholderDrawable = ResourcesCompat.getDrawable(
+        context.resources,
+        R.drawable.placeholder,
+        context.theme
+    )
+
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(Status.bgImage)//.error(placeholderDrawable)
+            .build(),
+        contentDescription = null,
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer(alpha = 0.3f),
+        contentScale = ContentScale.Crop,
+    )
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
             .background(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0x88167c6c), Color(0x0004282d)),
+                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
                     center = Offset.Infinite,
                     radius = 1200f
                 )
             )
             .background(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0x88167c6c), Color(0x0004282d)),
+                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
                     center = Offset.Zero,
                     radius = 1200f
                 )
             )
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(Color(0x8801080a), Color(0x880b465f), Color(0xFF01080a)),
+                    colors = listOf(Color(0x6601080a), Color(0x660b465f), Color(0xFF01080a)),
                     start = Offset.Zero,
                     end = Offset(0f, Float.POSITIVE_INFINITY)
                 )
             ).padding(start=60.dp)
     ) {
-        AsyncImage(
-            model = Status.bgImage,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer(alpha = 0.3f),
-            contentScale = ContentScale.Crop
-        )
         TvLazyColumn{
             itemsIndexed(Status.sectionList) { index, section ->
                 Section(
@@ -262,7 +278,13 @@ fun Card(
     } else {
         Modifier.background(Color(0x00000000))
     }
+    val context = LocalContext.current
 
+    val placeholderDrawable = ResourcesCompat.getDrawable(
+        context.resources,
+        R.drawable.placeholder,
+        context.theme
+    )
     Column(
         modifier = Modifier
             .width(200.dp)
@@ -282,9 +304,13 @@ fun Card(
         ) {
             Box() {
                 AsyncImage(
-                    model = card.thumbnailUrl,
+                    model =  ImageRequest.Builder(LocalContext.current)
+                        .data(card.thumbnailUrl)
+//                        .placeholder(ColorPainter(Color.Gray)) // Set the placeholder here
+                        .error(placeholderDrawable) // Optional: set an error placeholder
+                        .build(),
                     contentDescription = card.label,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().background(Color(0x88000000)),
                     contentScale = ContentScale.Crop
                 )
                 Box(
