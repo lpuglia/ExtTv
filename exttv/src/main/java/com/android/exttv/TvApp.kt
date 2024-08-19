@@ -7,17 +7,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,12 +31,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -92,7 +97,7 @@ fun CatalogBrowser(
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
     val drawerWidth by animateDpAsState(
-        targetValue = if (drawerState.currentValue == DrawerValue.Open) 280.dp else 60.dp,
+        targetValue = if (drawerState.currentValue == DrawerValue.Open) 380.dp else 60.dp,
         label = ""
     )
     val focusRequesters by rememberUpdatedState(
@@ -101,9 +106,15 @@ fun CatalogBrowser(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            Column(
+            LazyColumn(
                 Modifier
-                    .background(Color(0xF30F2B31))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFF0F2B31), Color(0x00000000)),
+                            start = Offset(0f, 0f),
+                            end = Offset(Float.POSITIVE_INFINITY, 0f)
+                        )
+                    )
                     .width(drawerWidth) // Use animated width
                     .fillMaxHeight()
                     .padding(12.dp)
@@ -111,7 +122,8 @@ fun CatalogBrowser(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items.forEachIndexed { addonIndex, item ->
+                itemsIndexed(items){ addonIndex, item ->
+//                items.forEachIndexed { addonIndex, item ->
                     val (text, icon) = item
                     NavigationDrawerItem(
                         modifier = Modifier.focusRequester(focusRequesters[addonIndex]),
@@ -127,9 +139,10 @@ fun CatalogBrowser(
                             if(text=="Add from GitHub") Status.showGithubDialog = true
                         },
                         colors = NavigationDrawerItemDefaults.colors(
-                            containerColor = Color(0xCB1D2E31),
-                            focusedContainerColor = Color(0xCB2B474D),
-                            pressedContentColor = Color(0xCB426C75),
+                            containerColor = Color(0xFF1D2E31),
+                            focusedContainerColor = Color(0xFF2B474D),
+                            pressedContentColor = Color(0xFF426C75),
+                            selectedContainerColor = Color(0xFF426C75)
                         ),
                         leadingContent = {
                             Icon(
@@ -171,16 +184,32 @@ fun Content(
         context.theme
     )
 
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(Status.bgImage)//.error(placeholderDrawable)
-            .build(),
-        contentDescription = null,
-        modifier = Modifier
-            .fillMaxSize()
-            .graphicsLayer(alpha = 0.3f),
-        contentScale = ContentScale.Crop,
-    )
+    fun Modifier.fadingEdge(brush: Brush) = this
+        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+        .drawWithContent {
+            drawContent()
+            drawRect(brush = brush, blendMode = BlendMode.DstIn)
+        }
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val topBottomFade = Brush.verticalGradient(0.7f to Color.Red, 1f to Color.Transparent)
+        val leftRightFade = Brush.horizontalGradient(0f to Color.Transparent, 0.1f to Color.Red)
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(Status.bgImage)//.error(placeholderDrawable)
+                .build(),
+            contentDescription = null,
+            modifier = Modifier
+                .fadingEdge(topBottomFade)
+                .fadingEdge(leftRightFade)
+                .width(800.dp)
+                .height(400.dp)
+                .graphicsLayer(alpha = 0.3f)
+                .align(Alignment.TopEnd),
+            contentScale = ContentScale.Crop,
+        )
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -207,7 +236,11 @@ fun Content(
                 )
             ).padding(start=60.dp)
     ) {
-        TvLazyColumn{
+        TvLazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Bottom
+        )
+        {
             itemsIndexed(Status.sectionList) { index, section ->
                 Section(
                     section = section,
@@ -248,10 +281,10 @@ fun Section(
         modifier = Modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(start = 40.dp, end = 40.dp)
+        contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
     ) {
         itemsIndexed(section.movieList) { cardIndex, card ->
-            Card(
+            CardItem(
                 card = card,
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
                 onClick = {
@@ -267,7 +300,7 @@ fun Section(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Card(
+fun CardItem(
     card: CardView,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
@@ -287,6 +320,7 @@ fun Card(
     )
     Column(
         modifier = Modifier
+//            .background(Color.Red)
             .width(200.dp)
     ){
         var isFocused by remember { mutableStateOf(false) }
@@ -342,7 +376,7 @@ fun Card(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        Spacer(modifier = Modifier.height(50.dp))
+        Spacer(modifier = Modifier.height(10.dp))
     }
     LaunchedEffect(Status.loadingState) {
         if (requestFocus && Status.sectionList.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_LOADED) {
