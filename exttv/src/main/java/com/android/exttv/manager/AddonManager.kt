@@ -17,7 +17,7 @@ data class Addon(
 
 object AddonManager {
     private lateinit var addons : SortedSet<String>
-    var focusedIndex by mutableIntStateOf(0)
+    var focusedIndex by mutableIntStateOf(-1)
     var selectedIndex by mutableIntStateOf(-1)
 
     fun init(context: Context){
@@ -34,6 +34,12 @@ object AddonManager {
         return selectedIndex
     }
 
+    fun uninstallAddon(index: Int) {
+        val addonName = addons.elementAt(index)
+        addons.remove(addonName)
+        selectedIndex = -1
+    }
+
     fun isSelected(index: Int): Boolean {
         return selectedIndex == index
     }
@@ -48,6 +54,10 @@ object AddonManager {
 
     fun selectAddon(pluginName: String) {
         selectedIndex = addons.indexOf(pluginName)
+    }
+
+    fun get(index: Int): String {
+        return addons.elementAt(index)
     }
 
 }
