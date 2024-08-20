@@ -77,9 +77,9 @@ import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
 import com.android.exttv.util.UninstallSettingButtons
-import com.android.exttv.util.addonKeyEvent
+import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
-import com.android.exttv.util.nonAddonKeyEvent
+import com.android.exttv.util.nonAddonKE
 import com.android.exttv.util.parseText
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.SectionManager as Sections
@@ -106,9 +106,6 @@ fun CatalogBrowser(
     val drawerWidth by animateDpAsState(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 410.dp else 80.dp,
         label = ""
-    )
-    val uninstallSettingsRequesters by rememberUpdatedState(
-        newValue = List(addons.size) { FocusRequester() }
     )
     val focusRequesters by rememberUpdatedState(
         newValue = List(addons.size) { FocusRequester() }
@@ -137,12 +134,12 @@ fun CatalogBrowser(
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
                         if(addonIndex<addons.size){
-                            UninstallSettingButtons(addonIndex, item, uninstallSettingsRequesters)
+                            UninstallSettingButtons(addonIndex, item)
                             modifier = modifier.focusRequester(focusRequesters[addonIndex])
-                            modifier = modifier.onKeyEvent { event -> addonKeyEvent(event, addonIndex, uninstallSettingsRequesters) }
+                            modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
                             isSelected = Addons.isSelected(addonIndex)
                         }else{
-                            modifier = modifier.onKeyEvent { event -> nonAddonKeyEvent(event) }
+                            modifier = modifier.onKeyEvent { event -> nonAddonKE(event) }
                         }
                         val (text, icon) = item
                         NavigationDrawerItem(
@@ -178,7 +175,9 @@ fun CatalogBrowser(
                         Divider(
                             color = Color.Gray,
                             thickness = 1.dp,
-                            modifier = Modifier.padding(top = 10.dp).width(250.dp)
+                            modifier = Modifier
+                                .padding(top = 10.dp)
+                                .width(250.dp)
                         )
                     }
                 }

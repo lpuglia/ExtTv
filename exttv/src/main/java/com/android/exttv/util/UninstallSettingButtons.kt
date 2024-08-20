@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -27,17 +26,16 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
-import com.android.exttv.manager.AddonManager as Addon
+import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.StatusManager as Status
 
 @Composable
 fun UninstallSettingButtons(
     addonIndex: Int,
     item: Pair<String, ImageVector>,
-    uninstallSettingsRequesters: List<FocusRequester>
 ) {
     val animatedDpList = animateDpAsState(
-            targetValue = if(Addon.focusedIndex==addonIndex) 120.dp else 0.dp,
+            targetValue = if(Addons.focusedIndex==addonIndex) 120.dp else 0.dp,
             label = "Animated Dp"
         ).value
 
@@ -57,7 +55,7 @@ fun UninstallSettingButtons(
                 .onFocusChanged{
                     Log.d("Focus", item.first)
                 }
-                .onKeyEvent { event -> uninstallButtonsKeyEvent(event, addonIndex, uninstallSettingsRequesters) },
+                .onKeyEvent { event -> uninstallButtonKE(event, addonIndex)},
             colors = ButtonDefaults.colors(
                 containerColor = Color(0xFF1D2E31),
                 focusedContainerColor = Color(0xFF2B474D)
@@ -78,8 +76,8 @@ fun UninstallSettingButtons(
                 .onFocusChanged{
                     Log.d("Focus", item.first)
                 }
-                .focusRequester(uninstallSettingsRequesters[addonIndex])
-                .onKeyEvent { event -> settingButtonsKeyEvent(event, addonIndex) },
+                .focusRequester(Addons.settingsRequesters[addonIndex])
+                .onKeyEvent { event -> settingButtonKE(event, addonIndex) },
             colors = ButtonDefaults.colors(
                 containerColor = Color(0xFF1D2E31),
                 focusedContainerColor = Color(0xFF2B474D)
@@ -95,10 +93,9 @@ fun UninstallSettingButtons(
     }
 }
 
-fun uninstallButtonsKeyEvent(
+fun uninstallButtonKE(
     event: KeyEvent,
     addonIndex: Int,
-    uninstallSettingsRequesters: List<FocusRequester>
 ): Boolean {
     if(
         addonIndex==0 && event.key == Key.DirectionUp //||
@@ -106,21 +103,21 @@ fun uninstallButtonsKeyEvent(
     ){
         return true
     } else if (event.key == Key.DirectionUp || event.key == Key.DirectionDown) {
-        Addon.focusedIndex = -1
+        Addons.focusedIndex = -1
         return false
     }else if (event.key == Key.DirectionLeft){
         return true
     } else if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight){
         return true
     } else if (event.type == KeyEventType.KeyUp && event.key == Key.DirectionRight){
-        uninstallSettingsRequesters[addonIndex].requestFocus()
+        Addons.settingsRequesters[addonIndex].requestFocus()
         return true
     }else{
         return false
     }
 }
 
-fun settingButtonsKeyEvent(
+fun settingButtonKE(
     event: KeyEvent,
     addonIndex: Int,
 ): Boolean{
@@ -129,21 +126,20 @@ fun settingButtonsKeyEvent(
     ){
         return true
     }else if (event.key == Key.DirectionUp || event.key == Key.DirectionDown || event.key == Key.DirectionRight) {
-        Addon.focusedIndex = -1
+        Addons.focusedIndex = -1
     }
     return false
 }
 
-fun addonKeyEvent(
+fun addonKE(
     event: KeyEvent,
     addonIndex: Int,
-    uninstallSettingsRequesters: List<FocusRequester>
 ): Boolean {
     if (addonIndex == 0 && event.key == Key.DirectionUp){
         return true
     } else if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
-        Addon.focusedIndex = addonIndex
-        uninstallSettingsRequesters[addonIndex].requestFocus()
+        Addons.focusedIndex = addonIndex
+        Addons.settingsRequesters[addonIndex].requestFocus()
         return true
     } else if(event.type == KeyEventType.KeyUp && event.key == Key.DirectionLeft){
         return true
@@ -153,7 +149,7 @@ fun addonKeyEvent(
 }
 
 
-fun nonAddonKeyEvent(
+fun nonAddonKE(
     event: KeyEvent
 ): Boolean {
     return event.key == Key.DirectionLeft
