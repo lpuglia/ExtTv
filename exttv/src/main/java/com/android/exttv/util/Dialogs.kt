@@ -78,10 +78,8 @@ fun UninstallDialog(indexAddon: Int) {
             confirmButton = {
                 Button(
                     onClick = {
-                        coroutineScope.launch {
-                            Addons.uninstallAddon(indexAddon)
-                            Status.showContextMenu = false
-                        }
+                        Addons.uninstallAddon(indexAddon)
+                        Status.showContextMenu = false
                     }
                 ) {
                     Text("Uninstall")
@@ -147,8 +145,6 @@ fun RepositoryDialog(
         context.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
         Status.showRepositoryDialog = false
     }
-
-    var selectedItem by remember { mutableStateOf<Addon?>(null) }
 
     Dialog(onDismissRequest = {
         Status.loadingState = LoadingStatus.DONE

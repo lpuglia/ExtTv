@@ -58,12 +58,6 @@ object SectionManager {
         return true
     }
 
-    fun removeAllSection(): List<Section> {
-        sections.clear()
-        selectedIndices.clear()
-        return sections.values.toList()
-    }
-
     fun getSectionsInOrder(): List<Section> {
         return sections.values.toList()
     }
@@ -84,5 +78,17 @@ object SectionManager {
         } else {
             null
         }
+    }
+
+    fun isEmpty(): Boolean {
+        return sections.isEmpty()
+    }
+
+    fun clearSections() {
+        sections.clear()
+        selectedIndices.clear()
+        StatusManager.bgImage = ""
+        StatusManager.loadingState = LoadingStatus.DONE
+        StatusManager.sectionList = getSectionsInOrder()
     }
 }

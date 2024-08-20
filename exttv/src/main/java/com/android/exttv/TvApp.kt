@@ -205,7 +205,11 @@ fun CatalogBrowser(
         if (drawerState.currentValue == DrawerValue.Open)
             if (AddonManager.selectedIndex>=0)
                 focusRequesters[AddonManager.selectedIndex].requestFocus()
+        if (Sections.isEmpty()) { // keep the drawer open when sections is empty
+            drawerState.setValue(DrawerValue.Open)
+        }
     }
+
 }
 
 @Composable

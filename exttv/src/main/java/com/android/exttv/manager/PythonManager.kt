@@ -36,7 +36,7 @@ object PythonManager {
 
     fun selectAddon(pluginName: String) {
         Status.loadingState = LoadingStatus.SELECTING_ADDON
-        Sections.removeAllSection()
+        Sections.clearSections()
         Status.titleMap.clear()
         Thread {
             Python.getInstance().getModule("utils").callAttr("set_plugin_name", pluginName)
@@ -61,13 +61,11 @@ object PythonManager {
             try {
                 Handler(Looper.getMainLooper()).post {
                     if(sectionIndex==-1 && newSection.movieList.isEmpty()){
-                        Sections.removeAllSection()
-                        Status.bgImage = ""
-                        Status.loadingState = LoadingStatus.DONE
+                        Sections.clearSections()
                     }else{
                         Status.loadingState = LoadingStatus.SECTION_LOADED
+                        Status.sectionList = Sections.getSectionsInOrder()
                     }
-                    Status.sectionList = Sections.getSectionsInOrder()
                 }
             } catch (e: InterruptedException) {
                 e.printStackTrace()

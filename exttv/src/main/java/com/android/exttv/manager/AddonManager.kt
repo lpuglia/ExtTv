@@ -1,6 +1,7 @@
 package com.android.exttv.manager
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -21,6 +22,7 @@ data class Addon(
 
 object AddonManager {
     private lateinit var addons : SortedSet<String>
+    private var addonsPath = File("")
     var focusedIndex by mutableIntStateOf(-1)
     var selectedIndex by mutableIntStateOf(-1)
     // this force focus to settings button when pressing left from addon item
@@ -28,7 +30,7 @@ object AddonManager {
 
     @Composable
     fun init(context: Context){
-        val addonsPath = File(context.filesDir, "exttv_home/addons")
+        addonsPath = File(context.filesDir, "exttv_home/addons")
         val toReturn = if (addonsPath.exists() && addonsPath.isDirectory) {
             addons = TreeSet(addonsPath.listFiles { file -> file.isDirectory }?.map { it.name } ?: emptyList())
         } else {
@@ -45,9 +47,35 @@ object AddonManager {
     }
 
     fun uninstallAddon(index: Int) {
+        fun deleteDirectory(directory: File) {
+            if (directory.exists() && directory.isDirectory) {
+                directory.listFiles()?.forEach { file ->
+                    if (file.isDirectory) {
+                        deleteDirectory(file)
+                    } else {
+                        file.delete()
+                    }
+                }
+                directory.delete()
+            }
+        }
+
         val addonName = addons.elementAt(index)
-        addons.remove(addonName)
-        selectedIndex = -1
+        val directory = File("$addonsPath/$addonName")
+        try {
+            deleteDirectory(directory)
+            directory.delete()
+            addons.remove(addonName)
+            focusedIndex = -1
+            if(selectedIndex==index){
+                selectedIndex = -1
+                SectionManager.clearSections()
+            }
+
+        } catch (e: Exception) {
+            Log.d("AddonManager","Error deleting directory: ${e.message}")
+            false
+        }
     }
 
     fun isSelected(index: Int): Boolean {
