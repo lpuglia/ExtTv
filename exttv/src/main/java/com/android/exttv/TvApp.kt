@@ -75,6 +75,7 @@ import com.android.exttv.manager.Section
 import com.android.exttv.manager.SectionManager.CardView
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
+import com.android.exttv.util.UninstallDialog
 import com.android.exttv.util.UninstallSettingButtons
 import com.android.exttv.util.addonKeyEvent
 import com.android.exttv.util.cleanText
@@ -102,7 +103,6 @@ fun CatalogBrowser(
     )
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
-    Status.uninstallSettingsState = List(addons.size) { false }
     val drawerWidth by animateDpAsState(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 410.dp else 80.dp,
         label = ""
@@ -125,7 +125,7 @@ fun CatalogBrowser(
                             end = Offset(Float.POSITIVE_INFINITY, 0f)
                         )
                     )
-                    .width(drawerWidth) // Use animated width
+                    .width(drawerWidth)
                     .fillMaxHeight()
                     .padding(12.dp)
                     .selectableGroup(),
@@ -137,7 +137,7 @@ fun CatalogBrowser(
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
                         if(addonIndex<addons.size){
-                            UninstallSettingButtons(Status.uninstallSettingsState, addonIndex, item, uninstallSettingsRequesters)
+                            UninstallSettingButtons(addonIndex, item, uninstallSettingsRequesters)
                             modifier = modifier.focusRequester(focusRequesters[addonIndex])
                             modifier = modifier.onKeyEvent { event -> addonKeyEvent(event, addonIndex, uninstallSettingsRequesters) }
                             isSelected = Addons.isSelected(addonIndex)
@@ -149,13 +149,9 @@ fun CatalogBrowser(
                             selected = isSelected,
                             modifier = modifier,
                             onClick = {
-                                if (!text.startsWith("Add from")) {
-                                    if(text!="Settings"){
-                                        Python.selectAddon(text)
-                                    }
-                                }
                                 if(text=="Add from Repository") Status.showRepositoryDialog = true
-                                if(text=="Add from GitHub") Status.showGithubDialog = true
+                                else if(text=="Add from GitHub") Status.showGithubDialog = true
+                                else if (text!="Settings") Python.selectAddon(text)
                             },
                             colors = NavigationDrawerItemDefaults.colors(
                                 containerColor = Color(0xFF1D2E31),
@@ -202,6 +198,10 @@ fun CatalogBrowser(
             )
         }
     }
+    if (Status.showGithubDialog) GithubDialog();
+    if (Status.showRepositoryDialog) RepositoryDialog(context);
+    if (Status.showContextMenu) UninstallDialog(Addons.focusedIndex);
+
     LaunchedEffect(drawerState.currentValue) {
         if (drawerState.currentValue == DrawerValue.Open)
             if (AddonManager.selectedIndex>=0)
@@ -213,9 +213,6 @@ fun CatalogBrowser(
 fun Content(
     context: MainActivity
 ) {
-    if (Status.showGithubDialog) GithubDialog();
-    if (Status.showRepositoryDialog) RepositoryDialog(context);
-
     val placeholderDrawable = ResourcesCompat.getDrawable(
         context.resources,
         R.drawable.placeholder,

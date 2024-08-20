@@ -27,29 +27,30 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
+import com.android.exttv.manager.AddonManager as Addon
 import com.android.exttv.manager.StatusManager as Status
 
 @Composable
 fun UninstallSettingButtons(
-    uninstallSettingsState: List<Boolean>,
     addonIndex: Int,
     item: Pair<String, ImageVector>,
     uninstallSettingsRequesters: List<FocusRequester>
 ) {
-    val animatedDpList = uninstallSettingsState.map { isSelected ->
-        animateDpAsState(
-            targetValue = if (isSelected) 120.dp else 0.dp,
+    val animatedDpList = animateDpAsState(
+            targetValue = if(Addon.focusedIndex==addonIndex) 120.dp else 0.dp,
             label = "Animated Dp"
         ).value
-    }
+
     Row(
         Modifier
 //            .align(Alignment.CenterVertically)
             .height(50.dp)
-            .width(animatedDpList[addonIndex])
+            .width(animatedDpList)
     ) {
         Button(
-            onClick = {},
+            onClick = {
+                Status.showContextMenu = true
+            },
             modifier = Modifier
                 .padding(end = 10.dp)
                 .width(50.dp)
@@ -105,9 +106,7 @@ fun uninstallButtonsKeyEvent(
     ){
         return true
     } else if (event.key == Key.DirectionUp || event.key == Key.DirectionDown) {
-        Status.uninstallSettingsState = Status.uninstallSettingsState.toMutableList().apply {
-            this[addonIndex] = false
-        }
+        Addon.focusedIndex = -1
         return false
     }else if (event.key == Key.DirectionLeft){
         return true
@@ -127,14 +126,10 @@ fun settingButtonsKeyEvent(
 ): Boolean{
     if(
         addonIndex==0 && event.key == Key.DirectionUp //||
-//        addonIndex==Status.uninstallSettingsState.size-1 && event.key == Key.DirectionDown
     ){
         return true
     }else if (event.key == Key.DirectionUp || event.key == Key.DirectionDown || event.key == Key.DirectionRight) {
-        Status.uninstallSettingsState = Status.uninstallSettingsState.toMutableList().apply {
-            this[addonIndex] = false
-        }
-//        return true
+        Addon.focusedIndex = -1
     }
     return false
 }
@@ -147,10 +142,8 @@ fun addonKeyEvent(
     if (addonIndex == 0 && event.key == Key.DirectionUp){
         return true
     } else if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
-        Status.uninstallSettingsState = Status.uninstallSettingsState.toMutableList().apply {
-            this[addonIndex] = true
-            uninstallSettingsRequesters[addonIndex].requestFocus()
-        }
+        Addon.focusedIndex = addonIndex
+        uninstallSettingsRequesters[addonIndex].requestFocus()
         return true
     } else if(event.type == KeyEventType.KeyUp && event.key == Key.DirectionLeft){
         return true

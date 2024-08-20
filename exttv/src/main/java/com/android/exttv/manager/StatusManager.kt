@@ -24,6 +24,4 @@ object StatusManager {
     var showRepositoryDialog by mutableStateOf(false)
     var bgImage by mutableStateOf("")
     var showContextMenu by mutableStateOf(false)
-    var uninstallSettingsState by mutableStateOf(listOf<Boolean>())//mutableStateOf(List(addons.size) { false })
-
 }

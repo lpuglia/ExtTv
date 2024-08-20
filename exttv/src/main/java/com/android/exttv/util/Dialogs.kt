@@ -62,23 +62,24 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.IOException
 import org.json.JSONObject
+import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.StatusManager as Status
 import com.android.exttv.manager.PythonManager as Python
 
 @Composable
-fun AddonBox(addon: Addon, onUninstall: (Addon) -> Unit) {
+fun UninstallDialog(indexAddon: Int) {
     val coroutineScope = rememberCoroutineScope()
 
     if (Status.showContextMenu) {
         AlertDialog(
             onDismissRequest = { Status.showContextMenu = false },
             title = { Text(text = "Context Menu") },
-            text = { Text(text = "Do you want to uninstall this addon?") },
+            text = { Text(text = "Do you want to uninstall ${Addons.get(indexAddon)}") },
             confirmButton = {
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            onUninstall(addon)
+                            Addons.uninstallAddon(indexAddon)
                             Status.showContextMenu = false
                         }
                     }
