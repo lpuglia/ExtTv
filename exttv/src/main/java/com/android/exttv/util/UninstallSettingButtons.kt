@@ -50,7 +50,7 @@ fun UninstallSettingButtons(
                 Status.showContextMenu = true
             },
             modifier = Modifier
-                .padding(end = 10.dp)
+                .padding(top=5.dp, end = 10.dp)
                 .width(50.dp)
                 .onFocusChanged{
                     Log.d("Focus", item.first)
@@ -71,7 +71,7 @@ fun UninstallSettingButtons(
         Button(
             onClick = {},
             modifier = Modifier
-                .padding(end = 10.dp)
+                .padding(top=5.dp, end = 10.dp)
                 .width(50.dp)
                 .onFocusChanged{
                     Log.d("Focus", item.first)

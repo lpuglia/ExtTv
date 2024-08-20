@@ -201,7 +201,7 @@ fun CatalogBrowser(
     if (Status.showRepositoryDialog) RepositoryDialog(context);
     if (Status.showContextMenu) UninstallDialog(Addons.focusedIndex);
 
-    LaunchedEffect(drawerState.currentValue) {
+    LaunchedEffect(drawerState.currentValue, AddonManager.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)
             if (AddonManager.selectedIndex>=0)
                 focusRequesters[AddonManager.selectedIndex].requestFocus()

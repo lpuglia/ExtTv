@@ -65,11 +65,14 @@ object AddonManager {
         try {
             deleteDirectory(directory)
             directory.delete()
+            val currentlySelected = addons.elementAt(selectedIndex)
             addons.remove(addonName)
             focusedIndex = -1
             if(selectedIndex==index){
                 selectedIndex = -1
                 SectionManager.clearSections()
+            }else{
+                selectedIndex = addons.indexOf(currentlySelected)
             }
 
         } catch (e: Exception) {
