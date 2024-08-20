@@ -2,6 +2,7 @@ package com.android.exttv.manager
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
 
@@ -23,4 +24,6 @@ object StatusManager {
     var showRepositoryDialog by mutableStateOf(false)
     var bgImage by mutableStateOf("")
     var showContextMenu by mutableStateOf(false)
+    var uninstallSettingsState by mutableStateOf(listOf<Boolean>())//mutableStateOf(List(addons.size) { false })
+
 }

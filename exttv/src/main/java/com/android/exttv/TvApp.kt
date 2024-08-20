@@ -1,4 +1,3 @@
-import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -21,9 +20,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,11 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
@@ -60,8 +55,6 @@ import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
-import androidx.tv.material3.Button
-import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.DrawerValue
@@ -82,7 +75,10 @@ import com.android.exttv.manager.Section
 import com.android.exttv.manager.SectionManager.CardView
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
+import com.android.exttv.util.UninstallSettingButtons
+import com.android.exttv.util.addonKeyEvent
 import com.android.exttv.util.cleanText
+import com.android.exttv.util.nonAddonKeyEvent
 import com.android.exttv.util.parseText
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.SectionManager as Sections
@@ -106,13 +102,7 @@ fun CatalogBrowser(
     )
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
-    var uninstallSettingsState by remember { mutableStateOf(List(addons.size) { false }) }
-    val animatedDpList = uninstallSettingsState.map { isSelected ->
-        animateDpAsState(
-            targetValue = if (isSelected) 120.dp else 0.dp,
-            label = "Animated Dp"
-        ).value
-    }
+    Status.uninstallSettingsState = List(addons.size) { false }
     val drawerWidth by animateDpAsState(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 410.dp else 80.dp,
         label = ""
@@ -142,101 +132,22 @@ fun CatalogBrowser(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                itemsIndexed(addons){ addonIndex, item ->
+                itemsIndexed(addons+extras){ addonIndex, item ->
                     Row {
-                        Row(
-                            Modifier
-                                .align(Alignment.CenterVertically)
-                                .height(50.dp)
-                                .width(animatedDpList[addonIndex])
-                        ) {
-                            Button(
-                                onClick = {},
-                                modifier = Modifier
-                                    .padding(end = 10.dp)
-                                    .width(50.dp)
-                                    .onFocusChanged{
-                                        Log.d("Focus", item.first)
-                                    }
-                                    .onKeyEvent { event ->
-                                        if (event.key == Key.DirectionUp || event.key == Key.DirectionDown) {
-                                            uninstallSettingsState = uninstallSettingsState.toMutableList().apply {
-                                                    this[addonIndex] = false
-                                                }
-                                        }
-                                        if (event.key == Key.DirectionLeft){
-                                            true
-                                        } else if (event.type== KeyEventType.KeyDown && event.key == Key.DirectionRight){
-                                            true
-                                        } else if (event.type== KeyEventType.KeyUp && event.key == Key.DirectionRight){
-                                                uninstallSettingsRequesters[addonIndex].requestFocus()
-                                            true
-                                        }else{
-                                            false
-                                        }
-                                    },
-                                colors = ButtonDefaults.colors(
-                                    containerColor = Color(0xFF1D2E31),
-                                    focusedContainerColor = Color(0xFF2B474D)
-                                ),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Favorite Icon",
-                                    modifier = Modifier.size(60.dp),
-                                    tint = Color.White,
-                                )
-                            }
-                            Button(
-                                onClick = {},
-                                modifier = Modifier
-                                    .padding(end = 10.dp)
-                                    .width(50.dp)
-                                    .onFocusChanged{
-                                        Log.d("Focus", item.first)
-                                    }
-                                    .focusRequester(uninstallSettingsRequesters[addonIndex])
-                                    .onKeyEvent { event ->
-                                        if (event.key == Key.DirectionUp || event.key == Key.DirectionDown || event.key == Key.DirectionRight) {
-                                            uninstallSettingsState = uninstallSettingsState.toMutableList().apply {
-                                                this[addonIndex] = false
-                                            }
-                                        }
-                                        false
-                                    },
-                                colors = ButtonDefaults.colors(
-                                    containerColor = Color(0xFF1D2E31),
-                                    focusedContainerColor = Color(0xFF2B474D)
-                                ),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Settings,
-                                    contentDescription = "Favorite Icon",
-                                    modifier = Modifier.size(60.dp),
-                                    tint = Color.White,
-                                )
-                            }
+                        var modifier = Modifier.padding(0.dp)
+                        var isSelected = false
+                        if(addonIndex<addons.size){
+                            UninstallSettingButtons(Status.uninstallSettingsState, addonIndex, item, uninstallSettingsRequesters)
+                            modifier = modifier.focusRequester(focusRequesters[addonIndex])
+                            modifier = modifier.onKeyEvent { event -> addonKeyEvent(event, addonIndex, uninstallSettingsRequesters) }
+                            isSelected = Addons.isSelected(addonIndex)
+                        }else{
+                            modifier = modifier.onKeyEvent { event -> nonAddonKeyEvent(event) }
                         }
                         val (text, icon) = item
                         NavigationDrawerItem(
-                            modifier = Modifier
-                                .focusRequester(focusRequesters[addonIndex])
-                                .onKeyEvent { event ->
-                                    if (addonIndex == 0 && event.key == Key.DirectionUp){
-                                        true
-                                    } else if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
-                                        uninstallSettingsState = uninstallSettingsState.toMutableList().apply {
-                                            this[addonIndex] = true
-                                            uninstallSettingsRequesters[addonIndex].requestFocus()
-                                        }
-                                        true
-                                    } else if(event.type == KeyEventType.KeyUp && event.key == Key.DirectionLeft){
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                },
-                            selected = Addons.isSelected(addonIndex),
+                            selected = isSelected,
+                            modifier = modifier,
                             onClick = {
                                 if (!text.startsWith("Add from")) {
                                     if(text!="Settings"){
@@ -256,16 +167,23 @@ fun CatalogBrowser(
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = null,
-                                    tint = if (Addons.isSelected(addonIndex)) Color.White else Color.LightGray
+                                    tint = if (isSelected) Color.White else Color.LightGray
                                 )
                             }
                         ) {
                             Text(
                                 text,
-                                modifier = Modifier.basicMarquee(iterations = if (Addons.isSelected(addonIndex)) 100 else 0),
-                                color = if (Addons.isSelected(addonIndex)) Color.White else Color.LightGray
+                                modifier = Modifier.basicMarquee(iterations = if (isSelected) 100 else 0),
+                                color = if (isSelected) Color.White else Color.LightGray
                                 )
                         }
+                    }
+                    if(addonIndex==addons.size-1){
+                        Divider(
+                            color = Color.Gray,
+                            thickness = 1.dp,
+                            modifier = Modifier.padding(top = 10.dp).width(250.dp)
+                        )
                     }
                 }
             }
