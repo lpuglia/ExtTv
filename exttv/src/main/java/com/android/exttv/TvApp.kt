@@ -117,9 +117,9 @@ fun CatalogBrowser(
                 Modifier
                     .background(
                         brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFF0F2B31), Color(0x00000000)),
+                            colors = listOf(Color(0xFF0F2B31), Color(0x000F2B31)),
                             start = Offset(0f, 0f),
-                            end = Offset(Float.POSITIVE_INFINITY, 0f)
+                            end = Offset(700f, 0f)
                         )
                     )
                     .width(drawerWidth)
@@ -207,6 +207,7 @@ fun CatalogBrowser(
                 focusRequesters[AddonManager.selectedIndex].requestFocus()
         if (Sections.isEmpty()) { // keep the drawer open when sections is empty
             drawerState.setValue(DrawerValue.Open)
+            focusRequesters[0].requestFocus()
         }
     }
 
