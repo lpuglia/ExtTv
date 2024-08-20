@@ -8,6 +8,13 @@ import java.io.File
 import java.util.SortedSet
 import java.util.TreeSet
 
+data class Addon(
+    val addonid: String,
+    val name: String,
+    val icon: String,
+    val description: String
+)
+
 object AddonManager {
     private lateinit var addons : SortedSet<String>
     var focusedIndex by mutableIntStateOf(0)

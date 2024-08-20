@@ -1,3 +1,4 @@
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -6,19 +7,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -42,6 +45,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
@@ -52,6 +60,8 @@ import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.DrawerValue
@@ -88,20 +98,30 @@ fun CatalogBrowser(
     Python.init(context)
 
     val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
-
-    val items = Addons.getAllAddons().map { it to myIcon } + listOf(
+    val addons = Addons.getAllAddons().map { it to myIcon }
+    val extras = listOf(
         "Add from Repository" to Icons.Default.Add,
         "Add from GitHub" to Icons.Default.Add,
         "Settings" to Icons.Default.Settings,
     )
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
+    var uninstallSettingsState by remember { mutableStateOf(List(addons.size) { false }) }
+    val animatedDpList = uninstallSettingsState.map { isSelected ->
+        animateDpAsState(
+            targetValue = if (isSelected) 120.dp else 0.dp,
+            label = "Animated Dp"
+        ).value
+    }
     val drawerWidth by animateDpAsState(
-        targetValue = if (drawerState.currentValue == DrawerValue.Open) 380.dp else 60.dp,
+        targetValue = if (drawerState.currentValue == DrawerValue.Open) 410.dp else 80.dp,
         label = ""
     )
+    val uninstallSettingsRequesters by rememberUpdatedState(
+        newValue = List(addons.size) { FocusRequester() }
+    )
     val focusRequesters by rememberUpdatedState(
-        newValue = List(items.size) { FocusRequester() }
+        newValue = List(addons.size) { FocusRequester() }
     )
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -122,47 +142,147 @@ fun CatalogBrowser(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                itemsIndexed(items){ addonIndex, item ->
-//                items.forEachIndexed { addonIndex, item ->
-                    val (text, icon) = item
-                    NavigationDrawerItem(
-                        modifier = Modifier.focusRequester(focusRequesters[addonIndex]),
-                        selected = Addons.isSelected(addonIndex),
-                        onClick = {
-                            if (!text.startsWith("Add from")) {
-                                if(text!="Settings"){
-                                    Python.selectAddon(text)
-                                }
+                itemsIndexed(addons){ addonIndex, item ->
+                    Row {
+                        Row(
+                            Modifier
+                                .align(Alignment.CenterVertically)
+                                .height(50.dp)
+                                .width(animatedDpList[addonIndex])
+                        ) {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier
+                                    .padding(end = 10.dp)
+                                    .width(50.dp)
+                                    .onFocusChanged{
+                                        Log.d("Focus", item.first)
+                                    }
+                                    .onKeyEvent { event ->
+                                        if (event.key == Key.DirectionUp || event.key == Key.DirectionDown) {
+                                            uninstallSettingsState = uninstallSettingsState.toMutableList().apply {
+                                                    this[addonIndex] = false
+                                                }
+                                        }
+                                        if (event.key == Key.DirectionLeft){
+                                            true
+                                        } else if (event.type== KeyEventType.KeyDown && event.key == Key.DirectionRight){
+                                            true
+                                        } else if (event.type== KeyEventType.KeyUp && event.key == Key.DirectionRight){
+                                                uninstallSettingsRequesters[addonIndex].requestFocus()
+                                            true
+                                        }else{
+                                            false
+                                        }
+                                    },
+                                colors = ButtonDefaults.colors(
+                                    containerColor = Color(0xFF1D2E31),
+                                    focusedContainerColor = Color(0xFF2B474D)
+                                ),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Favorite Icon",
+                                    modifier = Modifier.size(60.dp),
+                                    tint = Color.White,
+                                )
                             }
-
-                            if(text=="Add from Repository") Status.showRepositoryDialog = true
-                            if(text=="Add from GitHub") Status.showGithubDialog = true
-                        },
-                        colors = NavigationDrawerItemDefaults.colors(
-                            containerColor = Color(0xFF1D2E31),
-                            focusedContainerColor = Color(0xFF2B474D),
-                            pressedContentColor = Color(0xFF426C75),
-                            selectedContainerColor = Color(0xFF426C75)
-                        ),
-                        leadingContent = {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = if (Addons.isSelected(addonIndex)) Color.White else Color.LightGray
-                            )
+                            Button(
+                                onClick = {},
+                                modifier = Modifier
+                                    .padding(end = 10.dp)
+                                    .width(50.dp)
+                                    .onFocusChanged{
+                                        Log.d("Focus", item.first)
+                                    }
+                                    .focusRequester(uninstallSettingsRequesters[addonIndex])
+                                    .onKeyEvent { event ->
+                                        if (event.key == Key.DirectionUp || event.key == Key.DirectionDown || event.key == Key.DirectionRight) {
+                                            uninstallSettingsState = uninstallSettingsState.toMutableList().apply {
+                                                this[addonIndex] = false
+                                            }
+                                        }
+                                        false
+                                    },
+                                colors = ButtonDefaults.colors(
+                                    containerColor = Color(0xFF1D2E31),
+                                    focusedContainerColor = Color(0xFF2B474D)
+                                ),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Settings,
+                                    contentDescription = "Favorite Icon",
+                                    modifier = Modifier.size(60.dp),
+                                    tint = Color.White,
+                                )
+                            }
                         }
-                    ) {
-                        Text(
-                            text,
-                            modifier = Modifier.basicMarquee(iterations = if (Addons.isSelected(addonIndex)) 100 else 0),
-                            color = if (Addons.isSelected(addonIndex)) Color.White else Color.LightGray
-                            )
+                        val (text, icon) = item
+                        NavigationDrawerItem(
+                            modifier = Modifier
+                                .focusRequester(focusRequesters[addonIndex])
+                                .onKeyEvent { event ->
+                                    if (addonIndex == 0 && event.key == Key.DirectionUp){
+                                        true
+                                    } else if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
+                                        uninstallSettingsState = uninstallSettingsState.toMutableList().apply {
+                                            this[addonIndex] = true
+                                            uninstallSettingsRequesters[addonIndex].requestFocus()
+                                        }
+                                        true
+                                    } else if(event.type == KeyEventType.KeyUp && event.key == Key.DirectionLeft){
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                },
+                            selected = Addons.isSelected(addonIndex),
+                            onClick = {
+                                if (!text.startsWith("Add from")) {
+                                    if(text!="Settings"){
+                                        Python.selectAddon(text)
+                                    }
+                                }
+                                if(text=="Add from Repository") Status.showRepositoryDialog = true
+                                if(text=="Add from GitHub") Status.showGithubDialog = true
+                            },
+                            colors = NavigationDrawerItemDefaults.colors(
+                                containerColor = Color(0xFF1D2E31),
+                                focusedContainerColor = Color(0xFF2B474D),
+                                pressedContentColor = Color(0xFF426C75),
+                                selectedContainerColor = Color(0xFF426C75)
+                            ),
+                            leadingContent = {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (Addons.isSelected(addonIndex)) Color.White else Color.LightGray
+                                )
+                            }
+                        ) {
+                            Text(
+                                text,
+                                modifier = Modifier.basicMarquee(iterations = if (Addons.isSelected(addonIndex)) 100 else 0),
+                                color = if (Addons.isSelected(addonIndex)) Color.White else Color.LightGray
+                                )
+                        }
                     }
                 }
             }
         }
     ) {
         Content(context)
+    }
+    if (Status.loadingState != LoadingStatus.DONE) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(58.dp)
+            )
+        }
     }
     LaunchedEffect(drawerState.currentValue) {
         if (drawerState.currentValue == DrawerValue.Open)
@@ -234,7 +354,8 @@ fun Content(
                     start = Offset.Zero,
                     end = Offset(0f, Float.POSITIVE_INFINITY)
                 )
-            ).padding(start=60.dp)
+            )
+            .padding(start = 80.dp)
     ) {
         TvLazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -246,15 +367,6 @@ fun Content(
                     section = section,
                     sectionIndex = index
                 )
-            }
-        }
-        // Show a loading indicator if the data is still loading
-        if (Status.loadingState != LoadingStatus.DONE) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
             }
         }
     }
@@ -332,7 +444,8 @@ fun CardItem(
                 .onFocusChanged {
                     isFocused = it.isFocused
                     Status.bgImage = card.fanartUrl
-                }.let { if (requestFocus) it.focusRequester(Status.focusRequester) else it },
+                }
+                .let { if (requestFocus) it.focusRequester(Status.focusRequester) else it },
             onClick = onClick,
             colors = CardDefaults.colors(containerColor = Color(0x00000000)),
         ) {
@@ -344,7 +457,9 @@ fun CardItem(
                         .error(placeholderDrawable) // Optional: set an error placeholder
                         .build(),
                     contentDescription = card.label,
-                    modifier = Modifier.fillMaxWidth().background(Color(0x88000000)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0x88000000)),
                     contentScale = ContentScale.Crop
                 )
                 Box(
@@ -359,9 +474,10 @@ fun CardItem(
             text = parseText(cleanText(card.label)),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White,
-            modifier = Modifier.padding(start=10.dp, top=20.dp, end=10.dp)
-                               .width(200.dp)
-                               .basicMarquee(iterations = if (isFocused) 100 else 0),
+            modifier = Modifier
+                .padding(start = 10.dp, top = 20.dp, end = 10.dp)
+                .width(200.dp)
+                .basicMarquee(iterations = if (isFocused) 100 else 0),
             overflow = TextOverflow.Ellipsis,
         )
         if(card.plot.isNotEmpty()){
@@ -369,8 +485,9 @@ fun CardItem(
                 text = parseText(cleanText(card.plot)),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White,
-                modifier = Modifier.alpha(if (isFocused) 1f else 0f)
-                    .padding(start=10.dp, top=5.dp, end=10.dp)
+                modifier = Modifier
+                    .alpha(if (isFocused) 1f else 0f)
+                    .padding(start = 10.dp, top = 5.dp, end = 10.dp)
                     .width(200.dp)
                     .basicMarquee(iterations = if (isFocused) 100 else 0),
                 overflow = TextOverflow.Ellipsis,

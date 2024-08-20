@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -51,6 +53,7 @@ import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.MainActivity
+import com.android.exttv.manager.Addon
 import com.android.exttv.manager.LoadingStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -62,12 +65,35 @@ import org.json.JSONObject
 import com.android.exttv.manager.StatusManager as Status
 import com.android.exttv.manager.PythonManager as Python
 
-data class Addon(
-    val addonid: String,
-    val name: String,
-    val icon: String,
-    val description: String
-)
+@Composable
+fun AddonBox(addon: Addon, onUninstall: (Addon) -> Unit) {
+    val coroutineScope = rememberCoroutineScope()
+
+    if (Status.showContextMenu) {
+        AlertDialog(
+            onDismissRequest = { Status.showContextMenu = false },
+            title = { Text(text = "Context Menu") },
+            text = { Text(text = "Do you want to uninstall this addon?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            onUninstall(addon)
+                            Status.showContextMenu = false
+                        }
+                    }
+                ) {
+                    Text("Uninstall")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { Status.showContextMenu = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
 
 fun fetchUrlContent(url: String): String? {
     val client = OkHttpClient()
