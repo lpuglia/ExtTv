@@ -76,7 +76,7 @@ import com.android.exttv.manager.SectionManager.CardView
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
-import com.android.exttv.util.UninstallSettingButtons
+import com.android.exttv.util.ContextButtons
 import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.nonAddonKE
@@ -91,8 +91,10 @@ import com.android.exttv.manager.PythonManager as Python
 fun CatalogBrowser(
     context: MainActivity,
 ) {
-    Addons.init(context)
-    Python.init(context)
+    Addons.settingsRequesters = rememberUpdatedState(
+        newValue = List(Addons.size()) { FocusRequester() }
+    ).value
+
 
     val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
     val addons = Addons.getAllAddons().map { it to myIcon }
@@ -134,7 +136,7 @@ fun CatalogBrowser(
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
                         if(addonIndex<addons.size){
-                            UninstallSettingButtons(addonIndex, item)
+                            ContextButtons(addonIndex, item)
                             modifier = modifier.focusRequester(focusRequesters[addonIndex])
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
                             isSelected = Addons.isSelected(addonIndex)
@@ -207,7 +209,8 @@ fun CatalogBrowser(
                 focusRequesters[AddonManager.selectedIndex].requestFocus()
         if (Sections.isEmpty()) { // keep the drawer open when sections is empty
             drawerState.setValue(DrawerValue.Open)
-            focusRequesters[0].requestFocus()
+            if(focusRequesters.isNotEmpty())
+                focusRequesters[0].requestFocus()
         }
     }
 

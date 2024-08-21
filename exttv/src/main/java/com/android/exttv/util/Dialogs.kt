@@ -64,7 +64,6 @@ import okio.IOException
 import org.json.JSONObject
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.StatusManager as Status
-import com.android.exttv.manager.PythonManager as Python
 
 @Composable
 fun UninstallDialog(indexAddon: Int) {
@@ -116,6 +115,7 @@ fun RepositoryDialog(
     Status.loadingState = LoadingStatus.FETCHING_ADDON
     val videoAddons = mutableListOf<Addon>()
     val url = "https://kodi.tv/page-data/addons/omega/search/page-data.json"
+    val coroutineScope = rememberCoroutineScope()
 
     val jsonData = fetchUrlContent(url)
     if (jsonData != null) {
@@ -184,7 +184,11 @@ fun RepositoryDialog(
                         onClick = {
                             Status.showRepositoryDialog = false
                             Status.loadingState = LoadingStatus.SELECTING_SECTION
-                            Python.addAddon("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
+                            coroutineScope.launch {
+                                withContext(Dispatchers.IO) {
+                                    Addons.installAddon("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
+                                }
+                            }
                         },
                         modifier = Modifier
                             .padding(vertical = 8.dp)
@@ -340,8 +344,7 @@ fun GithubDialog() {
                                     val repo = "addon"
                                     val branch = "master"
                                     val url = "$owner/$repo/$branch"
-
-                                    Python.addAddon(url, isOfficial = false) // This might be a long operation
+                                    Addons.installAddon(url)
                                 }
                             }
                         },

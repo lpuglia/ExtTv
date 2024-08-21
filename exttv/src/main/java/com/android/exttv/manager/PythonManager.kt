@@ -3,7 +3,6 @@ package com.android.exttv.manager
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import com.android.exttv.manager.SectionManager
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
@@ -21,17 +20,6 @@ object PythonManager {
         Thread {
             exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
         }.apply { start(); join() }
-    }
-
-    fun addAddon(url: String, isOfficial : Boolean = true) {
-        Status.loadingState = LoadingStatus.INSTALLING_ADDON
-        var pluginName = ""
-        Thread {
-            val utils = Python.getInstance().getModule("utils")
-            pluginName = utils.callAttr(if(isOfficial)"get_from_repository" else "get_from_git", url, true).toString()
-            Addons.add(pluginName)
-        }.apply { start(); join() }
-        selectAddon(pluginName)
     }
 
     fun selectAddon(pluginName: String) {

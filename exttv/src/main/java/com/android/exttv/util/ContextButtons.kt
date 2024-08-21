@@ -30,7 +30,7 @@ import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.StatusManager as Status
 
 @Composable
-fun UninstallSettingButtons(
+fun ContextButtons(
     addonIndex: Int,
     item: Pair<String, ImageVector>,
 ) {

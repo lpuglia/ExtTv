@@ -11,6 +11,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.tv.material3.MaterialTheme
+import com.android.exttv.manager.AddonManager
+import com.android.exttv.manager.PythonManager
 
 class MainActivity : ComponentActivity() {
 
@@ -78,6 +80,8 @@ class MainActivity : ComponentActivity() {
         instance = this
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
+        AddonManager.init(this)
+        PythonManager.init(this)
 
         setContent {
             MaterialTheme {
