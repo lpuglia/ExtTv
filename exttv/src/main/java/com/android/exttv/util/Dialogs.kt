@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,7 +36,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.tv.foundation.lazy.list.TvLazyColumn
 import androidx.tv.foundation.lazy.list.itemsIndexed
+import androidx.tv.foundation.lazy.list.rememberTvLazyListState
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -145,6 +146,7 @@ fun RepositoryDialog(
         context.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
         Status.showRepositoryDialog = false
     }
+    Status.loadingState = LoadingStatus.DONE
 
     Dialog(onDismissRequest = {
         Status.loadingState = LoadingStatus.DONE
@@ -170,9 +172,14 @@ fun RepositoryDialog(
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
-            var isFocused by remember { mutableStateOf(false) }
+            val listState = rememberTvLazyListState()
+            val focusRequester = remember {FocusRequester()}
 
+            LaunchedEffect(Unit) {
+               focusRequester.requestFocus()
+            }
             TvLazyColumn(
+                state = listState,
                 modifier = Modifier
                             .fillMaxWidth()
                             .background(Color(0xA30F2B31))
@@ -193,7 +200,8 @@ fun RepositoryDialog(
                         modifier = Modifier
                             .padding(vertical = 8.dp)
                             .fillMaxWidth()
-                            .height(100.dp),
+                            .height(100.dp)
+                            .let { if (index==0) it.focusRequester(focusRequester) else it },
 //                            .clickable {
 //                                selectedItem = addon
 //                            },
