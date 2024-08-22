@@ -71,8 +71,6 @@ import com.android.exttv.MainActivity
 import com.android.exttv.R
 import com.android.exttv.manager.AddonManager
 import com.android.exttv.manager.LoadingStatus
-import com.android.exttv.manager.Section
-import com.android.exttv.manager.SectionManager.CardView
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
@@ -283,7 +281,7 @@ fun Content(
         )
         {
             itemsIndexed(Status.sectionList) { index, section ->
-                Section(
+                SectionItem(
                     section = section,
                     sectionIndex = index
                 )
@@ -293,8 +291,8 @@ fun Content(
 }
 
 @Composable
-fun Section(
-    section: Section,
+fun SectionItem(
+    section: Sections.Section,
     sectionIndex: Int
 ) {
     val listState = rememberTvLazyListState()
@@ -333,7 +331,7 @@ fun Section(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CardItem(
-    card: CardView,
+    card: Sections.CardView,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
     requestFocus: Boolean

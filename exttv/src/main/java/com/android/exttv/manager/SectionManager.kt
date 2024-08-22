@@ -1,14 +1,10 @@
 package com.android.exttv.manager
 
-import com.android.exttv.manager.SectionManager.CardView
-
-data class Section(
-    val title: String,
-    val movieList: List<CardView>,
-)
-
 object SectionManager {
-
+    data class Section(
+        val title: String,
+        val movieList: List<CardView>,
+    )
     data class CardView(
         val id: String,
         val label : String,

@@ -17,7 +17,7 @@ enum class LoadingStatus {
 object StatusManager {
     val titleMap: MutableMap<String, String> = mutableMapOf()
     val focusRequester = FocusRequester()
-    var sectionList by mutableStateOf(listOf<Section>())
+    var sectionList by mutableStateOf(listOf<SectionManager.Section>())
     var loadingState by mutableStateOf(LoadingStatus.DONE)
     var showGithubDialog by mutableStateOf(false)
     var showRepositoryDialog by mutableStateOf(false)

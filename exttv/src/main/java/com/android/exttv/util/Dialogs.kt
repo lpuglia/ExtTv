@@ -54,7 +54,6 @@ import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.MainActivity
-import com.android.exttv.manager.Addon
 import com.android.exttv.manager.LoadingStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -138,7 +137,7 @@ fun RepositoryDialog(
     context: MainActivity,
 ) {
     Status.loadingState = LoadingStatus.FETCHING_ADDON
-    val videoAddons = mutableListOf<Addon>()
+    val videoAddons = mutableListOf<Addons.Addon>()
     val url = "https://kodi.tv/page-data/addons/omega/search/page-data.json"
     val coroutineScope = rememberCoroutineScope()
 
@@ -155,7 +154,7 @@ fun RepositoryDialog(
             for (j in 0 until categories.length()) {
                 val category = categories.getJSONObject(j).getString("name")
                 if (category == "Video addons") {
-                    val videoAddon = Addon(
+                    val videoAddon = Addons.Addon(
                         addonid = addon.getString("addonid"),
                         name = addon.getString("name"),
                         icon = addon.getString("icon"),
@@ -240,7 +239,7 @@ fun RepositoryDialog(
 }
 
 @Composable
-fun AddonBox(addon: Addon) {
+fun AddonBox(addon: Addons.Addon) {
     Box(
         modifier = Modifier
             .size(width = 400.dp, height = 100.dp)
