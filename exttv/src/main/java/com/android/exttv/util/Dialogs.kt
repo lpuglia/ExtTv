@@ -65,6 +65,12 @@ import okio.IOException
 import org.json.JSONObject
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.StatusManager as Status
+import com.android.exttv.manager.SectionManager as Sections
+
+@Composable
+fun FavouriteMenu() {
+    Log.d("Dialogs", Sections.getFocusedCard().toString())
+}
 
 @Composable
 fun UninstallDialog(indexAddon: Int) {

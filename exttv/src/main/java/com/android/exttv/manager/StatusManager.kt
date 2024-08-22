@@ -17,11 +17,11 @@ enum class LoadingStatus {
 object StatusManager {
     val titleMap: MutableMap<String, String> = mutableMapOf()
     val focusRequester = FocusRequester()
-    var sectionList by mutableStateOf(listOf<SectionManager.Section>())
     var loadingState by mutableStateOf(LoadingStatus.DONE)
     var showGithubDialog by mutableStateOf(false)
     var showRepositoryDialog by mutableStateOf(false)
     var bgImage by mutableStateOf("")
     var showUninstallDialog by mutableStateOf(false)
     var showUpdateDialog by mutableStateOf(false)
+    var showFavouriteMenu by mutableStateOf(false)
 }

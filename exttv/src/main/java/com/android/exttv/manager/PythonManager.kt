@@ -15,7 +15,7 @@ object PythonManager {
     private var exttv: PyObject? = null
 
     fun init(context: Activity) {
-        if (exttv != null && Status.sectionList.isNotEmpty()) return
+        if (exttv != null && Sections.sectionList.isNotEmpty()) return
         if (!Python.isStarted()) Python.start(AndroidPlatform(context))
         Thread {
             exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
@@ -40,19 +40,19 @@ object PythonManager {
             val title : String = Status.titleMap.getOrDefault(argv2, "")
             // returned value from exttv.py
             val newSection = Sections.Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<SectionManager.CardView>)
-            Status.titleMap.putAll(newSection.movieList.associate { it.id to it.label })
+            Status.titleMap.putAll(newSection.cardList.associate { it.id to it.label })
 
-            if(newSection.movieList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, argv2, newSection)) {
+            if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, argv2, newSection)) {
                 Sections.updateSelectedSection(sectionIndex, cardIndex)
             }
 
             try {
                 Handler(Looper.getMainLooper()).post {
-                    if(sectionIndex==-1 && newSection.movieList.isEmpty()){
+                    if(sectionIndex==-1 && newSection.cardList.isEmpty()){
                         Sections.clearSections()
                     }else{
                         Status.loadingState = LoadingStatus.SECTION_LOADED
-                        Status.sectionList = Sections.getSectionsInOrder()
+                        Sections.sectionList = Sections.getSectionsInOrder()
                     }
                 }
             } catch (e: InterruptedException) {

@@ -1,9 +1,14 @@
 package com.android.exttv.manager
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 object SectionManager {
     data class Section(
         val title: String,
-        val movieList: List<CardView>,
+        val cardList: List<CardView>,
     )
     data class CardView(
         val id: String,
@@ -15,15 +20,22 @@ object SectionManager {
         val fanartUrl: String,
     )
 
+    var focusedIndex by mutableIntStateOf(-1)
+    var focusedCardIndex by mutableIntStateOf(-1)
     private val sections = LinkedHashMap<String, Section>()
     private val selectedIndices: MutableList<Int?> = mutableListOf()
+    var sectionList by mutableStateOf(listOf<SectionManager.Section>())
+
+    fun getFocusedCard(): CardView {
+        return sectionList[focusedIndex].cardList[focusedCardIndex]
+    }
 
     fun removeAndAdd(index: Int, key: String, newSection: Section): Boolean {
         // Convert the map keys to a list to easily access by index
         val keys = sections.keys.toList()
 
         // Compare newSection with the section at index-1 if index is greater than 0
-        if (index > 0 && sections[keys[index - 1]]?.movieList == newSection.movieList) {
+        if (index > 0 && sections[keys[index - 1]]?.cardList == newSection.cardList) {
             return false// Ignore the addition if the newSection is equal to the last added section
         }
 
@@ -85,6 +97,6 @@ object SectionManager {
         selectedIndices.clear()
         StatusManager.bgImage = ""
         StatusManager.loadingState = LoadingStatus.DONE
-        StatusManager.sectionList = getSectionsInOrder()
+        sectionList = getSectionsInOrder()
     }
 }

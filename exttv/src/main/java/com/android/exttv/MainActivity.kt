@@ -1,12 +1,14 @@
 package com.android.exttv
 
 import CatalogBrowser
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.StrictMode
 import android.util.Log
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -90,4 +92,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("RestrictedApi")
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Remap back-space to the back key
+        if (event.keyCode == KeyEvent.KEYCODE_DEL) {
+            dispatchKeyEvent(KeyEvent(event.action, KeyEvent.KEYCODE_BACK))
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
 }

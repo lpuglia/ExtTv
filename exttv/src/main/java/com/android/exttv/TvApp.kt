@@ -71,11 +71,12 @@ import com.android.exttv.MainActivity
 import com.android.exttv.R
 import com.android.exttv.manager.AddonManager
 import com.android.exttv.manager.LoadingStatus
+import com.android.exttv.manager.SectionManager
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
 import com.android.exttv.util.ContextButtons
-import com.android.exttv.util.ContextManager
+import com.android.exttv.util.FavouriteMenu
 import com.android.exttv.util.UpdateDialog
 import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
@@ -197,6 +198,7 @@ fun CatalogBrowser(
     if (Status.showRepositoryDialog) RepositoryDialog(context);
     if (Status.showUninstallDialog)  UninstallDialog(Addons.focusedContextIndex);
     if (Status.showUpdateDialog)     UpdateDialog(context, Addons.focusedContextIndex);
+    if (Status.showFavouriteMenu)    FavouriteMenu();
 
     LaunchedEffect(drawerState.currentValue, AddonManager.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)
@@ -279,7 +281,7 @@ fun Content(
             verticalArrangement = Arrangement.Bottom
         )
         {
-            itemsIndexed(Status.sectionList) { index, section ->
+            itemsIndexed(Sections.sectionList) { index, section ->
                 SectionItem(
                     section = section,
                     sectionIndex = index
@@ -295,7 +297,7 @@ fun SectionItem(
     sectionIndex: Int
 ) {
     val listState = rememberTvLazyListState()
-    LaunchedEffect(section.movieList) {
+    LaunchedEffect(section.cardList) {
         listState.scrollToItem(0)
     }
 
@@ -312,7 +314,7 @@ fun SectionItem(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
     ) {
-        itemsIndexed(section.movieList) { cardIndex, card ->
+        itemsIndexed(section.cardList) { cardIndex, card ->
             CardItem(
                 card = card,
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
@@ -321,7 +323,9 @@ fun SectionItem(
                         Python.selectSection(card.id, sectionIndex, cardIndex)
                     }
                 },
-                requestFocus = cardIndex==0 && sectionIndex == Status.sectionList.size-1
+                requestFocus = cardIndex==0 && sectionIndex == Sections.sectionList.size-1,
+                sectionIndex,
+                cardIndex
             )
         }
     }
@@ -330,10 +334,12 @@ fun SectionItem(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CardItem(
-    card: Sections.CardView,
+    card: SectionManager.CardView,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    requestFocus: Boolean
+    requestFocus: Boolean,
+    sectionIndex: Int,
+    cardIndex: Int
 ) {
     val bgModifier = if (isSelected) {
         Modifier.background(Color(0x44BB0000))
@@ -353,7 +359,6 @@ fun CardItem(
             .width(200.dp)
     ){
         var isFocused by remember { mutableStateOf(false) }
-
         Card(
             modifier = Modifier
                 .padding(start = 10.dp)
@@ -364,6 +369,11 @@ fun CardItem(
                 }
                 .let { if (requestFocus) it.focusRequester(Status.focusRequester) else it },
             onClick = onClick,
+            onLongClick = {
+                Status.showFavouriteMenu = true
+                Sections.focusedIndex = sectionIndex
+                Sections.focusedCardIndex = cardIndex
+            },
             colors = CardDefaults.colors(containerColor = Color(0x00000000)),
         ) {
             Box() {
@@ -413,7 +423,7 @@ fun CardItem(
         Spacer(modifier = Modifier.height(10.dp))
     }
     LaunchedEffect(Status.loadingState) {
-        if (requestFocus && Status.sectionList.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_LOADED) {
+        if (requestFocus && Sections.sectionList.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_LOADED) {
             Status.loadingState = LoadingStatus.DONE
             Status.focusRequester.requestFocus()
         }
