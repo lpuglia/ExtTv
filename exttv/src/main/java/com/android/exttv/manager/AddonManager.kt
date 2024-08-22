@@ -23,10 +23,8 @@ data class Addon(
 object AddonManager {
     private lateinit var addons : SortedSet<String>
     var addonsPath = File("")
-    var focusedIndex by mutableIntStateOf(-1)
+    var focusedContextIndex by mutableIntStateOf(-1)
     var selectedIndex by mutableIntStateOf(-1)
-    // this force focus to settings button when pressing left from addon item
-    var settingsRequesters by mutableStateOf(listOf<FocusRequester>())
 
     fun init(context: Context){
         addonsPath = File(context.filesDir, "exttv_home/addons")
@@ -66,7 +64,7 @@ object AddonManager {
             directory.deleteRecursively()
             val currentlySelected = addons.elementAtOrNull(selectedIndex)
             addons.remove(addonName)
-            focusedIndex = -1
+            focusedContextIndex = -1
             if(selectedIndex==index){
                 selectedIndex = -1
                 SectionManager.clearSections()

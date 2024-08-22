@@ -77,6 +77,8 @@ import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
 import com.android.exttv.util.ContextButtons
+import com.android.exttv.util.ContextManager
+import com.android.exttv.util.UpdateDialog
 import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.nonAddonKE
@@ -91,11 +93,6 @@ import com.android.exttv.manager.PythonManager as Python
 fun CatalogBrowser(
     context: MainActivity,
 ) {
-    Addons.settingsRequesters = rememberUpdatedState(
-        newValue = List(Addons.size()) { FocusRequester() }
-    ).value
-
-
     val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
     val addons = Addons.getAllAddons().map { it to myIcon }
     val extras = listOf(
@@ -103,15 +100,15 @@ fun CatalogBrowser(
         "Add from GitHub" to Icons.Default.Add,
         "Settings" to Icons.Default.Settings,
     )
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
     val drawerWidth by animateDpAsState(
-        targetValue = if (drawerState.currentValue == DrawerValue.Open) 410.dp else 80.dp,
+        targetValue = if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp,
         label = ""
     )
     val focusRequesters by rememberUpdatedState(
-        newValue = List(addons.size) { FocusRequester() }
+        newValue = List(addons.size + extras.size) { FocusRequester() }
     )
+    ContextManager.Init()
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -135,9 +132,9 @@ fun CatalogBrowser(
                     Row {
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
+                        modifier = modifier.focusRequester(focusRequesters[addonIndex])
                         if(addonIndex<addons.size){
                             ContextButtons(addonIndex, item)
-                            modifier = modifier.focusRequester(focusRequesters[addonIndex])
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
                             isSelected = Addons.isSelected(addonIndex)
                         }else{
@@ -199,9 +196,10 @@ fun CatalogBrowser(
             )
         }
     }
-    if (Status.showGithubDialog) GithubDialog();
+    if (Status.showGithubDialog)     GithubDialog();
     if (Status.showRepositoryDialog) RepositoryDialog(context);
-    if (Status.showContextMenu) UninstallDialog(Addons.focusedIndex);
+    if (Status.showUninstallDialog)  UninstallDialog(Addons.focusedContextIndex);
+    if (Status.showUpdateDialog)     UpdateDialog(Addons.focusedContextIndex);
 
     LaunchedEffect(drawerState.currentValue, AddonManager.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)

@@ -68,25 +68,49 @@ import com.android.exttv.manager.StatusManager as Status
 
 @Composable
 fun UninstallDialog(indexAddon: Int) {
-    val coroutineScope = rememberCoroutineScope()
-
-    if (Status.showContextMenu) {
+    if (Status.showUninstallDialog) {
         AlertDialog(
-            onDismissRequest = { Status.showContextMenu = false },
-            title = { Text(text = "Context Menu") },
+            onDismissRequest = { Status.showUninstallDialog = false },
+            title = { Text(text = "Uninstall") },
             text = { Text(text = "Do you want to uninstall ${Addons.get(indexAddon)}") },
             confirmButton = {
                 Button(
                     onClick = {
                         Addons.uninstallAddon(indexAddon)
-                        Status.showContextMenu = false
+                        Status.showUninstallDialog = false
                     }
                 ) {
                     Text("Uninstall")
                 }
             },
             dismissButton = {
-                Button(onClick = { Status.showContextMenu = false }) {
+                Button(onClick = { Status.showUninstallDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun UpdateDialog(indexAddon: Int) {
+    if (Status.showUpdateDialog) {
+        AlertDialog(
+            onDismissRequest = { Status.showUpdateDialog = false },
+            title = { Text(text = "Update") },
+            text = { Text(text = "Do you want to update ${Addons.get(indexAddon)}") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        Addons.installAddon(Addons.get(indexAddon), true)
+                        Status.showUpdateDialog = false
+                    }
+                ) {
+                    Text("Update")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { Status.showUpdateDialog = false }) {
                     Text("Cancel")
                 }
             }

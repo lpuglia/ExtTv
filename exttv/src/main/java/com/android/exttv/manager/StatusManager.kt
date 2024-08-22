@@ -22,5 +22,6 @@ object StatusManager {
     var showGithubDialog by mutableStateOf(false)
     var showRepositoryDialog by mutableStateOf(false)
     var bgImage by mutableStateOf("")
-    var showContextMenu by mutableStateOf(false)
+    var showUninstallDialog by mutableStateOf(false)
+    var showUpdateDialog by mutableStateOf(false)
 }
