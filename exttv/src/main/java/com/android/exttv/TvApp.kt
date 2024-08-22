@@ -106,7 +106,6 @@ fun CatalogBrowser(
     val focusRequesters by rememberUpdatedState(
         newValue = List(addons.size + extras.size) { FocusRequester() }
     )
-    ContextManager.Init()
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -197,7 +196,7 @@ fun CatalogBrowser(
     if (Status.showGithubDialog)     GithubDialog();
     if (Status.showRepositoryDialog) RepositoryDialog(context);
     if (Status.showUninstallDialog)  UninstallDialog(Addons.focusedContextIndex);
-    if (Status.showUpdateDialog)     UpdateDialog(Addons.focusedContextIndex);
+    if (Status.showUpdateDialog)     UpdateDialog(context, Addons.focusedContextIndex);
 
     LaunchedEffect(drawerState.currentValue, AddonManager.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)

@@ -58,6 +58,7 @@ import com.android.exttv.manager.LoadingStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.IOException
@@ -92,7 +93,10 @@ fun UninstallDialog(indexAddon: Int) {
 }
 
 @Composable
-fun UpdateDialog(indexAddon: Int) {
+fun UpdateDialog(
+    context: MainActivity,
+    indexAddon: Int
+) {
     if (Status.showUpdateDialog) {
         AlertDialog(
             onDismissRequest = { Status.showUpdateDialog = false },
@@ -101,7 +105,26 @@ fun UpdateDialog(indexAddon: Int) {
             confirmButton = {
                 Button(
                     onClick = {
-                        Addons.installAddon(Addons.get(indexAddon), true)
+                        val json = Addons.addonsPath.resolve("${Addons.get(indexAddon)}/addon.json").readText()
+                        val data = Json.decodeFromString(PluginData.serializer(), json)
+                        if(data.sourceURL == data.zipURL){
+                            val regex = Regex("""https://github\.com/([^/]+)/([^/]+)/archive/refs/heads/([^/]+)\.zip""")
+                            val matchResult = regex.find(data.zipURL)
+                            if (matchResult != null) {
+                                val owner = matchResult.groupValues[1]
+                                val repository = matchResult.groupValues[2]
+                                val branch = matchResult.groupValues[3]
+                                Addons.installAddon("$owner/$repository/$branch", true)
+                            }
+                        }else{
+                            val (zipPath, _) = getLatestZipName(data.sourceURL)
+                            if(zipPath!=data.zipURL) { // update if different zip name
+                                context.showToast("Installing updates", Toast.LENGTH_SHORT)
+                                Addons.installAddon(data.sourceURL, true)
+                            }else{
+                                context.showToast("No updates available", Toast.LENGTH_SHORT)
+                            }
+                        }
                         Status.showUpdateDialog = false
                     }
                 ) {

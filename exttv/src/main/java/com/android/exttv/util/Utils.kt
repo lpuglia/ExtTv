@@ -6,6 +6,9 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.android.exttv.manager.AddonManager as Addons
 import org.json.JSONObject
 import java.io.File
@@ -116,14 +119,14 @@ fun getFromGit(url: String, force: Boolean = false) : String {
             throw Exception("Failed to get plugin id")
         }
 
-        downloadAndExtractPlugin(zipPath, pluginName, force)
+        downloadAndExtractPlugin(zipPath, pluginName, zipPath, false)
         return pluginName
     } catch (e: Exception) {
         throw Exception("Error occurred while processing URL: ${e.message}", e)
     }
 }
 
-fun getFromRepository(url: String, force: Boolean = false): String {
+fun getLatestZipName(url: String): Pair<String, String>{
     try {
         // Make an HTTP GET request to the provided URL
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -148,13 +151,17 @@ fun getFromRepository(url: String, force: Boolean = false): String {
                 .getJSONObject("data")
                 .getJSONObject("addon")
                 .getString("addonid")
-
-            downloadAndExtractPlugin(zipPath, pluginName, force)
-            return pluginName
+            return Pair(zipPath, pluginName)
         }
     } catch (e: Exception) {
         throw Exception("Failed to fetch or decode JSON data: ${e.message}", e)
     }
+}
+
+fun getFromRepository(url: String, force: Boolean = false): String {
+    val (zipPath, pluginName) = getLatestZipName(url)
+    downloadAndExtractPlugin(zipPath, pluginName, url, false)
+    return pluginName
 }
 
 fun unzip(zipFile: File, targetDir: File) {
@@ -195,14 +202,21 @@ fun getRootDirectoryName(zipFile: File): String? {
 class DownloadError(message: String) : Exception(message)
 class ExtractionError(message: String) : Exception(message)
 
-fun downloadAndExtractPlugin(url: String, pluginName: String, force: Boolean = false) {
+@Serializable
+data class PluginData(
+    val zipURL: String,
+    val pluginName: String,
+    val sourceURL: String
+)
+
+fun downloadAndExtractPlugin(zipURL: String, pluginName: String, sourceURL: String, force: Boolean = false) {
     Thread {
-        val filename = url.substringAfterLast('/')
+        val filename = zipURL.substringAfterLast('/')
         val pluginPath = Addons.addonsPath.resolve(pluginName)
 
         if (force || !pluginPath.exists()) {
             try {
-                val connection = URL(url).openConnection() as HttpURLConnection
+                val connection = URL(zipURL).openConnection() as HttpURLConnection
                 connection.inputStream.use { input ->
                     val cache = Addons.addonsPath.resolve("../cache")
                     cache.deleteRecursively()
@@ -213,10 +227,8 @@ fun downloadAndExtractPlugin(url: String, pluginName: String, force: Boolean = f
                     }
 
                     if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                        throw DownloadError("Failed to download $url. Status code: ${connection.responseCode}")
+                        throw DownloadError("Failed to download $zipURL. Status code: ${connection.responseCode}")
                     }
-
-                    Log.d("D&E","Downloaded ${zipFile.toPath()} successfully")
 
                     try {
                         if (pluginPath.exists()) {
@@ -227,6 +239,10 @@ fun downloadAndExtractPlugin(url: String, pluginName: String, force: Boolean = f
 
                         val extractedFolder = cache.resolve(getRootDirectoryName(zipFile)!!)
                         extractedFolder.renameTo(pluginPath)
+
+                        val pluginData = PluginData(zipURL, pluginName, sourceURL)
+                        pluginPath.resolve("addon.json").writeText(Json.encodeToString(pluginData))
+
                         Log.d("D&E","Plugin $pluginName extracted successfully.")
                     } catch (e: Exception) {
                         throw ExtractionError("Failed to extract ${zipFile.toPath()}: ${e.message}")

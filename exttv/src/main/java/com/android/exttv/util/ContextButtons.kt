@@ -51,6 +51,7 @@ fun ContextButtons(
     addonIndex: Int,
     item: Pair<String, ImageVector>,
 ) {
+    ContextManager.Init() // TODO: move it away from here
     val animatedDpList = animateDpAsState(
             targetValue = if(Addons.focusedContextIndex==addonIndex) 180.dp else 0.dp,
             label = "Animated Dp"

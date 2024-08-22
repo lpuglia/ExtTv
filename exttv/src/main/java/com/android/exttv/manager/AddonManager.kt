@@ -4,9 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.focus.FocusRequester
 import com.android.exttv.util.getFromGit
 import com.android.exttv.util.getFromRepository
 import java.io.File
@@ -54,6 +52,7 @@ object AddonManager {
         addons.add(pluginName)
         if(currentlySelected != null)
             selectedIndex = addons.indexOf(currentlySelected)
+        focusedContextIndex = -1
         PythonManager.selectAddon(pluginName)
     }
 
