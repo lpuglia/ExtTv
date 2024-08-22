@@ -57,7 +57,7 @@ fun ContextButtons(
             label = "Animated Dp"
         ).value
     Row(
-        Modifier.width(animatedDpList).height(50.dp)
+        Modifier.height(50.dp).width(animatedDpList)
     ) {
         Button(
             onClick = {
@@ -131,11 +131,20 @@ fun uninstallButtonKE(
        event.key == Key.DirectionLeft   ||
       (addonIndex==0 && event.key == Key.DirectionUp)){ return true }
 
-    if (event.key == Key.DirectionUp || event.key == Key.DirectionDown) {
-        Addons.focusedContextIndex = -1
-    } else if (event.key == Key.DirectionRight){
-        ContextManager.updateReqs[addonIndex].requestFocus()
-        return true
+    when (event.key) {
+        Key.DirectionUp -> {
+            Addons.focusedContextIndex -= 1
+            ContextManager.uninstallReqs[Addons.focusedContextIndex].requestFocus()
+            return true
+        } Key.DirectionDown -> {
+            Addons.focusedContextIndex += 1
+            if (Addons.focusedContextIndex >= Addons.size()) return false
+            ContextManager.uninstallReqs[Addons.focusedContextIndex].requestFocus()
+            return true
+        } Key.DirectionRight -> {
+            ContextManager.updateReqs[addonIndex].requestFocus()
+            return true
+        }
     }
     return false
 }
@@ -147,14 +156,23 @@ fun updateButtonKE(
     if(event.type == KeyEventType.KeyUp ||
       (addonIndex==0 && event.key == Key.DirectionUp)){ return true }
 
-    if (event.key == Key.DirectionUp || event.key == Key.DirectionDown) {
-        Addons.focusedContextIndex = -1
-    } else if (event.key == Key.DirectionLeft) {
-        ContextManager.uninstallReqs[addonIndex].requestFocus()
-        return true
-    } else if (event.key == Key.DirectionRight){
-        ContextManager.settingReqs[addonIndex].requestFocus()
-        return true
+    when (event.key) {
+        Key.DirectionUp -> {
+            Addons.focusedContextIndex -= 1
+            ContextManager.updateReqs[Addons.focusedContextIndex].requestFocus()
+            return true
+        } Key.DirectionDown -> {
+            Addons.focusedContextIndex += 1
+            if (Addons.focusedContextIndex >= Addons.size()) return false
+            ContextManager.updateReqs[Addons.focusedContextIndex].requestFocus()
+            return true
+        } Key.DirectionLeft -> {
+            ContextManager.uninstallReqs[addonIndex].requestFocus()
+            return true
+        } Key.DirectionRight -> {
+            ContextManager.settingReqs[addonIndex].requestFocus()
+            return true
+        }
     }
     return false
 }
@@ -166,11 +184,22 @@ fun settingButtonKE(
     if (event.type == KeyEventType.KeyUp ||
        (addonIndex==0 && event.key == Key.DirectionUp)){ return true }
 
-    if (event.key == Key.DirectionRight || event.key == Key.DirectionUp || event.key == Key.DirectionDown) {
-        Addons.focusedContextIndex = -1
-    } else if (event.key == Key.DirectionLeft) {
-        ContextManager.updateReqs[addonIndex].requestFocus()
-        return true
+    when (event.key) {
+        Key.DirectionUp -> {
+            Addons.focusedContextIndex -= 1
+            ContextManager.settingReqs[Addons.focusedContextIndex].requestFocus()
+            return true
+        } Key.DirectionDown -> {
+            Addons.focusedContextIndex += 1
+            if (Addons.focusedContextIndex >= Addons.size()) return false
+            ContextManager.settingReqs[Addons.focusedContextIndex].requestFocus()
+            return true
+        } Key.DirectionRight -> {
+            Addons.focusedContextIndex = -1
+        } Key.DirectionLeft -> {
+            ContextManager.updateReqs[addonIndex].requestFocus()
+            return true
+        }
     }
     return false
 }
