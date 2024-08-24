@@ -14,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.tv.material3.MaterialTheme
 import com.android.exttv.manager.AddonManager
+import com.android.exttv.manager.FavouriteManager
 import com.android.exttv.manager.PythonManager
 
 class MainActivity : ComponentActivity() {
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
         StrictMode.setThreadPolicy(policy)
         AddonManager.init(this)
         PythonManager.init(this)
+        FavouriteManager.init(this)
 
         setContent {
             MaterialTheme {

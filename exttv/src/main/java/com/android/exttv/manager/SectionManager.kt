@@ -8,9 +8,9 @@ import androidx.compose.runtime.setValue
 object SectionManager {
     data class Section(
         val title: String,
-        val cardList: List<CardView>,
+        val cardList: List<CardItem>,
     )
-    data class CardView(
+    data class CardItem(
         val id: String,
         val label : String,
         val label2 : String,
@@ -18,6 +18,7 @@ object SectionManager {
         val thumbnailUrl: String,
         val posterUrl: String,
         val fanartUrl: String,
+        val isFolder: Boolean,
     )
 
     var focusedIndex by mutableIntStateOf(-1)
@@ -26,7 +27,7 @@ object SectionManager {
     private val selectedIndices: MutableList<Int?> = mutableListOf()
     var sectionList by mutableStateOf(listOf<SectionManager.Section>())
 
-    fun getFocusedCard(): CardView {
+    fun getFocusedCard(): CardItem {
         return sectionList[focusedIndex].cardList[focusedCardIndex]
     }
 

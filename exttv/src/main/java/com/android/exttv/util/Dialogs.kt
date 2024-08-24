@@ -3,6 +3,7 @@ package com.android.exttv.util
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -54,7 +56,9 @@ import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.MainActivity
+import com.android.exttv.manager.FavouriteManager
 import com.android.exttv.manager.LoadingStatus
+import com.android.exttv.manager.SectionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,11 +69,104 @@ import okio.IOException
 import org.json.JSONObject
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.StatusManager as Status
-import com.android.exttv.manager.SectionManager as Sections
+
+@Composable
+fun NewPlaylistMenu() {
+    val cardItem = SectionManager.getFocusedCard()
+    if (Status.showNewPlaylistMenu) {
+        var playlistName by remember { mutableStateOf("") }
+        val focusRequester = remember { FocusRequester() }
+        val focusManager = LocalFocusManager.current
+
+        Dialog(onDismissRequest = { Status.showNewPlaylistMenu = false }) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Enter Playlist Name",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    TextField(
+                        value = playlistName,
+                        onValueChange = { newName -> playlistName = newName },
+                        placeholder = { Text("New Playlist") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester)
+                            .onKeyEvent { event ->
+                                if (event.type == KeyEventType.KeyDown) {
+                                    when (event.key) {
+                                        Key.Enter -> {
+                                            FavouriteManager.addCardToListOrCreate(playlistName, cardItem)
+                                            Status.showNewPlaylistMenu = false // Close dialog after creation
+                                            Status.showFavouriteMenu = false
+                                            focusManager.clearFocus() // Clear focus
+                                            true
+                                        }
+                                        else -> false
+                                    }
+                                } else {
+                                    false
+                                }
+                            },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                FavouriteManager.addCardToListOrCreate(playlistName, cardItem)
+                                Status.showNewPlaylistMenu = false // Close dialog after creation
+                                Status.showFavouriteMenu = false
+                                focusManager.clearFocus() // Clear focus
+                            }
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
+
+        // Request focus when the dialog is first composed
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+    }
+}
+
+@Composable
+fun OptionItem(text: String, onClick: () -> Unit) {
+    Text(
+        text = text,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable(onClick = onClick),
+        color = Color.Black
+    )
+}
 
 @Composable
 fun FavouriteMenu() {
-    Log.d("Dialogs", Sections.getFocusedCard().toString())
+    if (Status.showFavouriteMenu) {
+        Dialog(onDismissRequest = { Status.showFavouriteMenu = false }) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    OptionItem(text = "Add to new playlist", onClick = {
+                        Status.showNewPlaylistMenu = true
+                    })
+                    OptionItem(text = "Add content to new playlist", onClick = {})
+                    OptionItem(text = "Add to playlist", onClick = {})
+                    OptionItem(text = "Add content to playlist", onClick = {})
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -233,10 +330,10 @@ fun RepositoryDialog(
             TvLazyColumn(
                 state = listState,
                 modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xA30F2B31))
-                            .padding(top = 38.dp)
-                            .padding(horizontal = 23.dp)
+                    .fillMaxWidth()
+                    .background(Color(0xA30F2B31))
+                    .padding(top = 38.dp)
+                    .padding(horizontal = 23.dp)
             ) {
                 itemsIndexed(videoAddons) { index, addon ->
                     Card(
@@ -253,7 +350,7 @@ fun RepositoryDialog(
                             .padding(vertical = 8.dp)
                             .fillMaxWidth()
                             .height(100.dp)
-                            .let { if (index==0) it.focusRequester(focusRequester) else it },
+                            .let { if (index == 0) it.focusRequester(focusRequester) else it },
 //                            .clickable {
 //                                selectedItem = addon
 //                            },
@@ -377,6 +474,7 @@ fun GithubDialog() {
                                                 }
                                                 true
                                             }
+
                                             else -> false
                                         }
                                     } else {

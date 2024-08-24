@@ -77,6 +77,7 @@ import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
 import com.android.exttv.util.ContextButtons
 import com.android.exttv.util.FavouriteMenu
+import com.android.exttv.util.NewPlaylistMenu
 import com.android.exttv.util.UpdateDialog
 import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
@@ -93,11 +94,9 @@ fun CatalogBrowser(
     context: MainActivity,
 ) {
     val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
-    val addons = Addons.getAllAddons().map { it to myIcon }
-    val extras = listOf(
+    val drawerItems = Addons.getAllAddons().map { it to myIcon } + listOf(
         "Add from Repository" to Icons.Default.Add,
         "Add from GitHub" to Icons.Default.Add,
-        "Settings" to Icons.Default.Settings,
     )
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
     val drawerWidth by animateDpAsState(
@@ -105,7 +104,7 @@ fun CatalogBrowser(
         label = ""
     )
     val focusRequesters by rememberUpdatedState(
-        newValue = List(addons.size + extras.size) { FocusRequester() }
+        newValue = List(drawerItems.size) { FocusRequester() }
     )
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -126,12 +125,12 @@ fun CatalogBrowser(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                itemsIndexed(addons+extras){ addonIndex, item ->
+                itemsIndexed(drawerItems){ addonIndex, item ->
                     Row {
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
                         modifier = modifier.focusRequester(focusRequesters[addonIndex])
-                        if(addonIndex<addons.size){
+                        if(addonIndex<Addons.size()){
                             ContextButtons(addonIndex, item)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
                             isSelected = Addons.isSelected(addonIndex)
@@ -145,7 +144,7 @@ fun CatalogBrowser(
                             onClick = {
                                 if(text=="Add from Repository") Status.showRepositoryDialog = true
                                 else if(text=="Add from GitHub") Status.showGithubDialog = true
-                                else if (text!="Settings") Python.selectAddon(text)
+                                else Python.selectAddon(text)
                             },
                             colors = NavigationDrawerItemDefaults.colors(
                                 containerColor = Color(0xFF1D2E31),
@@ -168,13 +167,11 @@ fun CatalogBrowser(
                                 )
                         }
                     }
-                    if(addonIndex==addons.size-1){
+                    if(addonIndex==Addons.size()-1){
                         Divider(
                             color = Color.Gray,
                             thickness = 1.dp,
-                            modifier = Modifier
-                                .padding(top = 10.dp)
-                                .width(250.dp)
+                            modifier = Modifier.padding(top = 10.dp).width(250.dp)
                         )
                     }
                 }
@@ -199,6 +196,7 @@ fun CatalogBrowser(
     if (Status.showUninstallDialog)  UninstallDialog(Addons.focusedContextIndex);
     if (Status.showUpdateDialog)     UpdateDialog(context, Addons.focusedContextIndex);
     if (Status.showFavouriteMenu)    FavouriteMenu();
+    if (Status.showNewPlaylistMenu)  NewPlaylistMenu();
 
     LaunchedEffect(drawerState.currentValue, AddonManager.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)
@@ -315,7 +313,7 @@ fun SectionItem(
         contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
     ) {
         itemsIndexed(section.cardList) { cardIndex, card ->
-            CardItem(
+            CardView(
                 card = card,
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
                 onClick = {
@@ -333,8 +331,8 @@ fun SectionItem(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CardItem(
-    card: SectionManager.CardView,
+fun CardView(
+    card: SectionManager.CardItem,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
     requestFocus: Boolean,

@@ -39,7 +39,7 @@ object PythonManager {
         val runnable = Runnable {
             val title : String = Status.titleMap.getOrDefault(argv2, "")
             // returned value from exttv.py
-            val newSection = Sections.Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<SectionManager.CardView>)
+            val newSection = Sections.Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<SectionManager.CardItem>)
             Status.titleMap.putAll(newSection.cardList.associate { it.id to it.label })
 
             if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, argv2, newSection)) {

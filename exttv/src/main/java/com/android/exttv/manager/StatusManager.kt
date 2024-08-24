@@ -24,4 +24,5 @@ object StatusManager {
     var showUninstallDialog by mutableStateOf(false)
     var showUpdateDialog by mutableStateOf(false)
     var showFavouriteMenu by mutableStateOf(false)
+    var showNewPlaylistMenu by mutableStateOf(false)
 }

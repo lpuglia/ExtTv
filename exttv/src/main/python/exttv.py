@@ -13,7 +13,7 @@ def run(argv=""):
     movie_list = []
     try:
         to_return = utils.run([argv.split("?")[0], '3', argv[argv.find("?"):] if "?" in argv else ""])
-        cardView = jclass("com.android.exttv.manager.SectionManager$CardView")
+        cardView = jclass("com.android.exttv.manager.SectionManager$CardItem")
         movie_list = []
         for item in to_return:
             movie_list.append(cardView(
@@ -24,6 +24,7 @@ def run(argv=""):
                 item[1].art.get('thumb', ''),
                 item[1].art.get('poster', ''),
                 item[1].art.get('fanart', ''),
+                item[2] # isFolder
             ))
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
