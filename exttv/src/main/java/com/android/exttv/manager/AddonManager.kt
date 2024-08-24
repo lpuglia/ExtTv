@@ -82,7 +82,7 @@ object AddonManager {
         return selectedIndex == index
     }
 
-    fun getAllAddons(): SortedSet<String> {
+    fun getAllAddonNames(): SortedSet<String> {
         return addons
     }
 

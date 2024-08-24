@@ -15,12 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
@@ -84,6 +82,7 @@ import com.android.exttv.util.cleanText
 import com.android.exttv.util.nonAddonKE
 import com.android.exttv.util.parseText
 import com.android.exttv.manager.AddonManager as Addons
+import com.android.exttv.manager.FavouriteManager as Favourites
 import com.android.exttv.manager.SectionManager as Sections
 import com.android.exttv.manager.StatusManager as Status
 import com.android.exttv.manager.PythonManager as Python
@@ -94,10 +93,13 @@ fun CatalogBrowser(
     context: MainActivity,
 ) {
     val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
-    val drawerItems = Addons.getAllAddons().map { it to myIcon } + listOf(
-        "Add from Repository" to Icons.Default.Add,
-        "Add from GitHub" to Icons.Default.Add,
-    )
+    val drawerItems =
+        Addons.getAllAddonNames().map { it to myIcon } +
+        Favourites.getAllFavouritesNames().map { it to Icons.Default.Star } +
+        listOf(
+            "Add from Repository" to Icons.Default.Add,
+            "Add from GitHub" to Icons.Default.Add,
+        )
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
     val drawerWidth by animateDpAsState(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp,
@@ -109,7 +111,7 @@ fun CatalogBrowser(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            LazyColumn(
+            TvLazyColumn(
                 Modifier
                     .background(
                         brush = Brush.linearGradient(
@@ -126,6 +128,26 @@ fun CatalogBrowser(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 itemsIndexed(drawerItems){ addonIndex, item ->
+                    if(addonIndex==0 || addonIndex==Addons.size() || addonIndex==Addons.size()+Favourites.size()){
+                        Row(modifier = Modifier.width(255.dp)) {
+                            @Composable
+                            fun HeaderText(textProvider: () -> String) {
+                                Text(text = textProvider(), maxLines = 1, color = Color.White,
+                                    overflow = TextOverflow.Ellipsis,modifier = Modifier.padding(top = 5.dp)
+                                )
+                            }
+                            if(addonIndex==0) HeaderText { "Addons" }
+                            if(addonIndex==Addons.size()) HeaderText { "Favourites" }
+                            if(addonIndex==Addons.size()+Favourites.size()) HeaderText { "Menu" }
+                            Divider(
+                                color = Color.Gray,
+                                thickness = 1.dp,
+                                modifier = Modifier
+                                    .padding(top = 15.dp, bottom=20.dp)
+                                    .fillMaxWidth()
+                            )
+                        }
+                    }
                     Row {
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
@@ -166,13 +188,6 @@ fun CatalogBrowser(
                                 color = if (isSelected) Color.White else Color.LightGray
                                 )
                         }
-                    }
-                    if(addonIndex==Addons.size()-1){
-                        Divider(
-                            color = Color.Gray,
-                            thickness = 1.dp,
-                            modifier = Modifier.padding(top = 10.dp).width(250.dp)
-                        )
                     }
                 }
             }

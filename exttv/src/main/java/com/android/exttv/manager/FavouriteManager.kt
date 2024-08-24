@@ -14,7 +14,7 @@ object FavouriteManager {
     // Initialize with SharedPreferences
     fun init(context: Context) {
         prefs = context.getSharedPreferences("favourite_prefs", Context.MODE_PRIVATE)
-        val allLists: Map<String, List<CardItem>> = getAllLists()
+        val allLists: Map<String, List<CardItem>> = getAllFavourites()
         for ((listName, cardList) in allLists) {
             Log.d("Favourites", "List Name: $listName")
             cardList.forEach { card ->
@@ -85,7 +85,7 @@ object FavouriteManager {
 
     // Clear all stored lists
     fun clearAllLists() {
-        val listNames = getAllListNames()
+        val listNames = getAllFavouritesNames()
         listNames.forEach { listName ->
             prefs.edit().remove(listName).apply()
         }
@@ -94,20 +94,20 @@ object FavouriteManager {
 
     // Add a list name to the set of all list names
     private fun addListName(listName: String) {
-        val listNames = getAllListNames().toMutableSet()
+        val listNames = getAllFavouritesNames().toMutableSet()
         listNames.add(listName)
         prefs.edit().putStringSet("list_names", listNames).apply()
     }
 
     // Remove a list name from the set of all list names
     private fun removeListName(listName: String) {
-        val listNames = getAllListNames().toMutableSet()
+        val listNames = getAllFavouritesNames().toMutableSet()
         listNames.remove(listName)
         prefs.edit().putStringSet("list_names", listNames).apply()
     }
 
     // Retrieve all list names
-    private fun getAllListNames(): Set<String> {
+    fun getAllFavouritesNames(): Set<String> {
         return prefs.getStringSet("list_names", emptySet()) ?: emptySet()
     }
 
@@ -117,12 +117,16 @@ object FavouriteManager {
     }
 
     // Get all lists with their names and contents
-    fun getAllLists(): Map<String, List<CardItem>> {
-        val listNames = getAllListNames()
+    fun getAllFavourites(): Map<String, List<CardItem>> {
+        val listNames = getAllFavouritesNames()
         val allLists = mutableMapOf<String, List<CardItem>>()
         listNames.forEach { listName ->
             allLists[listName] = getCardList(listName)
         }
         return allLists
+    }
+
+    fun size(): Int {
+        return getAllFavouritesNames().size
     }
 }
