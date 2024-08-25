@@ -19,7 +19,10 @@ object SectionManager {
         val posterUrl: String,
         val fanartUrl: String,
         val isFolder: Boolean,
-    )
+    ) {
+        val pluginName: String
+            get() = id.split("://")[1].split("/")[0]
+    }
 
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)

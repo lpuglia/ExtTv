@@ -26,13 +26,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -74,6 +72,8 @@ import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
 import com.android.exttv.util.ContextButtons
+import com.android.exttv.util.ContextManager
+import com.android.exttv.util.FavouriteButtons
 import com.android.exttv.util.FavouriteMenu
 import com.android.exttv.util.NewPlaylistMenu
 import com.android.exttv.util.UpdateDialog
@@ -105,9 +105,9 @@ fun CatalogBrowser(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp,
         label = ""
     )
-    val focusRequesters by rememberUpdatedState(
-        newValue = List(drawerItems.size) { FocusRequester() }
-    )
+    ContextManager.Init() // TODO: move it away from here
+    val listState = rememberTvLazyListState()
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -124,6 +124,7 @@ fun CatalogBrowser(
                     .fillMaxHeight()
                     .padding(12.dp)
                     .selectableGroup(),
+                state = listState,
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -148,25 +149,29 @@ fun CatalogBrowser(
                             )
                         }
                     }
+                    val (text, icon) = item
                     Row {
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
-                        modifier = modifier.focusRequester(focusRequesters[addonIndex])
+                        modifier = modifier.focusRequester(ContextManager.drawerItemRequesters[addonIndex])
                         if(addonIndex<Addons.size()){
-                            ContextButtons(addonIndex, item)
+                            ContextButtons(addonIndex)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
                             isSelected = Addons.isSelected(addonIndex)
-                        }else{
+                        } else if(addonIndex<Addons.size()+Favourites.size()){
+                            FavouriteButtons(addonIndex-Addons.size(), text)
+                            modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
+                        } else {
                             modifier = modifier.onKeyEvent { event -> nonAddonKE(event) }
                         }
-                        val (text, icon) = item
                         NavigationDrawerItem(
                             selected = isSelected,
                             modifier = modifier,
                             onClick = {
                                 if(text=="Add from Repository") Status.showRepositoryDialog = true
                                 else if(text=="Add from GitHub") Status.showGithubDialog = true
-                                else Python.selectAddon(text)
+                                else if(addonIndex<Addons.size()) Python.selectAddon(text)
+                                else Python.selectFavourite(text)
                             },
                             colors = NavigationDrawerItemDefaults.colors(
                                 containerColor = Color(0xFF1D2E31),
@@ -215,15 +220,16 @@ fun CatalogBrowser(
 
     LaunchedEffect(drawerState.currentValue, AddonManager.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)
-            if (AddonManager.selectedIndex>=0)
-                focusRequesters[AddonManager.selectedIndex].requestFocus()
-        if (Sections.isEmpty()) { // keep the drawer open when sections is empty
+            if (AddonManager.selectedIndex>=0) {
+                listState.scrollToItem(AddonManager.selectedIndex)
+                ContextManager.drawerItemRequesters[AddonManager.selectedIndex].requestFocus()
+            }
+        if (Sections.isEmpty() && Status.loadingState == LoadingStatus.DONE) { // keep the drawer open when sections is empty and Done
             drawerState.setValue(DrawerValue.Open)
-            if(focusRequesters.isNotEmpty())
-                focusRequesters[0].requestFocus()
+            if(ContextManager.drawerItemRequesters.isNotEmpty())
+                ContextManager.drawerItemRequesters[0].requestFocus()
         }
     }
-
 }
 
 @Composable

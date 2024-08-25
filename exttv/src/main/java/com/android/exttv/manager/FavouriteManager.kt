@@ -31,7 +31,7 @@ object FavouriteManager {
 
     // Add a new card to a specific list or create a new list if it doesn't exist
     fun addCardToListOrCreate(listName: String, card: CardItem) {
-        val cardList = getCardList(listName).toMutableList()
+        val cardList = getFavourite(listName).toMutableList()
         cardList.add(card)
         saveCardList(listName, cardList)
         addListName(listName) // Ensure the list name is added
@@ -39,14 +39,14 @@ object FavouriteManager {
 
     // Remove a card from a specific list
     fun removeCardFromList(listName: String, card: CardItem) {
-        val cardList = getCardList(listName).toMutableList()
+        val cardList = getFavourite(listName).toMutableList()
         cardList.removeAll { it.id == card.id }
         saveCardList(listName, cardList)
     }
 
     // Move a card to a new position in the list
     fun moveCardInList(listName: String, cardId: String, newPosition: Int) {
-        val cardList = getCardList(listName).toMutableList()
+        val cardList = getFavourite(listName).toMutableList()
         val card = cardList.find { it.id == cardId } ?: return
 
         // Remove the card from its current position
@@ -65,7 +65,7 @@ object FavouriteManager {
     }
 
     // Retrieve a list of CardItem
-    fun getCardList(listName: String): List<CardItem> {
+    fun getFavourite(listName: String): List<CardItem> {
         val jsonString = prefs.getString(listName, null) ?: return emptyList()
         val type = object : TypeToken<List<CardItem>>() {}.type
         return gson.fromJson(jsonString, type)
@@ -78,9 +78,9 @@ object FavouriteManager {
     }
 
     // Delete a list entirely
-    fun deleteList(listName: String) {
+    fun deleteFavourite(listName: String) {
         prefs.edit().remove(listName).apply()
-        removeListName(listName)
+        removeFavourite(listName)
     }
 
     // Clear all stored lists
@@ -100,7 +100,7 @@ object FavouriteManager {
     }
 
     // Remove a list name from the set of all list names
-    private fun removeListName(listName: String) {
+    private fun removeFavourite(listName: String) {
         val listNames = getAllFavouritesNames().toMutableSet()
         listNames.remove(listName)
         prefs.edit().putStringSet("list_names", listNames).apply()
@@ -121,7 +121,7 @@ object FavouriteManager {
         val listNames = getAllFavouritesNames()
         val allLists = mutableMapOf<String, List<CardItem>>()
         listNames.forEach { listName ->
-            allLists[listName] = getCardList(listName)
+            allLists[listName] = getFavourite(listName)
         }
         return allLists
     }

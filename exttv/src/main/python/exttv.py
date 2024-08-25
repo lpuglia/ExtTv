@@ -24,7 +24,7 @@ def run(argv=""):
                 item[1].art.get('thumb', ''),
                 item[1].art.get('poster', ''),
                 item[1].art.get('fanart', ''),
-                item[2] # isFolder
+                item[2], # isFolder
             ))
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)

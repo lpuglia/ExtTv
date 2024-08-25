@@ -8,6 +8,7 @@ import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.android.exttv.manager.AddonManager as Addons
+import com.android.exttv.manager.FavouriteManager as Favourites
 import com.android.exttv.manager.SectionManager as Sections
 import com.android.exttv.manager.StatusManager as Status
 
@@ -22,13 +23,26 @@ object PythonManager {
         }.apply { start(); join() }
     }
 
+    fun setPluginName(pluginName: String) {
+        Thread {
+            Python.getInstance().getModule("utils").callAttr("set_plugin_name", pluginName)
+        }.apply { start(); join() }
+    }
+
+    fun selectFavourite(favouriteName: String) {
+        Favourites.getFavourite(favouriteName).let {
+            Status.loadingState = LoadingStatus.SELECTING_ADDON
+            Sections.clearSections()
+            Status.titleMap.clear()
+            Sections.sectionList = listOf(SectionManager.Section("", it))
+        }
+    }
+
     fun selectAddon(pluginName: String) {
         Status.loadingState = LoadingStatus.SELECTING_ADDON
         Sections.clearSections()
         Status.titleMap.clear()
-        Thread {
-            Python.getInstance().getModule("utils").callAttr("set_plugin_name", pluginName)
-        }.apply { start(); join() }
+        setPluginName(pluginName)
         Addons.selectAddon(pluginName)
         Status.titleMap["plugin://$pluginName/"] = "Menu"
         selectSection("plugin://$pluginName/")
