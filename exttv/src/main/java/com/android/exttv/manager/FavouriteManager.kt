@@ -3,6 +3,9 @@ package com.android.exttv.manager
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.android.exttv.manager.SectionManager.CardItem
@@ -10,6 +13,7 @@ import com.android.exttv.manager.SectionManager.CardItem
 object FavouriteManager {
     private lateinit var prefs: SharedPreferences
     private val gson = Gson()
+    var selectedIndex by mutableIntStateOf(-1)
 
     // Initialize with SharedPreferences
     fun init(context: Context) {
@@ -97,6 +101,7 @@ object FavouriteManager {
         val listNames = getAllFavouritesNames().toMutableSet()
         listNames.add(listName)
         prefs.edit().putStringSet("list_names", listNames).apply()
+        StatusManager.focusedContextIndex = -1
     }
 
     // Remove a list name from the set of all list names
@@ -104,6 +109,8 @@ object FavouriteManager {
         val listNames = getAllFavouritesNames().toMutableSet()
         listNames.remove(listName)
         prefs.edit().putStringSet("list_names", listNames).apply()
+//        StatusManager.selectedIndex = -1
+        StatusManager.focusedContextIndex = -1
     }
 
     // Retrieve all list names

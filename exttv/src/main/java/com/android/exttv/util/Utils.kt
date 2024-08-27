@@ -160,7 +160,8 @@ fun getLatestZipName(url: String): Pair<String, String>{
 
 fun getFromRepository(url: String, force: Boolean = false): String {
     val (zipPath, pluginName) = getLatestZipName(url)
-    downloadAndExtractPlugin(zipPath, pluginName, url, false)
+    val mirrorZip = "https://mirrors.kodi.tv/addons/omega/" + zipPath.split("addons/omega/")[1]
+    downloadAndExtractPlugin(mirrorZip, pluginName, url, false)
     return pluginName
 }
 
@@ -249,7 +250,7 @@ fun downloadAndExtractPlugin(zipURL: String, pluginName: String, sourceURL: Stri
                     }
                 }
             } catch (e: Exception) {
-                println("Error occurred while downloading and extracting plugin: ${e.message}")
+                println("Error occurred while downloading and extracting plugin: $zipURL $pluginName $sourceURL \n ${e.message}")
                 e.printStackTrace()
                 throw e
             }

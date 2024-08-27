@@ -65,14 +65,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.exttv.MainActivity
 import com.android.exttv.R
-import com.android.exttv.manager.AddonManager
 import com.android.exttv.manager.LoadingStatus
 import com.android.exttv.manager.SectionManager
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
 import com.android.exttv.util.ContextButtons
-import com.android.exttv.util.ContextManager
 import com.android.exttv.util.FavouriteButtons
 import com.android.exttv.util.FavouriteMenu
 import com.android.exttv.util.NewPlaylistMenu
@@ -81,6 +79,7 @@ import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.nonAddonKE
 import com.android.exttv.util.parseText
+import com.android.exttv.util.ContextManager as Contexts
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.FavouriteManager as Favourites
 import com.android.exttv.manager.SectionManager as Sections
@@ -105,7 +104,6 @@ fun CatalogBrowser(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp,
         label = ""
     )
-    ContextManager.Init() // TODO: move it away from here
     val listState = rememberTvLazyListState()
 
     ModalNavigationDrawer(
@@ -137,8 +135,8 @@ fun CatalogBrowser(
                                     overflow = TextOverflow.Ellipsis,modifier = Modifier.padding(top = 5.dp)
                                 )
                             }
-                            if(addonIndex==0) HeaderText { "Addons" }
-                            if(addonIndex==Addons.size()) HeaderText { "Favourites" }
+                            if(addonIndex==0 && Addons.size()>0) HeaderText { "Addons" }
+                            if(addonIndex==Addons.size() && Favourites.size()>0) HeaderText { "Favourites" }
                             if(addonIndex==Addons.size()+Favourites.size()) HeaderText { "Menu" }
                             Divider(
                                 color = Color.Gray,
@@ -153,7 +151,7 @@ fun CatalogBrowser(
                     Row {
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
-                        modifier = modifier.focusRequester(ContextManager.drawerItemRequesters[addonIndex])
+                        modifier = modifier.focusRequester(Contexts.drawerItemRequesters[addonIndex])
                         if(addonIndex<Addons.size()){
                             ContextButtons(addonIndex)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
@@ -213,21 +211,21 @@ fun CatalogBrowser(
     }
     if (Status.showGithubDialog)     GithubDialog();
     if (Status.showRepositoryDialog) RepositoryDialog(context);
-    if (Status.showUninstallDialog)  UninstallDialog(Addons.focusedContextIndex);
-    if (Status.showUpdateDialog)     UpdateDialog(context, Addons.focusedContextIndex);
+    if (Status.showUninstallDialog)  UninstallDialog(Status.focusedContextIndex);
+    if (Status.showUpdateDialog)     UpdateDialog(context, Status.focusedContextIndex);
     if (Status.showFavouriteMenu)    FavouriteMenu();
     if (Status.showNewPlaylistMenu)  NewPlaylistMenu();
 
-    LaunchedEffect(drawerState.currentValue, AddonManager.selectedIndex) {
+    LaunchedEffect(drawerState.currentValue, Status.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)
-            if (AddonManager.selectedIndex>=0) {
-                listState.scrollToItem(AddonManager.selectedIndex)
-                ContextManager.drawerItemRequesters[AddonManager.selectedIndex].requestFocus()
+            if (Status.selectedIndex>=0) {
+                listState.scrollToItem(Status.selectedIndex)
+                Contexts.drawerItemRequesters[Status.selectedIndex].requestFocus()
             }
         if (Sections.isEmpty() && Status.loadingState == LoadingStatus.DONE) { // keep the drawer open when sections is empty and Done
             drawerState.setValue(DrawerValue.Open)
-            if(ContextManager.drawerItemRequesters.isNotEmpty())
-                ContextManager.drawerItemRequesters[0].requestFocus()
+            if(Contexts.drawerItemRequesters.isNotEmpty())
+                Contexts.drawerItemRequesters[0].requestFocus()
         }
     }
 }

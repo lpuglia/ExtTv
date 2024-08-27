@@ -172,6 +172,9 @@ fun FavouriteMenu() {
 @Composable
 fun UninstallDialog(indexAddon: Int) {
     if (Status.showUninstallDialog) {
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) {focusRequester.requestFocus()}
+
         AlertDialog(
             onDismissRequest = { Status.showUninstallDialog = false },
             title = { Text(text = "Uninstall") },
@@ -182,14 +185,13 @@ fun UninstallDialog(indexAddon: Int) {
                         Addons.uninstallAddon(indexAddon)
                         Status.showUninstallDialog = false
                     }
-                ) {
-                    Text("Uninstall")
-                }
+                ) { Text("Uninstall") }
             },
             dismissButton = {
-                Button(onClick = { Status.showUninstallDialog = false }) {
-                    Text("Cancel")
-                }
+                Button(
+                    onClick = { Status.showUninstallDialog = false },
+                    modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
+                ) { Text("Cancel") }
             }
         )
     }
@@ -201,6 +203,9 @@ fun UpdateDialog(
     indexAddon: Int
 ) {
     if (Status.showUpdateDialog) {
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) {focusRequester.requestFocus()}
+
         AlertDialog(
             onDismissRequest = { Status.showUpdateDialog = false },
             title = { Text(text = "Update") },
@@ -235,7 +240,9 @@ fun UpdateDialog(
                 }
             },
             dismissButton = {
-                Button(onClick = { Status.showUpdateDialog = false }) {
+                Button(onClick = { Status.showUpdateDialog = false },
+                       modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
+                ){
                     Text("Cancel")
                 }
             }

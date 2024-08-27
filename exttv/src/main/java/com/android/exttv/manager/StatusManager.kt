@@ -1,6 +1,7 @@
 package com.android.exttv.manager
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
@@ -25,4 +26,7 @@ object StatusManager {
     var showUpdateDialog by mutableStateOf(false)
     var showFavouriteMenu by mutableStateOf(false)
     var showNewPlaylistMenu by mutableStateOf(false)
+    var selectedIndex by mutableIntStateOf(-1)
+    var focusedContextIndex by mutableIntStateOf(-1)
+
 }
