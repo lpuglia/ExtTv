@@ -81,12 +81,12 @@ object AddonManager {
 
     fun add(pluginName: String) {
         addons.add(pluginName)
-        ContextManager.init()
+        ContextManager.update()
     }
 
     fun remove(pluginName: String) {
         addons.remove(pluginName)
-        ContextManager.init()
+        ContextManager.update()
     }
 
     fun selectAddon(pluginName: String) {

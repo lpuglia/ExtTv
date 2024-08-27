@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
         AddonManager.init(this)
         PythonManager.init(this)
         FavouriteManager.init(this)
-        ContextManager.init()
+        ContextManager.update()
 
         setContent {
             MaterialTheme {

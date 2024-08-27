@@ -38,7 +38,7 @@ object ContextManager {
     var settingReqs   by mutableStateOf(listOf<FocusRequester>())
     var removeFavReqs by mutableStateOf(listOf<FocusRequester>())
 
-    fun init(){
+    fun update(){
         drawerItemRequesters = List(Addons.size()+Favourites.size()+2) { FocusRequester() }
         settingReqs   = List(Addons.size()) { FocusRequester() }
         updateReqs    = List(Addons.size()) { FocusRequester() }

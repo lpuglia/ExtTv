@@ -27,8 +27,8 @@ object SectionManager {
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)
     private val sections = LinkedHashMap<String, Section>()
+    var sectionList by mutableStateOf(listOf<Section>())
     private val selectedIndices: MutableList<Int?> = mutableListOf()
-    var sectionList by mutableStateOf(listOf<SectionManager.Section>())
 
     fun getFocusedCard(): CardItem {
         return sectionList[focusedIndex].cardList[focusedCardIndex]
@@ -102,5 +102,6 @@ object SectionManager {
         StatusManager.bgImage = ""
         StatusManager.loadingState = LoadingStatus.DONE
         sectionList = getSectionsInOrder()
+        StatusManager.titleMap.clear()
     }
 }

@@ -33,15 +33,15 @@ object PythonManager {
         Favourites.getFavourite(favouriteName).let {
             Status.loadingState = LoadingStatus.SELECTING_ADDON
             Sections.clearSections()
-            Status.titleMap.clear()
+            Favourites.selectFavourite(favouriteName)
             Sections.sectionList = listOf(SectionManager.Section("", it))
+            Status.loadingState = LoadingStatus.SECTION_LOADED
         }
     }
 
     fun selectAddon(pluginName: String) {
         Status.loadingState = LoadingStatus.SELECTING_ADDON
         Sections.clearSections()
-        Status.titleMap.clear()
         setPluginName(pluginName)
         Addons.selectAddon(pluginName)
         Status.titleMap["plugin://$pluginName/"] = "Menu"
@@ -65,8 +65,8 @@ object PythonManager {
                     if(sectionIndex==-1 && newSection.cardList.isEmpty()){
                         Sections.clearSections()
                     }else{
-                        Status.loadingState = LoadingStatus.SECTION_LOADED
                         Sections.sectionList = Sections.getSectionsInOrder()
+                        Status.loadingState = LoadingStatus.SECTION_LOADED
                     }
                 }
             } catch (e: InterruptedException) {

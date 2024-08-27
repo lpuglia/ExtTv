@@ -3,17 +3,15 @@ package com.android.exttv.manager
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
+import com.android.exttv.manager.AddonManager as Addons
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.android.exttv.manager.SectionManager.CardItem
+import com.android.exttv.util.ContextManager
 
 object FavouriteManager {
     private lateinit var prefs: SharedPreferences
     private val gson = Gson()
-    var selectedIndex by mutableIntStateOf(-1)
 
     // Initialize with SharedPreferences
     fun init(context: Context) {
@@ -29,108 +27,94 @@ object FavouriteManager {
 
     // Create a new list given the card/cards
     fun createList(listName: String, cards: List<CardItem>) {
-        saveCardList(listName, cards)
-        addListName(listName)
+        val allLists = getAllFavourites().toMutableMap()
+        allLists[listName] = cards
+        saveAllData(allLists)
     }
 
     // Add a new card to a specific list or create a new list if it doesn't exist
     fun addCardToListOrCreate(listName: String, card: CardItem) {
-        val cardList = getFavourite(listName).toMutableList()
+        val allLists = getAllFavourites().toMutableMap()
+        val cardList = allLists.getOrPut(listName) { mutableListOf() } as MutableList<CardItem>
         cardList.add(card)
-        saveCardList(listName, cardList)
-        addListName(listName) // Ensure the list name is added
+        allLists[listName] = cardList
+        saveAllData(allLists)
     }
 
     // Remove a card from a specific list
     fun removeCardFromList(listName: String, card: CardItem) {
-        val cardList = getFavourite(listName).toMutableList()
+        val allLists = getAllFavourites().toMutableMap()
+        val cardList = allLists[listName]?.toMutableList() ?: return
         cardList.removeAll { it.id == card.id }
-        saveCardList(listName, cardList)
+        if (cardList.isEmpty()) {
+            allLists.remove(listName)
+        } else {
+            allLists[listName] = cardList
+        }
+        saveAllData(allLists)
     }
 
     // Move a card to a new position in the list
     fun moveCardInList(listName: String, cardId: String, newPosition: Int) {
-        val cardList = getFavourite(listName).toMutableList()
+        val allLists = getAllFavourites().toMutableMap()
+        val cardList = allLists[listName]?.toMutableList() ?: return
         val card = cardList.find { it.id == cardId } ?: return
 
-        // Remove the card from its current position
         cardList.remove(card)
-
-        // Insert the card at the new position
-        if (newPosition < 0) {
-            cardList.add(0, card) // Move to the beginning if position is negative
-        } else if (newPosition >= cardList.size) {
-            cardList.add(card) // Move to the end if position is beyond the list size
-        } else {
-            cardList.add(newPosition, card) // Move to the specific position
+        when {
+            newPosition < 0 -> cardList.add(0, card)
+            newPosition >= cardList.size -> cardList.add(card)
+            else -> cardList.add(newPosition, card)
         }
 
-        saveCardList(listName, cardList)
+        allLists[listName] = cardList
+        saveAllData(allLists)
     }
 
     // Retrieve a list of CardItem
     fun getFavourite(listName: String): List<CardItem> {
-        val jsonString = prefs.getString(listName, null) ?: return emptyList()
-        val type = object : TypeToken<List<CardItem>>() {}.type
-        return gson.fromJson(jsonString, type)
+        return getAllFavourites()[listName] ?: emptyList()
     }
 
-    // Save a list of CardItem
-    private fun saveCardList(listName: String, cardList: List<CardItem>) {
-        val jsonString = gson.toJson(cardList)
-        prefs.edit().putString(listName, jsonString).apply()
+    // Save all lists and their names in a single entry
+    private fun saveAllData(allLists: Map<String, List<CardItem>>) {
+        val jsonString = gson.toJson(allLists)
+        prefs.edit().putString("all_favourites", jsonString).apply()
+        ContextManager.update()
     }
 
     // Delete a list entirely
     fun deleteFavourite(listName: String) {
-        prefs.edit().remove(listName).apply()
-        removeFavourite(listName)
+        val allLists = getAllFavourites().toMutableMap()
+        allLists.remove(listName)
+        saveAllData(allLists)
     }
 
     // Clear all stored lists
     fun clearAllLists() {
-        val listNames = getAllFavouritesNames()
-        listNames.forEach { listName ->
-            prefs.edit().remove(listName).apply()
-        }
-        clearAllListNames()
-    }
-
-    // Add a list name to the set of all list names
-    private fun addListName(listName: String) {
-        val listNames = getAllFavouritesNames().toMutableSet()
-        listNames.add(listName)
-        prefs.edit().putStringSet("list_names", listNames).apply()
-        StatusManager.focusedContextIndex = -1
-    }
-
-    // Remove a list name from the set of all list names
-    private fun removeFavourite(listName: String) {
-        val listNames = getAllFavouritesNames().toMutableSet()
-        listNames.remove(listName)
-        prefs.edit().putStringSet("list_names", listNames).apply()
-//        StatusManager.selectedIndex = -1
-        StatusManager.focusedContextIndex = -1
+        saveAllData(emptyMap())
     }
 
     // Retrieve all list names
     fun getAllFavouritesNames(): Set<String> {
-        return prefs.getStringSet("list_names", emptySet()) ?: emptySet()
-    }
-
-    // Clear all list names
-    private fun clearAllListNames() {
-        prefs.edit().remove("list_names").apply()
+        return getAllFavourites().keys
     }
 
     // Get all lists with their names and contents
-    fun getAllFavourites(): Map<String, List<CardItem>> {
-        val listNames = getAllFavouritesNames()
-        val allLists = mutableMapOf<String, List<CardItem>>()
-        listNames.forEach { listName ->
-            allLists[listName] = getFavourite(listName)
-        }
-        return allLists
+    private fun getAllFavourites(): Map<String, List<CardItem>> {
+        val jsonString = prefs.getString("all_favourites", null) ?: return emptyMap()
+        val type = object : TypeToken<Map<String, List<CardItem>>>() {}.type
+        return gson.fromJson(jsonString, type)
+    }
+
+    // New method to get the index of a favorite name
+    private fun indexOf(favouriteName: String): Int {
+        val listNames = getAllFavouritesNames().toList()
+        return listNames.indexOf(favouriteName)
+    }
+
+    fun selectFavourite(pluginName: String) {
+        StatusManager.selectedIndex = Addons.size() + indexOf(pluginName)
     }
 
     fun size(): Int {
