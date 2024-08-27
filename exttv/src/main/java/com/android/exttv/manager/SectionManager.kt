@@ -1,11 +1,13 @@
 package com.android.exttv.manager
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 
+@SuppressLint("MutableCollectionMutableState")
 object SectionManager {
     data class Section(
         val title: String,
@@ -27,14 +29,9 @@ object SectionManager {
 
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)
-//    private val sections = LinkedHashMap<String, Section>()
-    private var sections by mutableStateOf(SnapshotStateMap<String, Section>())
+    private var sections by mutableStateOf(LinkedHashMap<String, Section>())
 
     private val selectedIndices: MutableList<Int?> = mutableListOf()
-
-    fun getFocusedCard(): CardItem {
-        return sections.entries.toList()[focusedIndex].value.cardList[focusedCardIndex]
-    }
 
     fun removeAndAdd(index: Int, key: String, newSection: Section): Boolean {
         // Convert the map keys to a list to easily access by index
@@ -50,23 +47,23 @@ object SectionManager {
 
             // Remove all entries after the given index
             for (i in keys.size - 1 downTo index + 1) {
-                sections.remove(keys[i])
+                this.remove(keys[i])
                 selectedIndices.removeAt(i)
             }
 
             // Replace the entry at the given index or add new if index is out of current bounds
             if (index < keys.size) {
                 val keyAtIndex = keys[index]
-                sections[keyAtIndex] = newSection
+                this[keyAtIndex] = newSection
                 selectedIndices[index] = null // Reset selected index for the new section
             } else {
                 // If the index is out of bounds (greater than current size), add the new section
-                sections[key] = newSection
+                this[key] = newSection
                 selectedIndices.add(null)
             }
         } else {
             // If index is out of bounds, just add the new section
-            sections[key] = newSection
+            this[key] = newSection
             selectedIndices.add(null)
         }
         return true
@@ -76,8 +73,8 @@ object SectionManager {
         return sections.values.toList()
     }
 
-    fun getLastSectionKey(): String? {
-        return sections.keys.lastOrNull()
+    fun getFocusedCard(): CardItem {
+        return sections.entries.toList()[focusedIndex].value.cardList[focusedCardIndex]
     }
 
     fun updateSelectedSection(sectionIndex: Int, selectedIndex: Int?) {
@@ -94,16 +91,28 @@ object SectionManager {
         }
     }
 
-    fun isEmpty(): Boolean {
-        return sections.isEmpty()
+    val isEmpty: Boolean get() = sections.isEmpty()
+    val isNotEmpty: Boolean get() = sections.isNotEmpty()
+    val size: Int get() = sections.size
+
+    operator fun get(index: Int): Section {
+        return sections.values.toList()[index]
     }
 
-    fun isNotEmpty(): Boolean {
-        return sections.isNotEmpty()
+    operator fun get(key: String): Section? {
+        return sections[key]
     }
 
-    fun size(): Int {
-        return sections.size
+    operator fun set(key: String, section: Section) {
+        val newSections = LinkedHashMap(sections)
+        newSections[key] = section
+        sections = newSections
+    }
+
+    fun remove(key: String) {
+        val newSections = LinkedHashMap(sections)
+        newSections.remove(key)
+        sections = newSections  // Assign new instance to trigger recomposition
     }
 
     fun clearSections() {

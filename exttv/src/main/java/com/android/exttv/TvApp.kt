@@ -222,7 +222,7 @@ fun CatalogBrowser(
                 listState.scrollToItem(Status.selectedIndex)
                 Contexts.drawerItemRequesters[Status.selectedIndex].requestFocus()
             }
-        if (Sections.isEmpty() && Status.loadingState == LoadingStatus.DONE) { // keep the drawer open when sections is empty and Done
+        if (Sections.isEmpty && Status.loadingState == LoadingStatus.DONE) { // keep the drawer open when sections is empty and Done
             drawerState.setValue(DrawerValue.Open)
             if(Contexts.drawerItemRequesters.isNotEmpty())
                 Contexts.drawerItemRequesters[0].requestFocus()
@@ -340,7 +340,7 @@ fun SectionItem(
                         Python.selectSection(card.id, card.label, sectionIndex, cardIndex)
                     }
                 },
-                requestFocus = cardIndex==0 && sectionIndex == Sections.size()-1,
+                requestFocus = cardIndex==0 && sectionIndex == Sections.size-1,
                 sectionIndex,
                 cardIndex
             )
@@ -440,7 +440,7 @@ fun CardView(
         Spacer(modifier = Modifier.height(10.dp))
     }
     LaunchedEffect(Status.loadingState) {
-        if (requestFocus && Sections.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_LOADED) {
+        if (requestFocus && Sections.isNotEmpty && Status.loadingState==LoadingStatus.SECTION_LOADED) {
             Status.loadingState = LoadingStatus.DONE
             Status.focusRequester.requestFocus()
         }

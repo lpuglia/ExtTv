@@ -16,7 +16,7 @@ object PythonManager {
     private var exttv: PyObject? = null
 
     fun init(context: Activity) {
-        if (exttv != null && Sections.isNotEmpty()) return
+        if (exttv != null && Sections.isNotEmpty) return
         if (!Python.isStarted()) Python.start(AndroidPlatform(context))
         Thread {
             exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
