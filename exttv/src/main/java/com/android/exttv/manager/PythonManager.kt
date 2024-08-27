@@ -16,7 +16,7 @@ object PythonManager {
     private var exttv: PyObject? = null
 
     fun init(context: Activity) {
-        if (exttv != null && Sections.sectionList.isNotEmpty()) return
+        if (exttv != null && Sections.isNotEmpty()) return
         if (!Python.isStarted()) Python.start(AndroidPlatform(context))
         Thread {
             exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
@@ -34,7 +34,6 @@ object PythonManager {
             Status.loadingState = LoadingStatus.SELECTING_ADDON
             Sections.clearSections()
             Favourites.selectFavourite(favouriteName)
-            Sections.sectionList = listOf(SectionManager.Section("", it))
             Status.loadingState = LoadingStatus.SECTION_LOADED
         }
     }
@@ -62,7 +61,6 @@ object PythonManager {
                     if(sectionIndex==-1 && newSection.cardList.isEmpty()){
                         Sections.clearSections()
                     }else{
-                        Sections.sectionList = Sections.getSectionsInOrder()
                         Status.loadingState = LoadingStatus.SECTION_LOADED
                     }
                 }

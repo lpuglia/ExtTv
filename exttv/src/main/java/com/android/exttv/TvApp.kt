@@ -298,7 +298,7 @@ fun Content(
             verticalArrangement = Arrangement.Bottom
         )
         {
-            itemsIndexed(Sections.sectionList) { index, section ->
+            itemsIndexed(Sections.getSectionsInOrder()) { index, section ->
                 SectionItem(
                     section = section,
                     sectionIndex = index
@@ -340,7 +340,7 @@ fun SectionItem(
                         Python.selectSection(card.id, card.label, sectionIndex, cardIndex)
                     }
                 },
-                requestFocus = cardIndex==0 && sectionIndex == Sections.sectionList.size-1,
+                requestFocus = cardIndex==0 && sectionIndex == Sections.size()-1,
                 sectionIndex,
                 cardIndex
             )
@@ -440,7 +440,7 @@ fun CardView(
         Spacer(modifier = Modifier.height(10.dp))
     }
     LaunchedEffect(Status.loadingState) {
-        if (requestFocus && Sections.sectionList.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_LOADED) {
+        if (requestFocus && Sections.isNotEmpty() && Status.loadingState==LoadingStatus.SECTION_LOADED) {
             Status.loadingState = LoadingStatus.DONE
             Status.focusRequester.requestFocus()
         }

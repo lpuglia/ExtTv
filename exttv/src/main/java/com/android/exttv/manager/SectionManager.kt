@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 
 object SectionManager {
     data class Section(
@@ -26,12 +27,13 @@ object SectionManager {
 
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)
-    private val sections = LinkedHashMap<String, Section>()
-    var sectionList by mutableStateOf(listOf<Section>())
+//    private val sections = LinkedHashMap<String, Section>()
+    private var sections by mutableStateOf(SnapshotStateMap<String, Section>())
+
     private val selectedIndices: MutableList<Int?> = mutableListOf()
 
     fun getFocusedCard(): CardItem {
-        return sectionList[focusedIndex].cardList[focusedCardIndex]
+        return sections.entries.toList()[focusedIndex].value.cardList[focusedCardIndex]
     }
 
     fun removeAndAdd(index: Int, key: String, newSection: Section): Boolean {
@@ -96,11 +98,18 @@ object SectionManager {
         return sections.isEmpty()
     }
 
+    fun isNotEmpty(): Boolean {
+        return sections.isNotEmpty()
+    }
+
+    fun size(): Int {
+        return sections.size
+    }
+
     fun clearSections() {
         sections.clear()
         selectedIndices.clear()
         StatusManager.bgImage = ""
         StatusManager.loadingState = LoadingStatus.DONE
-        sectionList = getSectionsInOrder()
     }
 }
