@@ -102,6 +102,5 @@ object SectionManager {
         StatusManager.bgImage = ""
         StatusManager.loadingState = LoadingStatus.DONE
         sectionList = getSectionsInOrder()
-        StatusManager.titleMap.clear()
     }
 }

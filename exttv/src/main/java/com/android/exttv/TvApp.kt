@@ -337,7 +337,7 @@ fun SectionItem(
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
                 onClick = {
                     if(Status.loadingState == LoadingStatus.DONE){
-                        Python.selectSection(card.id, sectionIndex, cardIndex)
+                        Python.selectSection(card.id, card.label, sectionIndex, cardIndex)
                     }
                 },
                 requestFocus = cardIndex==0 && sectionIndex == Sections.sectionList.size-1,

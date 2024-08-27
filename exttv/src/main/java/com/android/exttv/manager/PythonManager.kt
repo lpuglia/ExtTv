@@ -44,19 +44,16 @@ object PythonManager {
         Sections.clearSections()
         setPluginName(pluginName)
         Addons.selectAddon(pluginName)
-        Status.titleMap["plugin://$pluginName/"] = "Menu"
-        selectSection("plugin://$pluginName/")
+        selectSection("plugin://$pluginName/", "Menu")
     }
 
-    fun selectSection(argv2: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
+    fun selectSection(uri: String, title: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         val runnable = Runnable {
-            val title : String = Status.titleMap.getOrDefault(argv2, "")
             // returned value from exttv.py
-            val newSection = Sections.Section(title, exttv?.callAttr("run", argv2)?.toJava(List::class.java) as List<SectionManager.CardItem>)
-            Status.titleMap.putAll(newSection.cardList.associate { it.id to it.label })
+            val newSection = Sections.Section(title, exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<SectionManager.CardItem>)
 
-            if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, argv2, newSection)) {
+            if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, uri, newSection)) {
                 Sections.updateSelectedSection(sectionIndex, cardIndex)
             }
 
