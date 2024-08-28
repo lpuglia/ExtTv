@@ -34,6 +34,7 @@ object PythonManager {
             Status.loadingState = LoadingStatus.SELECTING_ADDON
             Sections.clearSections()
             Favourites.selectFavourite(favouriteName)
+            Sections.removeAndAdd(0, "", Sections.Section(favouriteName, it))
             Status.loadingState = LoadingStatus.SECTION_LOADED
         }
     }

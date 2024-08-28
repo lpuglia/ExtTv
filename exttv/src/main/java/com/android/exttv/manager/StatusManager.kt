@@ -16,6 +16,7 @@ enum class LoadingStatus {
 }
 
 object StatusManager {
+    var reboundEnter = false
     val focusRequester = FocusRequester()
     var loadingState by mutableStateOf(LoadingStatus.DONE)
     var showGithubDialog by mutableStateOf(false)

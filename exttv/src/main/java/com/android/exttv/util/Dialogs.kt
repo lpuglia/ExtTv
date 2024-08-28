@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -156,10 +157,20 @@ fun FavouriteMenu() {
             Surface(
                 shape = MaterialTheme.shapes.medium,
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    OptionItem(text = "Add to new playlist", onClick = {
-                        Status.showNewPlaylistMenu = true
-                    })
+                Column(modifier = Modifier.onKeyEvent { keyEvent ->
+                    // Consume the enter key event on key up to prevent accidental clicks
+                    keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyUp
+                }.padding(16.dp)) {
+                    OptionItem(
+                        text = "Add to new playlist",
+                        onClick = {
+                            if(Status.reboundEnter){
+                                Status.reboundEnter = false
+                            }else {
+                                Status.showNewPlaylistMenu = true
+                            }
+                        }
+                    )
                     OptionItem(text = "Add content to new playlist", onClick = {})
                     OptionItem(text = "Add to playlist", onClick = {})
                     OptionItem(text = "Add content to playlist", onClick = {})

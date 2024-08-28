@@ -91,6 +91,13 @@ object SectionManager {
         }
     }
 
+    fun clearSections() {
+        sections = LinkedHashMap()
+        selectedIndices.clear()
+        StatusManager.bgImage = ""
+        StatusManager.loadingState = LoadingStatus.DONE
+    }
+
     val isEmpty: Boolean get() = sections.isEmpty()
     val isNotEmpty: Boolean get() = sections.isNotEmpty()
     val size: Int get() = sections.size
@@ -115,10 +122,4 @@ object SectionManager {
         sections = newSections  // Assign new instance to trigger recomposition
     }
 
-    fun clearSections() {
-        sections.clear()
-        selectedIndices.clear()
-        StatusManager.bgImage = ""
-        StatusManager.loadingState = LoadingStatus.DONE
-    }
 }

@@ -388,6 +388,7 @@ fun CardView(
             onClick = onClick,
             onLongClick = {
                 Status.showFavouriteMenu = true
+                Status.reboundEnter = true
                 Sections.focusedIndex = sectionIndex
                 Sections.focusedCardIndex = cardIndex
             },
