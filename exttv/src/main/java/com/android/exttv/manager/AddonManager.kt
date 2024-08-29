@@ -9,44 +9,34 @@ import java.io.File
 object AddonManager {
     var addonsPath = File("")
 
-    // this ensures that uninstall and install are atomic
-    private val lock = Any()
-
     fun init(context: Context) {
-        synchronized(lock) {
-            addonsPath = File(context.filesDir, "exttv_home/addons")
-            if (!addonsPath.exists() || !addonsPath.isDirectory) {
-                addonsPath.mkdirs()
-            }
+        addonsPath = File(context.filesDir, "exttv_home/addons")
+        if (!addonsPath.exists() || !addonsPath.isDirectory) {
+            addonsPath.mkdirs()
         }
     }
 
     private fun getAllAddons(): List<String> {
-        synchronized(lock) {
-            return addonsPath.listFiles { file -> file.isDirectory }
-                ?.map { it.name }
-                ?.sorted() // Ensure the list is sorted
-                ?: emptyList()
-        }
+        return addonsPath.listFiles { file -> file.isDirectory }
+            ?.map { it.name }
+            ?.sorted() // Ensure the list is sorted
+            ?: emptyList()
     }
 
     fun installAddon(url: String, force: Boolean = false): String {
-        synchronized(lock) {
-            fun isValidUrl(url: String): Boolean {
-                val urlRegex = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$".toRegex()
-                return url.matches(urlRegex)
-            }
+        fun isValidUrl(url: String): Boolean {
+            val urlRegex = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$".toRegex()
+            return url.matches(urlRegex)
+        }
 
-            return if (isValidUrl(url)) {
-                getFromRepository(url, force)
-            } else {
-                getFromGit(url, force)
-            }
+        return if (isValidUrl(url)) {
+            getFromRepository(url, force)
+        } else {
+            getFromGit(url, force)
         }
     }
 
     fun uninstallAddon(index: Int) {
-        synchronized(lock) {
             val installedAddons = getAllAddons()
             val addonName = installedAddons.getOrNull(index) ?: return
             val directory = File("$addonsPath/$addonName")
@@ -57,7 +47,6 @@ object AddonManager {
                 Log.d("AddonManager", "Error deleting directory: ${e.message}")
                 e.printStackTrace()
                 throw e
-            }
         }
     }
 
