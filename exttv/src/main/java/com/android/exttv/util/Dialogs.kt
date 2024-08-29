@@ -55,7 +55,6 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
-import com.android.exttv.MainActivity
 import com.android.exttv.manager.LoadingStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -73,66 +72,65 @@ import com.android.exttv.manager.SectionManager as Sections
 
 @Composable
 fun NewPlaylistMenu() {
+    if (!Status.showNewPlaylistMenu) return
     val cardItem = Sections.getFocusedCard()
-    if (Status.showNewPlaylistMenu) {
-        var playlistName by remember { mutableStateOf("") }
-        val focusRequester = remember { FocusRequester() }
-        val focusManager = LocalFocusManager.current
+    var playlistName by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
-        Dialog(onDismissRequest = { Status.showNewPlaylistMenu = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Enter Playlist Name",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    TextField(
-                        value = playlistName,
-                        onValueChange = { newName -> playlistName = newName },
-                        placeholder = { Text("New Playlist") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(focusRequester)
-                            .onKeyEvent { event ->
-                                if (event.type == KeyEventType.KeyDown) {
-                                    when (event.key) {
-                                        Key.Enter -> {
-                                            Favourites.addCardOrCreateFavourite(playlistName, cardItem)
-                                            Status.showNewPlaylistMenu = false // Close dialog after creation
-                                            Status.showFavouriteMenu = false
-                                            focusManager.clearFocus() // Clear focus
-                                            true
-                                        }
-                                        else -> false
+    Dialog(onDismissRequest = { Status.showNewPlaylistMenu = false }) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Enter Playlist Name",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                TextField(
+                    value = playlistName,
+                    onValueChange = { newName -> playlistName = newName },
+                    placeholder = { Text("New Playlist") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                        .onKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown) {
+                                when (event.key) {
+                                    Key.Enter -> {
+                                        Favourites.addCardOrCreateFavourite(playlistName, cardItem)
+                                        Status.showNewPlaylistMenu = false // Close dialog after creation
+                                        Status.showFavouriteMenu = false
+                                        focusManager.clearFocus() // Clear focus
+                                        true
                                     }
-                                } else {
-                                    false
+                                    else -> false
                                 }
-                            },
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                Favourites.addCardOrCreateFavourite(playlistName, cardItem)
-                                Status.showNewPlaylistMenu = false // Close dialog after creation
-                                Status.showFavouriteMenu = false
-                                focusManager.clearFocus() // Clear focus
+                            } else {
+                                false
                             }
-                        )
+                        },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            Favourites.addCardOrCreateFavourite(playlistName, cardItem)
+                            Status.showNewPlaylistMenu = false // Close dialog after creation
+                            Status.showFavouriteMenu = false
+                            focusManager.clearFocus() // Clear focus
+                        }
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
 
-        // Request focus when the dialog is first composed
-        LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
-        }
+    // Request focus when the dialog is first composed
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 }
 
@@ -152,33 +150,32 @@ fun OptionItem(text: String, onClick: () -> Unit) {
 
 @Composable
 fun FavouriteMenu() {
-    if (Status.showFavouriteMenu) {
-        Dialog(onDismissRequest = { Status.showFavouriteMenu = false }) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Column(modifier = Modifier.onKeyEvent { keyEvent ->
-                    // Consume the enter key event on key up to prevent accidental clicks
-                    keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyUp
-                }.padding(16.dp)) {
-                    OptionItem(
-                        text = "Add to new playlist",
-                        onClick = {
-                            if(Status.reboundEnter){
-                                Status.reboundEnter = false
-                            }else {
-                                Status.showNewPlaylistMenu = true
-                            }
+    if (!Status.showFavouriteMenu) return
+    Dialog(onDismissRequest = { Status.showFavouriteMenu = false }) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Column(modifier = Modifier.onKeyEvent { keyEvent ->
+                // Consume the enter key event on key up to prevent accidental clicks
+                keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyUp
+            }.padding(16.dp)) {
+                OptionItem(
+                    text = "Add to new playlist",
+                    onClick = {
+                        if(Status.reboundEnter){
+                            Status.reboundEnter = false
+                        }else {
+                            Status.showNewPlaylistMenu = true
                         }
-                    )
-                    OptionItem(text = "Add content to new playlist", onClick = {})
-                    Favourites.getAllFavouriteNames().forEach { name ->
-                        OptionItem(text = "Add to $name", onClick = {
-                            Favourites.addCardOrCreateFavourite(name, Sections.getFocusedCard())
-                            Status.showFavouriteMenu = false
-                        })
-                        OptionItem(text = "Add content to $name", onClick = {})
                     }
+                )
+                OptionItem(text = "Add content to new playlist", onClick = {})
+                Favourites.getAllFavouriteNames().forEach { name ->
+                    OptionItem(text = "Add to $name", onClick = {
+                        Favourites.addCardOrCreateFavourite(name, Sections.getFocusedCard())
+                        Status.showFavouriteMenu = false
+                    })
+                    OptionItem(text = "Add content to $name", onClick = {})
                 }
             }
         }
@@ -187,137 +184,134 @@ fun FavouriteMenu() {
 
 @Composable
 fun RemoveDialog() {
+    if (!Status.showRemoveDialog) return
     val favouriteIndex = Status.focusedContextIndex-Addons.size
-    if (Status.showRemoveDialog) {
-        val focusRequester = remember { FocusRequester() }
-        val coroutineScope = rememberCoroutineScope()
-        LaunchedEffect(Unit) {focusRequester.requestFocus()}
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {focusRequester.requestFocus()}
 
-        AlertDialog(
-            onDismissRequest = { Status.showRemoveDialog = false },
-            title = { Text(text = "Uninstall") },
-            text = { Text(text = "Do you want to remove ${Favourites[favouriteIndex]}") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        Status.showRemoveDialog = false
-                        coroutineScope.launch {
-                            withContext(Dispatchers.IO) {
-                                Status.focusedContextIndex = -1
-                                if (Status.selectedIndex == favouriteIndex+Addons.size) {
-                                    Status.selectedIndex = -1
-                                    Sections.clearSections()
-                                } else if (Status.selectedIndex > favouriteIndex+Addons.size) {
-                                    Status.selectedIndex -= 1
-                                }
-                                Favourites.deleteFavourite(favouriteIndex)
-                                ContextManager.update()
+    AlertDialog(
+        onDismissRequest = { Status.showRemoveDialog = false },
+        title = { Text(text = "Remove") },
+        text = { Text(text = "Do you want to remove ${Favourites[favouriteIndex]}") },
+        confirmButton = {
+            Button(
+                onClick = {
+                    Status.showRemoveDialog = false
+                    coroutineScope.launch {
+                        withContext(Dispatchers.IO) {
+                            Status.focusedContextIndex = -1
+                            if (Status.selectedIndex == favouriteIndex+Addons.size) {
+                                Status.selectedIndex = -1
+                                Sections.clearSections()
+                            } else if (Status.selectedIndex > favouriteIndex+Addons.size) {
+                                Status.selectedIndex -= 1
                             }
+                            Favourites.deleteFavourite(favouriteIndex)
+                            Status.update()
                         }
                     }
-                ) { Text("Uninstall") }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { Status.showRemoveDialog = false },
-                    modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
-                ) { Text("Cancel") }
-            }
-        )
-    }
+                }
+            ) { Text("Remove") }
+        },
+        dismissButton = {
+            Button(
+                onClick = { Status.showRemoveDialog = false },
+                modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
+            ) { Text("Cancel") }
+        }
+    )
 }
 
 @Composable
 fun UninstallDialog() {
-    if (Status.showUninstallDialog) {
-        val indexAddon = Status.focusedContextIndex
-        val focusRequester = remember { FocusRequester() }
-        val coroutineScope = rememberCoroutineScope()
-        LaunchedEffect(Unit) {focusRequester.requestFocus()}
+    if (!Status.showUninstallDialog) return
+    val indexAddon = Status.focusedContextIndex
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {focusRequester.requestFocus()}
 
-        AlertDialog(
-            onDismissRequest = { Status.showUninstallDialog = false },
-            title = { Text(text = "Uninstall") },
-            text = { Text(text = "Do you want to uninstall ${Addons[indexAddon]}") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        Status.showUninstallDialog = false
-                        coroutineScope.launch {
-                            withContext(Dispatchers.IO) {
-                                Status.focusedContextIndex = -1
-                                if (Status.selectedIndex == indexAddon) {
-                                    Status.selectedIndex = -1
-                                    Sections.clearSections()
-                                } else if (Status.selectedIndex > indexAddon) {
-                                    Status.selectedIndex -= 1
-                                }
-                                Addons.uninstallAddon(indexAddon)
-                                ContextManager.update()
+    AlertDialog(
+        onDismissRequest = { Status.showUninstallDialog = false },
+        title = { Text(text = "Uninstall") },
+        text = { Text(text = "Do you want to uninstall ${Addons[indexAddon]}") },
+        confirmButton = {
+            Button(
+                onClick = {
+                    Status.showUninstallDialog = false
+                    coroutineScope.launch {
+                        withContext(Dispatchers.IO) {
+                            Status.focusedContextIndex = -1
+                            if (Status.selectedIndex == indexAddon) {
+                                Status.selectedIndex = -1
+                                Sections.clearSections()
+                            } else if (Status.selectedIndex > indexAddon) {
+                                Status.selectedIndex -= 1
                             }
+                            Addons.uninstallAddon(indexAddon)
+                            Status.update()
                         }
                     }
-                ) { Text("Uninstall") }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { Status.showUninstallDialog = false },
-                    modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
-                ) { Text("Cancel") }
-            }
-        )
-    }
+                }
+            ) { Text("Uninstall") }
+        },
+        dismissButton = {
+            Button(
+                onClick = { Status.showUninstallDialog = false },
+                modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
+            ) { Text("Cancel") }
+        }
+    )
 }
 
 @Composable
 fun UpdateDialog() {
+    if (!Status.showUpdateDialog) return
     val indexAddon = Status.focusedContextIndex
-    if (Status.showUpdateDialog) {
-        val focusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) {focusRequester.requestFocus()}
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {focusRequester.requestFocus()}
 
-        AlertDialog(
-            onDismissRequest = { Status.showUpdateDialog = false },
-            title = { Text(text = "Update") },
-            text = { Text(text = "Do you want to update ${Addons[indexAddon]}") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val json = Addons.addonsPath.resolve("${Addons[indexAddon]}/addon.json").readText()
-                        val data = Json.decodeFromString(PluginData.serializer(), json)
-                        if(data.sourceURL == data.zipURL){
-                            val regex = Regex("""https://github\.com/([^/]+)/([^/]+)/archive/refs/heads/([^/]+)\.zip""")
-                            val matchResult = regex.find(data.zipURL)
-                            if (matchResult != null) {
-                                val owner = matchResult.groupValues[1]
-                                val repository = matchResult.groupValues[2]
-                                val branch = matchResult.groupValues[3]
-                                Addons.installAddon("$owner/$repository/$branch", true)
-                            }
-                        }else{
-                            val (zipPath, _) = getLatestZipName(data.sourceURL)
-                            if(zipPath!=data.zipURL) { // update if different zip name
-                                Status.showToast("Installing updates", Toast.LENGTH_SHORT)
-                                Addons.installAddon(data.sourceURL, true)
-                            }else{
-                                Status.showToast("No updates available", Toast.LENGTH_SHORT)
-                            }
+    AlertDialog(
+        onDismissRequest = { Status.showUpdateDialog = false },
+        title = { Text(text = "Update") },
+        text = { Text(text = "Do you want to update ${Addons[indexAddon]}") },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val json = Addons.addonsPath.resolve("${Addons[indexAddon]}/addon.json").readText()
+                    val data = Json.decodeFromString(PluginData.serializer(), json)
+                    if(data.sourceURL == data.zipURL){
+                        val regex = Regex("""https://github\.com/([^/]+)/([^/]+)/archive/refs/heads/([^/]+)\.zip""")
+                        val matchResult = regex.find(data.zipURL)
+                        if (matchResult != null) {
+                            val owner = matchResult.groupValues[1]
+                            val repository = matchResult.groupValues[2]
+                            val branch = matchResult.groupValues[3]
+                            Addons.installAddon("$owner/$repository/$branch", true)
                         }
-                        Status.showUpdateDialog = false
+                    }else{
+                        val (zipPath, _) = getLatestZipName(data.sourceURL)
+                        if(zipPath!=data.zipURL) { // update if different zip name
+                            Status.showToast("Installing updates", Toast.LENGTH_SHORT)
+                            Addons.installAddon(data.sourceURL, true)
+                        }else{
+                            Status.showToast("No updates available", Toast.LENGTH_SHORT)
+                        }
                     }
-                ) {
-                    Text("Update")
+                    Status.showUpdateDialog = false
                 }
-            },
-            dismissButton = {
-                Button(onClick = { Status.showUpdateDialog = false },
-                       modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
-                ){
-                    Text("Cancel")
-                }
+            ) {
+                Text("Update")
             }
-        )
-    }
+        },
+        dismissButton = {
+            Button(onClick = { Status.showUpdateDialog = false },
+                   modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
+            ){
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 fun fetchUrlContent(url: String): String? {
@@ -344,6 +338,7 @@ data class Addon(
 
 @Composable
 fun RepositoryDialog() {
+    if (!Status.showRepositoryDialog) return
     Status.loadingState = LoadingStatus.FETCHING_ADDON
     val videoAddons = mutableListOf<Addon>()
     val url = "https://kodi.tv/page-data/addons/omega/search/page-data.json"
@@ -428,7 +423,7 @@ fun RepositoryDialog() {
                                     Status.focusedContextIndex = -1
 
                                     val pluginName = Addons.installAddon("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
-                                    ContextManager.update()
+                                    Status.update()
                                     Python.selectAddon(pluginName)
                                 }
                             }
@@ -497,6 +492,7 @@ fun AddonBox(addon: Addon) {
 
 @Composable
 fun GithubDialog() {
+    if(!Status.showGithubDialog) return
     var username by remember { mutableStateOf("") }
     var repoName by remember { mutableStateOf("") }
     var branchName by remember { mutableStateOf("") }
@@ -594,7 +590,7 @@ fun GithubDialog() {
                                     Status.focusedContextIndex = -1
 
                                     val pluginName = Addons.installAddon(url)
-                                    ContextManager.update()
+                                    Status.update()
                                     Python.selectAddon(pluginName)
                                 }
                             }

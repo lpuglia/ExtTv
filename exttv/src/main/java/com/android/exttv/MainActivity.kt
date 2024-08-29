@@ -17,7 +17,6 @@ import com.android.exttv.manager.AddonManager
 import com.android.exttv.manager.FavouriteManager
 import com.android.exttv.manager.PythonManager
 import com.android.exttv.manager.StatusManager
-import com.android.exttv.util.ContextManager
 
 class MainActivity : ComponentActivity() {
 
@@ -85,11 +84,10 @@ class MainActivity : ComponentActivity() {
         instance = this
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
-        StatusManager.init(this)
         AddonManager.init(this)
         PythonManager.init(this)
         FavouriteManager.init(this)
-        ContextManager.update()
+        StatusManager.init(this)
 
         setContent {
             MaterialTheme {

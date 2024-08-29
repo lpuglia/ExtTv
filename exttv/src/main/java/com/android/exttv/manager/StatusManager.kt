@@ -30,6 +30,7 @@ object StatusManager {
     var showNewPlaylistMenu by mutableStateOf(false)
     var selectedIndex by mutableIntStateOf(-1)
     var focusedContextIndex by mutableIntStateOf(-1)
+    var drawerItems by mutableStateOf(listOf<String>())
 
     lateinit var context : MainActivity
     lateinit var showToast : (String?, Int) -> Unit
@@ -37,6 +38,11 @@ object StatusManager {
     fun init(ctxt: MainActivity){
         context = ctxt
         showToast = ctxt::showToast
+        update()
     }
 
+    fun update() {
+        drawerItems = AddonManager.getAllAddonNames() + FavouriteManager.getAllFavouriteNames() +
+                listOf("Add from Repository", "Add from GitHub")
+    }
 }

@@ -42,6 +42,7 @@ object FavouriteManager {
         synchronized(lock) {
             val jsonString = gson.toJson(allLists)
             prefs.edit().putString("all_favourites", jsonString).apply()
+            StatusManager.update()
         }
     }
 

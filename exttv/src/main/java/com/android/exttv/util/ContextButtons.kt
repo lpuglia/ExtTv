@@ -1,5 +1,6 @@
 package com.android.exttv.util
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -10,9 +11,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -28,32 +26,23 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
 import com.android.exttv.manager.AddonManager as Addons
-import com.android.exttv.manager.FavouriteManager as Favourites
 import com.android.exttv.manager.StatusManager as Status
 
-object ContextManager {
-    var drawerItemRequesters by mutableStateOf(listOf<FocusRequester>())
-    var uninstallReqs by mutableStateOf(listOf<FocusRequester>())
-    var updateReqs    by mutableStateOf(listOf<FocusRequester>())
-    var settingReqs   by mutableStateOf(listOf<FocusRequester>())
-    var removeFavReqs by mutableStateOf(listOf<FocusRequester>())
-
-    fun update(){
-        drawerItemRequesters = List(Addons.size+Favourites.size+2) { FocusRequester() }
-        settingReqs   = List(Addons.size) { FocusRequester() }
-        updateReqs    = List(Addons.size) { FocusRequester() }
-        uninstallReqs = List(Addons.size) { FocusRequester() }
-        removeFavReqs = List(Favourites.size) { FocusRequester() }
-    }
-}
+var uninstallReqs = mutableListOf<FocusRequester>()
+var updateReqs = mutableListOf<FocusRequester>()
+var settingReqs = mutableListOf<FocusRequester>()
+var removeFavReqs = mutableListOf<FocusRequester>()
 
 @Composable
 fun FavouriteButtons(
-    itemIndex: Int
+    favouriteIndex: Int
 ){
     Row(
-        Modifier.height(50.dp).width(if(Status.focusedContextIndex==Addons.size+itemIndex) 60.dp else 0.dp)
+        Modifier.height(50.dp).width(if(Status.focusedContextIndex==Addons.size+favouriteIndex) 60.dp else 0.dp)
     ) {
+        if(favouriteIndex==0) removeFavReqs.clear()
+        removeFavReqs.add(FocusRequester())
+
         Button(
             onClick = {
                 Status.showRemoveDialog = true
@@ -61,8 +50,8 @@ fun FavouriteButtons(
             modifier = Modifier
                 .padding(end = 10.dp)
                 .width(50.dp)
-                .focusRequester(ContextManager.removeFavReqs[itemIndex])
-                .onKeyEvent { event -> removeFavButtonKE(event, itemIndex)},
+                .focusRequester(removeFavReqs.last())
+                .onKeyEvent { event -> removeFavButtonKE(event, favouriteIndex)},
             colors = ButtonDefaults.colors(
                 containerColor = Color(0xFF1D2E31),
                 focusedContainerColor = Color(0xFF2B474D)
@@ -104,6 +93,14 @@ fun ContextButtons(
     Row(
         Modifier.width(if (Status.focusedContextIndex == addonIndex) 180.dp else 0.dp,)
     ) {
+        if(addonIndex==0) {
+            settingReqs.clear()
+            updateReqs.clear()
+            uninstallReqs.clear()
+        }
+        uninstallReqs.add(FocusRequester())
+        updateReqs.add(FocusRequester())
+        settingReqs.add(FocusRequester())
         Button(
             onClick = {
                 Status.showUninstallDialog = true
@@ -111,7 +108,7 @@ fun ContextButtons(
             modifier = Modifier
                 .padding(end = 10.dp)
                 .width(50.dp).height(50.dp)
-                .focusRequester(ContextManager.uninstallReqs[addonIndex])
+                .focusRequester(uninstallReqs.last())
                 .onKeyEvent { event -> uninstallButtonKE(event, addonIndex) },
             colors = ButtonDefaults.colors(
                 containerColor = Color(0xFF1D2E31),
@@ -125,6 +122,7 @@ fun ContextButtons(
                 tint = Color.White,
             )
         }
+//        println("tFocusRequester assigned: ${System.identityHashCode(tFocusRequester)}")
         Button(
             onClick = {
                 Status.showUpdateDialog = true
@@ -132,7 +130,7 @@ fun ContextButtons(
             modifier = Modifier
                 .padding(end = 10.dp)
                 .width(50.dp).height(50.dp)
-                .focusRequester(ContextManager.updateReqs[addonIndex])
+                .focusRequester(updateReqs.last())
                 .onKeyEvent { event -> updateButtonKE(event, addonIndex) },
             colors = ButtonDefaults.colors(
                 containerColor = Color(0xFF1D2E31),
@@ -151,7 +149,7 @@ fun ContextButtons(
             modifier = Modifier
                 .padding(end = 10.dp)
                 .width(50.dp).height(50.dp)
-                .focusRequester(ContextManager.settingReqs[addonIndex])
+                .focusRequester(settingReqs.last())
                 .onKeyEvent { event -> settingButtonKE(event, addonIndex) },
             colors = ButtonDefaults.colors(
                 containerColor = Color(0xFF1D2E31),
@@ -181,7 +179,7 @@ fun uninstallButtonKE(
         Key.DirectionUp, Key.DirectionDown -> {
             Status.focusedContextIndex = -1
         } Key.DirectionRight -> {
-            ContextManager.updateReqs[addonIndex].requestFocus()
+            updateReqs[addonIndex].requestFocus()
             return true
         }
     }
@@ -199,10 +197,10 @@ fun updateButtonKE(
         Key.DirectionUp, Key.DirectionDown -> {
             Status.focusedContextIndex = -1
         } Key.DirectionLeft -> {
-            ContextManager.uninstallReqs[addonIndex].requestFocus()
+            uninstallReqs[addonIndex].requestFocus()
             return true
         } Key.DirectionRight -> {
-            ContextManager.settingReqs[addonIndex].requestFocus()
+            settingReqs[addonIndex].requestFocus()
             return true
         }
     }
@@ -220,7 +218,7 @@ fun settingButtonKE(
         Key.DirectionUp, Key.DirectionDown, Key.DirectionRight -> {
             Status.focusedContextIndex = -1
         } Key.DirectionLeft -> {
-            ContextManager.updateReqs[addonIndex].requestFocus()
+            updateReqs[addonIndex].requestFocus()
             return true
         }
     }
@@ -229,16 +227,16 @@ fun settingButtonKE(
 
 fun addonKE(
     event: KeyEvent,
-    addonIndex: Int,
+    itemIndex: Int,
 ): Boolean {
     if(event.type == KeyEventType.KeyUp ||
-      (addonIndex == 0 && event.key == Key.DirectionUp)){ return true }
+      (itemIndex == 0 && event.key == Key.DirectionUp)){ return true }
     if (event.key == Key.DirectionLeft) {
-        Status.focusedContextIndex = addonIndex
-        if(addonIndex < Addons.size){
-            ContextManager.settingReqs[addonIndex].requestFocus()
+        Status.focusedContextIndex = itemIndex
+        if(itemIndex < Addons.size){
+            settingReqs[itemIndex].requestFocus()
         }else{
-            ContextManager.removeFavReqs[addonIndex-Addons.size].requestFocus()
+            removeFavReqs[itemIndex-Addons.size].requestFocus()
         }
         return true
     }

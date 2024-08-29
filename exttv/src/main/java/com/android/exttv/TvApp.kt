@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -63,7 +64,6 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.exttv.MainActivity
 import com.android.exttv.R
 import com.android.exttv.manager.LoadingStatus
 import com.android.exttv.manager.SectionManager
@@ -80,7 +80,6 @@ import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.nonAddonKE
 import com.android.exttv.util.parseText
-import com.android.exttv.util.ContextManager as Contexts
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.FavouriteManager as Favourites
 import com.android.exttv.manager.SectionManager as Sections
@@ -90,15 +89,8 @@ import com.android.exttv.manager.PythonManager as Python
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CatalogBrowser() {
-    val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
-    val drawerItems =
-        Addons.getAllAddonNames().map { it to myIcon } +
-        Favourites.getAllFavouriteNames().map { it to Icons.Default.Star } +
-        listOf(
-            "Add from Repository" to Icons.Default.Add,
-            "Add from GitHub" to Icons.Default.Add,
-        )
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
+    val drawerItemRequesters = mutableListOf<FocusRequester>()
     val drawerWidth by animateDpAsState(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp,
         label = ""
@@ -125,41 +117,50 @@ fun CatalogBrowser() {
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                itemsIndexed(drawerItems){ addonIndex, item ->
-                    if(addonIndex==0 || addonIndex==Addons.size || addonIndex==Addons.size+Favourites.size){
+                itemsIndexed(Status.drawerItems) { drawerIndex, drawerItem ->
+                    val icon =
+                    if (drawerIndex < Addons.size) ImageVector.vectorResource(id = R.drawable.icon_drawer)
+                    else if (drawerIndex < Addons.size + Favourites.size) Icons.Default.Star
+                    else Icons.Default.Add
+
+                    if (drawerIndex == 0 || drawerIndex == Addons.size || drawerIndex == Addons.size + Favourites.size) {
                         Row(modifier = Modifier.width(255.dp)) {
                             @Composable
                             fun HeaderText(textProvider: () -> String) {
-                                Text(text = textProvider(), maxLines = 1, color = Color.White,
-                                    overflow = TextOverflow.Ellipsis,modifier = Modifier.padding(top = 5.dp)
+                                Text(
+                                    text = textProvider(),
+                                    maxLines = 1,
+                                    color = Color.White,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 5.dp)
                                 )
                             }
-                            if(addonIndex==0 && Addons.size>0) HeaderText { "Addons" }
-                            if(addonIndex==Addons.size && Favourites.size>0) HeaderText { "Favourites" }
-                            if(addonIndex==Addons.size+Favourites.size)
-                                HeaderText { "Menu" }
+                            if (drawerIndex == 0 && Addons.size > 0)  HeaderText { "Addons" }
+                            if (drawerIndex == Addons.size && Favourites.size > 0) HeaderText { "Favourites" }
+                            if (drawerIndex == Addons.size + Favourites.size) HeaderText { "Menu" }
                             Divider(
                                 color = Color.Gray,
                                 thickness = 1.dp,
                                 modifier = Modifier
-                                    .padding(top = 15.dp, bottom=20.dp)
+                                    .padding(top = 15.dp, bottom = 20.dp)
                                     .fillMaxWidth()
                             )
                         }
                     }
-                    val (text, icon) = item
                     Row {
+                        if(drawerIndex==0) drawerItemRequesters.clear()
+                        drawerItemRequesters.add(FocusRequester())
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
-                        modifier = modifier.focusRequester(Contexts.drawerItemRequesters[addonIndex])
-                        if(addonIndex<Addons.size){
-                            ContextButtons(addonIndex)
-                            modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
-                            isSelected = Status.selectedIndex == addonIndex
-                        } else if(addonIndex<Addons.size+Favourites.size){
-                            FavouriteButtons(addonIndex-Addons.size)
-                            modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
-                            isSelected = Status.selectedIndex == addonIndex
+                        modifier = modifier.focusRequester(drawerItemRequesters.last())
+                        if (drawerIndex < Addons.size) {
+                            ContextButtons(drawerIndex)
+                            modifier = modifier.onKeyEvent { event -> addonKE(event, drawerIndex) }
+                            isSelected = Status.selectedIndex == drawerIndex
+                        } else if (drawerIndex < Addons.size + Favourites.size) {
+                            FavouriteButtons(drawerIndex - Addons.size)
+                            modifier = modifier.onKeyEvent { event -> addonKE(event, drawerIndex) }
+                            isSelected = Status.selectedIndex == drawerIndex
                         } else {
                             modifier = modifier.onKeyEvent { event -> nonAddonKE(event) }
                         }
@@ -167,10 +168,14 @@ fun CatalogBrowser() {
                             selected = isSelected,
                             modifier = modifier,
                             onClick = {
-                                if(text=="Add from Repository") Status.showRepositoryDialog = true
-                                else if(text=="Add from GitHub") Status.showGithubDialog = true
-                                else if(addonIndex<Addons.size) Python.selectAddon(text)
-                                else Python.selectFavourite(text)
+                                if (drawerItem == "Add from Repository") Status.showRepositoryDialog =
+                                    true
+                                else if (drawerItem == "Add from GitHub") Status.showGithubDialog =
+                                    true
+                                else if (drawerIndex < Addons.size) Python.selectAddon(
+                                    drawerItem
+                                )
+                                else Python.selectFavourite(drawerItem)
                             },
                             colors = NavigationDrawerItemDefaults.colors(
                                 containerColor = Color(0xFF1D2E31),
@@ -187,10 +192,10 @@ fun CatalogBrowser() {
                             }
                         ) {
                             Text(
-                                text,
+                                drawerItem,
                                 modifier = Modifier.basicMarquee(iterations = if (isSelected) 100 else 0),
                                 color = if (isSelected) Color.White else Color.LightGray
-                                )
+                            )
                         }
                     }
                 }
@@ -210,24 +215,20 @@ fun CatalogBrowser() {
             )
         }
     }
-    if (Status.showGithubDialog)     GithubDialog();
-    if (Status.showRepositoryDialog) RepositoryDialog();
-    if (Status.showUninstallDialog)  UninstallDialog();
-    if (Status.showRemoveDialog)     RemoveDialog();
-    if (Status.showUpdateDialog)     UpdateDialog();
-    if (Status.showFavouriteMenu)    FavouriteMenu();
-    if (Status.showNewPlaylistMenu)  NewPlaylistMenu();
+    GithubDialog(); RepositoryDialog(); UninstallDialog();
+    RemoveDialog(); UpdateDialog(); FavouriteMenu();
+    NewPlaylistMenu();
 
     LaunchedEffect(drawerState.currentValue, Status.selectedIndex) {
         if (drawerState.currentValue == DrawerValue.Open)
-            if (Status.selectedIndex>=0) {
+            if (Status.selectedIndex >= 0) {
                 listState.scrollToItem(Status.selectedIndex)
-                Contexts.drawerItemRequesters[Status.selectedIndex].requestFocus()
+                drawerItemRequesters[Status.selectedIndex].requestFocus()
             }
         if (Sections.isEmpty && Status.loadingState == LoadingStatus.DONE) { // keep the drawer open when sections is empty and Done
             drawerState.setValue(DrawerValue.Open)
-            if(Contexts.drawerItemRequesters.isNotEmpty())
-                Contexts.drawerItemRequesters[0].requestFocus()
+            if (drawerItemRequesters.isNotEmpty())
+                drawerItemRequesters[0].requestFocus()
         }
     }
 }
