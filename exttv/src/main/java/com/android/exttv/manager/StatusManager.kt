@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
+import com.android.exttv.MainActivity
 
 enum class LoadingStatus {
     DONE,
@@ -22,11 +23,20 @@ object StatusManager {
     var showGithubDialog by mutableStateOf(false)
     var showRepositoryDialog by mutableStateOf(false)
     var bgImage by mutableStateOf("")
-    var showUninstallDialog by mutableStateOf(false)
     var showUpdateDialog by mutableStateOf(false)
+    var showUninstallDialog by mutableStateOf(false)
+    var showRemoveDialog by mutableStateOf(false)
     var showFavouriteMenu by mutableStateOf(false)
     var showNewPlaylistMenu by mutableStateOf(false)
     var selectedIndex by mutableIntStateOf(-1)
     var focusedContextIndex by mutableIntStateOf(-1)
+
+    lateinit var context : MainActivity
+    lateinit var showToast : (String?, Int) -> Unit
+
+    fun init(ctxt: MainActivity){
+        context = ctxt
+        showToast = ctxt::showToast
+    }
 
 }

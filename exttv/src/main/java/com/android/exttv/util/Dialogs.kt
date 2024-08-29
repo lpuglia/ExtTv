@@ -186,8 +186,51 @@ fun FavouriteMenu() {
 }
 
 @Composable
-fun UninstallDialog(indexAddon: Int) {
+fun RemoveDialog() {
+    val favouriteIndex = Status.focusedContextIndex-Addons.size
+    if (Status.showRemoveDialog) {
+        val focusRequester = remember { FocusRequester() }
+        val coroutineScope = rememberCoroutineScope()
+        LaunchedEffect(Unit) {focusRequester.requestFocus()}
+
+        AlertDialog(
+            onDismissRequest = { Status.showRemoveDialog = false },
+            title = { Text(text = "Uninstall") },
+            text = { Text(text = "Do you want to remove ${Favourites[favouriteIndex]}") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        Status.showRemoveDialog = false
+                        coroutineScope.launch {
+                            withContext(Dispatchers.IO) {
+                                Status.focusedContextIndex = -1
+                                if (Status.selectedIndex == favouriteIndex+Addons.size) {
+                                    Status.selectedIndex = -1
+                                    Sections.clearSections()
+                                } else if (Status.selectedIndex > favouriteIndex+Addons.size) {
+                                    Status.selectedIndex -= 1
+                                }
+                                Favourites.deleteFavourite(favouriteIndex)
+                                ContextManager.update()
+                            }
+                        }
+                    }
+                ) { Text("Uninstall") }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { Status.showRemoveDialog = false },
+                    modifier = Modifier.focusRequester(focusRequester) // Assign the focusRequester to the Cancel button
+                ) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+@Composable
+fun UninstallDialog() {
     if (Status.showUninstallDialog) {
+        val indexAddon = Status.focusedContextIndex
         val focusRequester = remember { FocusRequester() }
         val coroutineScope = rememberCoroutineScope()
         LaunchedEffect(Unit) {focusRequester.requestFocus()}
@@ -227,10 +270,8 @@ fun UninstallDialog(indexAddon: Int) {
 }
 
 @Composable
-fun UpdateDialog(
-    context: MainActivity,
-    indexAddon: Int
-) {
+fun UpdateDialog() {
+    val indexAddon = Status.focusedContextIndex
     if (Status.showUpdateDialog) {
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {focusRequester.requestFocus()}
@@ -256,10 +297,10 @@ fun UpdateDialog(
                         }else{
                             val (zipPath, _) = getLatestZipName(data.sourceURL)
                             if(zipPath!=data.zipURL) { // update if different zip name
-                                context.showToast("Installing updates", Toast.LENGTH_SHORT)
+                                Status.showToast("Installing updates", Toast.LENGTH_SHORT)
                                 Addons.installAddon(data.sourceURL, true)
                             }else{
-                                context.showToast("No updates available", Toast.LENGTH_SHORT)
+                                Status.showToast("No updates available", Toast.LENGTH_SHORT)
                             }
                         }
                         Status.showUpdateDialog = false
@@ -302,9 +343,7 @@ data class Addon(
 )
 
 @Composable
-fun RepositoryDialog(
-    context: MainActivity,
-) {
+fun RepositoryDialog() {
     Status.loadingState = LoadingStatus.FETCHING_ADDON
     val videoAddons = mutableListOf<Addon>()
     val url = "https://kodi.tv/page-data/addons/omega/search/page-data.json"
@@ -335,7 +374,7 @@ fun RepositoryDialog(
             }
         }
     } else {
-        context.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
+        Status.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
         Status.showRepositoryDialog = false
     }
     Status.loadingState = LoadingStatus.DONE

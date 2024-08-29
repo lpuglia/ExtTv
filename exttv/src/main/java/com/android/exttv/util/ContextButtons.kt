@@ -49,16 +49,14 @@ object ContextManager {
 
 @Composable
 fun FavouriteButtons(
-    itemIndex: Int,
-    label: String,
+    itemIndex: Int
 ){
     Row(
         Modifier.height(50.dp).width(if(Status.focusedContextIndex==Addons.size+itemIndex) 60.dp else 0.dp)
     ) {
         Button(
             onClick = {
-                Favourites.deleteFavourite(label)
-                Status.focusedContextIndex = -1
+                Status.showRemoveDialog = true
             },
             modifier = Modifier
                 .padding(end = 10.dp)

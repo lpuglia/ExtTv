@@ -23,19 +23,17 @@ object PythonManager {
         }.apply { start(); join() }
     }
 
-    fun selectFavourite(favouriteName: String) {
-        Favourites.getFavourite(favouriteName).let {
-            Status.selectedIndex = Addons.size + Favourites.getAllFavouriteNames().indexOf(favouriteName)
-            Status.loadingState = LoadingStatus.SELECTING_ADDON
-            Sections.removeAndAdd(0, "", Sections.Section(favouriteName, it))
-            Status.loadingState = LoadingStatus.SECTION_LOADED
-        }
-    }
-
     fun selectAddon(pluginName: String) {
         Status.selectedIndex = Addons.getAllAddonNames().indexOf(pluginName)
         Status.loadingState = LoadingStatus.SELECTING_ADDON
         selectSection("plugin://$pluginName/", "Menu")
+    }
+
+    fun selectFavourite(favouriteName: String) {
+        Status.selectedIndex = Addons.size + Favourites.indexOf(favouriteName)
+        Status.loadingState = LoadingStatus.SELECTING_SECTION
+        Sections.removeAndAdd(0, "", Sections.Section(favouriteName, Favourites.getFavourite(favouriteName)))
+        Status.loadingState = LoadingStatus.SECTION_LOADED
     }
 
     fun selectSection(uri: String, title: String, sectionIndex: Int = -1, cardIndex: Int = 0) {

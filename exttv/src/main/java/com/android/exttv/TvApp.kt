@@ -74,6 +74,7 @@ import com.android.exttv.util.ContextButtons
 import com.android.exttv.util.FavouriteButtons
 import com.android.exttv.util.FavouriteMenu
 import com.android.exttv.util.NewPlaylistMenu
+import com.android.exttv.util.RemoveDialog
 import com.android.exttv.util.UpdateDialog
 import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
@@ -88,9 +89,7 @@ import com.android.exttv.manager.PythonManager as Python
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CatalogBrowser(
-    context: MainActivity,
-) {
+fun CatalogBrowser() {
     val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
     val drawerItems =
         Addons.getAllAddonNames().map { it to myIcon } +
@@ -158,7 +157,7 @@ fun CatalogBrowser(
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
                             isSelected = Status.selectedIndex == addonIndex
                         } else if(addonIndex<Addons.size+Favourites.size){
-                            FavouriteButtons(addonIndex-Addons.size, text)
+                            FavouriteButtons(addonIndex-Addons.size)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
                             isSelected = Status.selectedIndex == addonIndex
                         } else {
@@ -198,7 +197,7 @@ fun CatalogBrowser(
             }
         }
     ) {
-        Content(context)
+        Content()
     }
     if (Status.loadingState != LoadingStatus.DONE) {
         Box(
@@ -212,9 +211,10 @@ fun CatalogBrowser(
         }
     }
     if (Status.showGithubDialog)     GithubDialog();
-    if (Status.showRepositoryDialog) RepositoryDialog(context);
-    if (Status.showUninstallDialog)  UninstallDialog(Status.focusedContextIndex);
-    if (Status.showUpdateDialog)     UpdateDialog(context, Status.focusedContextIndex);
+    if (Status.showRepositoryDialog) RepositoryDialog();
+    if (Status.showUninstallDialog)  UninstallDialog();
+    if (Status.showRemoveDialog)     RemoveDialog();
+    if (Status.showUpdateDialog)     UpdateDialog();
     if (Status.showFavouriteMenu)    FavouriteMenu();
     if (Status.showNewPlaylistMenu)  NewPlaylistMenu();
 
@@ -233,13 +233,11 @@ fun CatalogBrowser(
 }
 
 @Composable
-fun Content(
-    context: MainActivity
-) {
+fun Content() {
     val placeholderDrawable = ResourcesCompat.getDrawable(
-        context.resources,
+        Status.context.resources,
         R.drawable.placeholder,
-        context.theme
+        Status.context.theme
     )
 
     fun Modifier.fadingEdge(brush: Brush) = this
