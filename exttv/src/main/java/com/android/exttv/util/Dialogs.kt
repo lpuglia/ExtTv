@@ -57,7 +57,6 @@ import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.MainActivity
 import com.android.exttv.manager.LoadingStatus
-import com.android.exttv.manager.SectionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -69,10 +68,12 @@ import org.json.JSONObject
 import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.manager.FavouriteManager as Favourites
 import com.android.exttv.manager.StatusManager as Status
+import com.android.exttv.manager.PythonManager as Python
+import com.android.exttv.manager.SectionManager as Sections
 
 @Composable
 fun NewPlaylistMenu() {
-    val cardItem = SectionManager.getFocusedCard()
+    val cardItem = Sections.getFocusedCard()
     if (Status.showNewPlaylistMenu) {
         var playlistName by remember { mutableStateOf("") }
         val focusRequester = remember { FocusRequester() }
@@ -173,7 +174,7 @@ fun FavouriteMenu() {
                     OptionItem(text = "Add content to new playlist", onClick = {})
                     Favourites.getAllFavouriteNames().forEach { name ->
                         OptionItem(text = "Add to $name", onClick = {
-                            Favourites.addCardOrCreateFavourite(name, SectionManager.getFocusedCard())
+                            Favourites.addCardOrCreateFavourite(name, Sections.getFocusedCard())
                             Status.showFavouriteMenu = false
                         })
                         OptionItem(text = "Add content to $name", onClick = {})
@@ -188,17 +189,30 @@ fun FavouriteMenu() {
 fun UninstallDialog(indexAddon: Int) {
     if (Status.showUninstallDialog) {
         val focusRequester = remember { FocusRequester() }
+        val coroutineScope = rememberCoroutineScope()
         LaunchedEffect(Unit) {focusRequester.requestFocus()}
 
         AlertDialog(
             onDismissRequest = { Status.showUninstallDialog = false },
             title = { Text(text = "Uninstall") },
-            text = { Text(text = "Do you want to uninstall ${Addons.getAllAddonNames()[indexAddon]}") },
+            text = { Text(text = "Do you want to uninstall ${Addons[indexAddon]}") },
             confirmButton = {
                 Button(
                     onClick = {
-                        Addons.uninstallAddon(indexAddon)
                         Status.showUninstallDialog = false
+                        coroutineScope.launch {
+                            withContext(Dispatchers.IO) {
+                                Status.focusedContextIndex = -1
+                                if (Status.selectedIndex == indexAddon) {
+                                    Status.selectedIndex = -1
+                                    Sections.clearSections()
+                                } else if (Status.selectedIndex > indexAddon) {
+                                    Status.selectedIndex -= 1
+                                }
+                                Addons.uninstallAddon(indexAddon)
+                                ContextManager.update()
+                            }
+                        }
                     }
                 ) { Text("Uninstall") }
             },
@@ -224,11 +238,11 @@ fun UpdateDialog(
         AlertDialog(
             onDismissRequest = { Status.showUpdateDialog = false },
             title = { Text(text = "Update") },
-            text = { Text(text = "Do you want to update ${Addons.getAllAddonNames()[indexAddon]}") },
+            text = { Text(text = "Do you want to update ${Addons[indexAddon]}") },
             confirmButton = {
                 Button(
                     onClick = {
-                        val json = Addons.addonsPath.resolve("${Addons.getAllAddonNames()[indexAddon]}/addon.json").readText()
+                        val json = Addons.addonsPath.resolve("${Addons[indexAddon]}/addon.json").readText()
                         val data = Json.decodeFromString(PluginData.serializer(), json)
                         if(data.sourceURL == data.zipURL){
                             val regex = Regex("""https://github\.com/([^/]+)/([^/]+)/archive/refs/heads/([^/]+)\.zip""")
@@ -371,7 +385,12 @@ fun RepositoryDialog(
                             Status.loadingState = LoadingStatus.SELECTING_SECTION
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
-                                    Addons.installAddon("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
+                                    Status.loadingState = LoadingStatus.INSTALLING_ADDON
+                                    Status.focusedContextIndex = -1
+
+                                    val pluginName = Addons.installAddon("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
+                                    ContextManager.update()
+                                    Python.selectAddon(pluginName)
                                 }
                             }
                         },
@@ -531,7 +550,13 @@ fun GithubDialog() {
                                     val repo = "addon"
                                     val branch = "master"
                                     val url = "$owner/$repo/$branch"
-                                    Addons.installAddon(url)
+
+                                    Status.loadingState = LoadingStatus.INSTALLING_ADDON
+                                    Status.focusedContextIndex = -1
+
+                                    val pluginName = Addons.installAddon(url)
+                                    ContextManager.update()
+                                    Python.selectAddon(pluginName)
                                 }
                             }
                         },

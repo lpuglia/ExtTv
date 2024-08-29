@@ -2,79 +2,71 @@ package com.android.exttv.manager
 
 import android.content.Context
 import android.util.Log
-import com.android.exttv.util.ContextManager
 import com.android.exttv.util.getFromGit
 import com.android.exttv.util.getFromRepository
 import java.io.File
-import com.android.exttv.manager.StatusManager as Status
 
 object AddonManager {
     var addonsPath = File("")
 
-    fun init(context: Context){
-        addonsPath = File(context.filesDir, "exttv_home/addons")
-        if (!addonsPath.exists() || !addonsPath.isDirectory) {
-            addonsPath.mkdirs()
+    // this ensures that uninstall and install are atomic
+    private val lock = Any()
+
+    fun init(context: Context) {
+        synchronized(lock) {
+            addonsPath = File(context.filesDir, "exttv_home/addons")
+            if (!addonsPath.exists() || !addonsPath.isDirectory) {
+                addonsPath.mkdirs()
+            }
         }
     }
 
     private fun getAllAddons(): List<String> {
-        return addonsPath.listFiles { file -> file.isDirectory }
-            ?.map { it.name }
-            ?.sorted() // Ensure the list is sorted
-            ?: emptyList()
+        synchronized(lock) {
+            return addonsPath.listFiles { file -> file.isDirectory }
+                ?.map { it.name }
+                ?.sorted() // Ensure the list is sorted
+                ?: emptyList()
+        }
     }
 
-    fun installAddon(url: String, force: Boolean = false){
-        Status.loadingState = LoadingStatus.INSTALLING_ADDON
+    fun installAddon(url: String, force: Boolean = false): String {
+        synchronized(lock) {
+            fun isValidUrl(url: String): Boolean {
+                val urlRegex = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$".toRegex()
+                return url.matches(urlRegex)
+            }
 
-        fun isValidUrl(url: String): Boolean {
-            val urlRegex = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$".toRegex()
-            return url.matches(urlRegex)
+            return if (isValidUrl(url)) {
+                getFromRepository(url, force)
+            } else {
+                getFromGit(url, force)
+            }
         }
-
-        val currentlySelected = getAllAddons().getOrNull(Status.selectedIndex)
-        val pluginName = if(isValidUrl(url)){
-            getFromRepository(url, force)
-        } else {
-            getFromGit(url, force)
-        }
-
-        Status.focusedContextIndex = -1
-        PythonManager.selectAddon(pluginName)
-        if(currentlySelected != null) {
-            Status.selectedIndex = getAllAddons().indexOf(currentlySelected)
-        }
-        ContextManager.update()
     }
 
     fun uninstallAddon(index: Int) {
-        val installedAddons = getAllAddons()
-        val addonName = installedAddons.getOrNull(index) ?: return
-        val directory = File("$addonsPath/$addonName")
+        synchronized(lock) {
+            val installedAddons = getAllAddons()
+            val addonName = installedAddons.getOrNull(index) ?: return
+            val directory = File("$addonsPath/$addonName")
 
-        try {
-            directory.deleteRecursively()
-            val currentlySelected = installedAddons.getOrNull(Status.selectedIndex)
-            Status.focusedContextIndex = -1
-
-            if (Status.selectedIndex == index) {
-                Status.selectedIndex = -1
-                SectionManager.clearSections()
-            } else if (currentlySelected != null) {
-                Status.selectedIndex = getAllAddons().indexOf(currentlySelected)
+            try {
+                directory.deleteRecursively()
+            } catch (e: Exception) {
+                Log.d("AddonManager", "Error deleting directory: ${e.message}")
+                e.printStackTrace()
+                throw e
             }
-
-        } catch (e: Exception) {
-            Log.d("AddonManager", "Error deleting directory: ${e.message}")
-            e.printStackTrace()
-            throw e
         }
-        ContextManager.update()
     }
 
     fun getAllAddonNames(): List<String> {
         return getAllAddons()
+    }
+
+    operator fun get(index: Int): String {
+        return getAllAddons()[index]
     }
 
     val size: Int get() = getAllAddons().size

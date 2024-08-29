@@ -6,8 +6,6 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.android.exttv.manager.SectionManager.CardItem
-import com.android.exttv.manager.StatusManager as Status
-import com.android.exttv.manager.AddonManager as Addons
 import com.android.exttv.util.ContextManager as Contexts
 
 typealias Favourite = List<CardItem>
