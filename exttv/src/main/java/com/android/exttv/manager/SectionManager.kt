@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 
 @SuppressLint("MutableCollectionMutableState")
 object SectionManager {
@@ -14,7 +13,7 @@ object SectionManager {
         val cardList: List<CardItem>,
     )
     data class CardItem(
-        val id: String,
+        val uri: String,
         val label : String,
         val label2 : String,
         val plot : String,
@@ -24,7 +23,7 @@ object SectionManager {
         val isFolder: Boolean,
     ) {
         val pluginName: String
-            get() = id.split("://")[1].split("/")[0]
+            get() = uri.split("://")[1].split("/")[0]
     }
 
     var focusedIndex by mutableIntStateOf(-1)

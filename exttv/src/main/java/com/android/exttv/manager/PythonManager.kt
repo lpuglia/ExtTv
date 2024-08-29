@@ -23,18 +23,13 @@ object PythonManager {
         }.apply { start(); join() }
     }
 
-    fun setPluginName(pluginName: String) {
-        Thread {
-            Python.getInstance().getModule("utils").callAttr("set_plugin_name", pluginName)
-        }.apply { start(); join() }
-    }
-
     fun selectFavourite(favouriteName: String) {
         Favourites.getFavourite(favouriteName).let {
             Status.loadingState = LoadingStatus.SELECTING_ADDON
             Sections.clearSections()
             Favourites.selectFavourite(favouriteName)
             Sections.removeAndAdd(0, "", Sections.Section(favouriteName, it))
+            Favourites.selectFavourite(favouriteName)
             Status.loadingState = LoadingStatus.SECTION_LOADED
         }
     }
@@ -42,7 +37,6 @@ object PythonManager {
     fun selectAddon(pluginName: String) {
         Status.loadingState = LoadingStatus.SELECTING_ADDON
         Sections.clearSections()
-        setPluginName(pluginName)
         Addons.selectAddon(pluginName)
         selectSection("plugin://$pluginName/", "Menu")
     }
@@ -68,6 +62,33 @@ object PythonManager {
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
+        }
+        Thread(runnable).start()
+    }
+
+    fun unfoldCard(card: Sections.CardItem, visitedUris: MutableSet<String> = mutableSetOf()): List<Sections.CardItem> {
+        if (card.uri in visitedUris) return emptyList()
+        visitedUris.add(card.uri)
+
+        val childCards = exttv?.callAttr("run", card.uri)?.toJava(List::class.java) as List<Sections.CardItem>
+        val allCards = mutableListOf<Sections.CardItem>()
+
+        for (child in childCards) {
+            if (child.isFolder) allCards.addAll(unfoldCard(child, visitedUris))
+            else allCards.add(child)
+        }
+        return allCards
+    }
+
+    fun playCard(card: Sections.CardItem) {
+        Status.loadingState = LoadingStatus.SELECTING_SECTION
+        val runnable = Runnable {
+            if(card.isFolder){
+                Sections.removeAndAdd(0, "", Sections.Section(card.label, unfoldCard(card)))
+            }else{
+                exttv?.callAttr("run", card.uri)?.toJava(List::class.java)
+            }
+            Status.loadingState = LoadingStatus.DONE
         }
         Thread(runnable).start()
     }

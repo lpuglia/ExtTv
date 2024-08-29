@@ -94,7 +94,7 @@ fun CatalogBrowser(
     val myIcon: ImageVector = ImageVector.vectorResource(id = R.drawable.icon_drawer)
     val drawerItems =
         Addons.getAllAddonNames().map { it to myIcon } +
-        Favourites.getAllFavouritesNames().map { it to Icons.Default.Star } +
+        Favourites.getAllFavouriteNames().map { it to Icons.Default.Star } +
         listOf(
             "Add from Repository" to Icons.Default.Add,
             "Add from GitHub" to Icons.Default.Add,
@@ -159,6 +159,7 @@ fun CatalogBrowser(
                         } else if(addonIndex<Addons.size()+Favourites.size()){
                             FavouriteButtons(addonIndex-Addons.size(), text)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
+                            isSelected = Favourites.isSelected(addonIndex)
                         } else {
                             modifier = modifier.onKeyEvent { event -> nonAddonKE(event) }
                         }
@@ -337,7 +338,11 @@ fun SectionItem(
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
                 onClick = {
                     if(Status.loadingState == LoadingStatus.DONE){
-                        Python.selectSection(card.id, card.label, sectionIndex, cardIndex)
+                        if(Status.selectedIndex < Addons.size()){
+                            Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
+                        }else{
+                            Python.playCard(card)
+                        }
                     }
                 },
                 requestFocus = cardIndex==0 && sectionIndex == Sections.size-1,

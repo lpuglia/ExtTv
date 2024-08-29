@@ -4,7 +4,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,7 +56,6 @@ import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.MainActivity
-import com.android.exttv.manager.FavouriteManager
 import com.android.exttv.manager.LoadingStatus
 import com.android.exttv.manager.SectionManager
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +67,7 @@ import okhttp3.Request
 import okio.IOException
 import org.json.JSONObject
 import com.android.exttv.manager.AddonManager as Addons
+import com.android.exttv.manager.FavouriteManager as Favourites
 import com.android.exttv.manager.StatusManager as Status
 
 @Composable
@@ -100,7 +99,7 @@ fun NewPlaylistMenu() {
                                 if (event.type == KeyEventType.KeyDown) {
                                     when (event.key) {
                                         Key.Enter -> {
-                                            FavouriteManager.addCardToListOrCreate(playlistName, cardItem)
+                                            Favourites.addCardOrCreateFavourite(playlistName, cardItem)
                                             Status.showNewPlaylistMenu = false // Close dialog after creation
                                             Status.showFavouriteMenu = false
                                             focusManager.clearFocus() // Clear focus
@@ -117,7 +116,7 @@ fun NewPlaylistMenu() {
                         ),
                         keyboardActions = KeyboardActions(
                             onDone = {
-                                FavouriteManager.addCardToListOrCreate(playlistName, cardItem)
+                                Favourites.addCardOrCreateFavourite(playlistName, cardItem)
                                 Status.showNewPlaylistMenu = false // Close dialog after creation
                                 Status.showFavouriteMenu = false
                                 focusManager.clearFocus() // Clear focus
@@ -172,8 +171,13 @@ fun FavouriteMenu() {
                         }
                     )
                     OptionItem(text = "Add content to new playlist", onClick = {})
-                    OptionItem(text = "Add to playlist", onClick = {})
-                    OptionItem(text = "Add content to playlist", onClick = {})
+                    Favourites.getAllFavouriteNames().forEach { name ->
+                        OptionItem(text = "Add to $name", onClick = {
+                            Favourites.addCardOrCreateFavourite(name, SectionManager.getFocusedCard())
+                            Status.showFavouriteMenu = false
+                        })
+                        OptionItem(text = "Add content to $name", onClick = {})
+                    }
                 }
             }
         }

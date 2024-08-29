@@ -39,9 +39,6 @@ def full_addondata_path():
 def full_database_path():
     return os.path.join(workspace, database_path)
 
-def set_plugin_name(plugin_name):
-    plugin.plugin_name = plugin_name
-
 def decode_plugin_path(plugin_path):
     parsed_url = urllib.parse.urlparse(plugin_path)
     query_params = urllib.parse.parse_qs(parsed_url.query)
@@ -64,6 +61,7 @@ def reload_module(module_name):
 def run(argv):
     print(argv)
     plugin_name = argv[0].split("/")[2]
+    plugin.plugin_name = plugin_name
 
     # Remove paths starting with .//exttv_addon/
     sys.path = [path for path in sys.path if not path.startswith(full_addons_path())]
