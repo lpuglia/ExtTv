@@ -28,6 +28,13 @@ object FavouriteManager {
         }
     }
 
+    // Get all lists with their names and contents
+    private fun getAllFavourites(): Map<String, Favourite> {
+        val jsonString = prefs.getString("all_favourites", null) ?: return emptyMap()
+        val type = object : TypeToken<Map<String, Favourite>>() {}.type
+        return gson.fromJson(jsonString, type)
+    }
+
     // Create a new list given the card/cards
     fun createFavourite(listName: String, cards: Favourite) {
         val allLists = getAllFavourites().toMutableMap()
@@ -79,13 +86,6 @@ object FavouriteManager {
         return getAllFavourites()[listName] ?: emptyList()
     }
 
-    // Save all lists and their names in a single entry
-    private fun saveAllData(allLists: Map<String, Favourite>) {
-        val jsonString = gson.toJson(allLists)
-        prefs.edit().putString("all_favourites", jsonString).apply()
-        Contexts.update()
-    }
-
     // Delete a list entirely
     fun deleteFavourite(listName: String) {
         val allLists = getAllFavourites().toMutableMap()
@@ -93,9 +93,11 @@ object FavouriteManager {
         saveAllData(allLists)
     }
 
-    // Clear all stored lists
-    fun clearAllFavourites() {
-        saveAllData(emptyMap())
+    // Save all lists and their names in a single entry
+    private fun saveAllData(allLists: Map<String, Favourite>) {
+        val jsonString = gson.toJson(allLists)
+        prefs.edit().putString("all_favourites", jsonString).apply()
+        Contexts.update()
     }
 
     // Retrieve all list names
@@ -103,28 +105,5 @@ object FavouriteManager {
         return getAllFavourites().keys
     }
 
-    // Get all lists with their names and contents
-    private fun getAllFavourites(): Map<String, Favourite> {
-        val jsonString = prefs.getString("all_favourites", null) ?: return emptyMap()
-        val type = object : TypeToken<Map<String, Favourite>>() {}.type
-        return gson.fromJson(jsonString, type)
-    }
-
-    // New method to get the index of a favorite name
-    private fun indexOf(favouriteName: String): Int {
-        val listNames = getAllFavouriteNames().toList()
-        return listNames.indexOf(favouriteName)
-    }
-
-    fun isSelected(index: Int): Boolean {
-        return Status.selectedIndex == index
-    }
-
-    fun selectFavourite(pluginName: String) {
-        Status.selectedIndex = Addons.size() + indexOf(pluginName)
-    }
-
-    fun size(): Int {
-        return getAllFavouriteNames().size
-    }
+    val size: Int get() = getAllFavouriteNames().size
 }

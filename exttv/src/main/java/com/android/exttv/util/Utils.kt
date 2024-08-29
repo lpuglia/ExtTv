@@ -257,6 +257,5 @@ fun downloadAndExtractPlugin(zipURL: String, pluginName: String, sourceURL: Stri
         } else {
             println("Plugin $pluginName already exists. Skipping download.")
         }
-        Addons.add(pluginName)
     }.apply { start(); join() }
 }

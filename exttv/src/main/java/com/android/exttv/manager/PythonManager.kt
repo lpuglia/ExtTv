@@ -27,9 +27,8 @@ object PythonManager {
         Favourites.getFavourite(favouriteName).let {
             Status.loadingState = LoadingStatus.SELECTING_ADDON
             Sections.clearSections()
-            Favourites.selectFavourite(favouriteName)
             Sections.removeAndAdd(0, "", Sections.Section(favouriteName, it))
-            Favourites.selectFavourite(favouriteName)
+            Status.selectedIndex = Addons.size + Favourites.getAllFavouriteNames().indexOf(favouriteName)
             Status.loadingState = LoadingStatus.SECTION_LOADED
         }
     }
@@ -37,7 +36,7 @@ object PythonManager {
     fun selectAddon(pluginName: String) {
         Status.loadingState = LoadingStatus.SELECTING_ADDON
         Sections.clearSections()
-        Addons.selectAddon(pluginName)
+        Status.selectedIndex = Addons.getAllAddonNames().indexOf(pluginName)
         selectSection("plugin://$pluginName/", "Menu")
     }
 

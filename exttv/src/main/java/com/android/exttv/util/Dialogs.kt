@@ -193,7 +193,7 @@ fun UninstallDialog(indexAddon: Int) {
         AlertDialog(
             onDismissRequest = { Status.showUninstallDialog = false },
             title = { Text(text = "Uninstall") },
-            text = { Text(text = "Do you want to uninstall ${Addons.get(indexAddon)}") },
+            text = { Text(text = "Do you want to uninstall ${Addons.getAllAddonNames()[indexAddon]}") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -224,11 +224,11 @@ fun UpdateDialog(
         AlertDialog(
             onDismissRequest = { Status.showUpdateDialog = false },
             title = { Text(text = "Update") },
-            text = { Text(text = "Do you want to update ${Addons.get(indexAddon)}") },
+            text = { Text(text = "Do you want to update ${Addons.getAllAddonNames()[indexAddon]}") },
             confirmButton = {
                 Button(
                     onClick = {
-                        val json = Addons.addonsPath.resolve("${Addons.get(indexAddon)}/addon.json").readText()
+                        val json = Addons.addonsPath.resolve("${Addons.getAllAddonNames()[indexAddon]}/addon.json").readText()
                         val data = Json.decodeFromString(PluginData.serializer(), json)
                         if(data.sourceURL == data.zipURL){
                             val regex = Regex("""https://github\.com/([^/]+)/([^/]+)/archive/refs/heads/([^/]+)\.zip""")
@@ -280,12 +280,19 @@ fun fetchUrlContent(url: String): String? {
     }
 }
 
+data class Addon(
+    val addonid: String,
+    val name: String,
+    val icon: String,
+    val description: String
+)
+
 @Composable
 fun RepositoryDialog(
     context: MainActivity,
 ) {
     Status.loadingState = LoadingStatus.FETCHING_ADDON
-    val videoAddons = mutableListOf<Addons.Addon>()
+    val videoAddons = mutableListOf<Addon>()
     val url = "https://kodi.tv/page-data/addons/omega/search/page-data.json"
     val coroutineScope = rememberCoroutineScope()
 
@@ -302,7 +309,7 @@ fun RepositoryDialog(
             for (j in 0 until categories.length()) {
                 val category = categories.getJSONObject(j).getString("name")
                 if (category == "Video addons") {
-                    val videoAddon = Addons.Addon(
+                    val videoAddon = Addon(
                         addonid = addon.getString("addonid"),
                         name = addon.getString("name"),
                         icon = addon.getString("icon"),
@@ -387,7 +394,7 @@ fun RepositoryDialog(
 }
 
 @Composable
-fun AddonBox(addon: Addons.Addon) {
+fun AddonBox(addon: Addon) {
     Box(
         modifier = Modifier
             .size(width = 400.dp, height = 100.dp)

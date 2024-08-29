@@ -127,7 +127,7 @@ fun CatalogBrowser(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 itemsIndexed(drawerItems){ addonIndex, item ->
-                    if(addonIndex==0 || addonIndex==Addons.size() || addonIndex==Addons.size()+Favourites.size()){
+                    if(addonIndex==0 || addonIndex==Addons.size || addonIndex==Addons.size+Favourites.size){
                         Row(modifier = Modifier.width(255.dp)) {
                             @Composable
                             fun HeaderText(textProvider: () -> String) {
@@ -135,9 +135,10 @@ fun CatalogBrowser(
                                     overflow = TextOverflow.Ellipsis,modifier = Modifier.padding(top = 5.dp)
                                 )
                             }
-                            if(addonIndex==0 && Addons.size()>0) HeaderText { "Addons" }
-                            if(addonIndex==Addons.size() && Favourites.size()>0) HeaderText { "Favourites" }
-                            if(addonIndex==Addons.size()+Favourites.size()) HeaderText { "Menu" }
+                            if(addonIndex==0 && Addons.size>0) HeaderText { "Addons" }
+                            if(addonIndex==Addons.size && Favourites.size>0) HeaderText { "Favourites" }
+                            if(addonIndex==Addons.size+Favourites.size)
+                                HeaderText { "Menu" }
                             Divider(
                                 color = Color.Gray,
                                 thickness = 1.dp,
@@ -152,14 +153,14 @@ fun CatalogBrowser(
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
                         modifier = modifier.focusRequester(Contexts.drawerItemRequesters[addonIndex])
-                        if(addonIndex<Addons.size()){
+                        if(addonIndex<Addons.size){
                             ContextButtons(addonIndex)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
-                            isSelected = Addons.isSelected(addonIndex)
-                        } else if(addonIndex<Addons.size()+Favourites.size()){
-                            FavouriteButtons(addonIndex-Addons.size(), text)
+                            isSelected = Status.selectedIndex == addonIndex
+                        } else if(addonIndex<Addons.size+Favourites.size){
+                            FavouriteButtons(addonIndex-Addons.size, text)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, addonIndex)}
-                            isSelected = Favourites.isSelected(addonIndex)
+                            isSelected = Status.selectedIndex == addonIndex
                         } else {
                             modifier = modifier.onKeyEvent { event -> nonAddonKE(event) }
                         }
@@ -169,7 +170,7 @@ fun CatalogBrowser(
                             onClick = {
                                 if(text=="Add from Repository") Status.showRepositoryDialog = true
                                 else if(text=="Add from GitHub") Status.showGithubDialog = true
-                                else if(addonIndex<Addons.size()) Python.selectAddon(text)
+                                else if(addonIndex<Addons.size) Python.selectAddon(text)
                                 else Python.selectFavourite(text)
                             },
                             colors = NavigationDrawerItemDefaults.colors(
@@ -338,7 +339,7 @@ fun SectionItem(
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
                 onClick = {
                     if(Status.loadingState == LoadingStatus.DONE){
-                        if(Status.selectedIndex < Addons.size()){
+                        if(Status.selectedIndex < Addons.size){
                             Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
                         }else{
                             Python.playCard(card)

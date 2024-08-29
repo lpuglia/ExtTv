@@ -39,11 +39,11 @@ object ContextManager {
     var removeFavReqs by mutableStateOf(listOf<FocusRequester>())
 
     fun update(){
-        drawerItemRequesters = List(Addons.size()+Favourites.size()+2) { FocusRequester() }
-        settingReqs   = List(Addons.size()) { FocusRequester() }
-        updateReqs    = List(Addons.size()) { FocusRequester() }
-        uninstallReqs = List(Addons.size()) { FocusRequester() }
-        removeFavReqs = List(Favourites.size()) { FocusRequester() }
+        drawerItemRequesters = List(Addons.size+Favourites.size+2) { FocusRequester() }
+        settingReqs   = List(Addons.size) { FocusRequester() }
+        updateReqs    = List(Addons.size) { FocusRequester() }
+        uninstallReqs = List(Addons.size) { FocusRequester() }
+        removeFavReqs = List(Favourites.size) { FocusRequester() }
     }
 }
 
@@ -53,7 +53,7 @@ fun FavouriteButtons(
     label: String,
 ){
     Row(
-        Modifier.height(50.dp).width(if(Status.focusedContextIndex==Addons.size()+itemIndex) 60.dp else 0.dp)
+        Modifier.height(50.dp).width(if(Status.focusedContextIndex==Addons.size+itemIndex) 60.dp else 0.dp)
     ) {
         Button(
             onClick = {
@@ -237,10 +237,10 @@ fun addonKE(
       (addonIndex == 0 && event.key == Key.DirectionUp)){ return true }
     if (event.key == Key.DirectionLeft) {
         Status.focusedContextIndex = addonIndex
-        if(addonIndex < Addons.size()){
+        if(addonIndex < Addons.size){
             ContextManager.settingReqs[addonIndex].requestFocus()
         }else{
-            ContextManager.removeFavReqs[addonIndex-Addons.size()].requestFocus()
+            ContextManager.removeFavReqs[addonIndex-Addons.size].requestFocus()
         }
         return true
     }
