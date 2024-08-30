@@ -18,11 +18,9 @@ enum class LoadingStatus {
 
 object StatusManager {
     var reboundEnter = false
-    val focusRequester = FocusRequester()
     var loadingState by mutableStateOf(LoadingStatus.DONE)
     var showGithubDialog by mutableStateOf(false)
     var showRepositoryDialog by mutableStateOf(false)
-    var bgImage by mutableStateOf("")
     var showUpdateDialog by mutableStateOf(false)
     var showUninstallDialog by mutableStateOf(false)
     var showRemoveDialog by mutableStateOf(false)
@@ -31,6 +29,7 @@ object StatusManager {
     var selectedIndex by mutableIntStateOf(-1)
     var focusedContextIndex by mutableIntStateOf(-1)
     var drawerItems by mutableStateOf(listOf<String>())
+    var bgImage by mutableStateOf("")
 
     lateinit var context : MainActivity
     lateinit var showToast : (String?, Int) -> Unit

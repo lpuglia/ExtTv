@@ -507,10 +507,12 @@ fun GithubDialog() {
     val saveButtonRequester = FocusRequester()
     val coroutineScope = rememberCoroutineScope()
 
-    Dialog(onDismissRequest = {
-        Status.loadingState = LoadingStatus.DONE
-        Status.showGithubDialog = false
-    }) {
+    Dialog(
+        onDismissRequest = {
+            Status.loadingState = LoadingStatus.DONE
+            Status.showGithubDialog = false
+        }
+    ) {
         Surface(
             modifier = Modifier.background(Color.White),
             shape = MaterialTheme.shapes.medium,

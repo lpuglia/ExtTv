@@ -1,3 +1,4 @@
+import android.widget.Toast
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -363,6 +364,8 @@ fun CardView(
     sectionIndex: Int,
     cardIndex: Int
 ) {
+    val focusRequester = FocusRequester()
+
     val bgModifier = if (isSelected) {
         Modifier.background(Color(0x44BB0000))
     } else {
@@ -389,7 +392,7 @@ fun CardView(
                     isFocused = it.isFocused
                     Status.bgImage = card.fanartUrl
                 }
-                .let { if (requestFocus) it.focusRequester(Status.focusRequester) else it },
+                .let { if (requestFocus) it.focusRequester(focusRequester) else it },
             onClick = onClick,
             onLongClick = {
                 Status.showFavouriteMenu = true
@@ -448,7 +451,7 @@ fun CardView(
     LaunchedEffect(Status.loadingState) {
         if (requestFocus && Sections.isNotEmpty && Status.loadingState==LoadingStatus.SECTION_LOADED) {
             Status.loadingState = LoadingStatus.DONE
-            Status.focusRequester.requestFocus()
+            focusRequester.requestFocus()
         }
     }
 }
