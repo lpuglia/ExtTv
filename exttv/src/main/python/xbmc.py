@@ -77,7 +77,7 @@ def getInfoLabel(label):
 
 def executeJSONRPC(jsonrpc_request):
     response_dict = {}
-    response_dict['{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params": {"setting": "lookandfeel.skin"}, "id": 1 }'] = '{"id":1,"jsonrpc":"2.0","result":{"value":"skin.estuary"}\}'
+    response_dict['{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params": {"setting": "lookandfeel.skin"}, "id": 1 }'] = '{"id":1,"jsonrpc":"2.0","result":{"value":"skin.estuary"}}'
     if jsonrpc_request in response_dict:
         return response_dict[jsonrpc_request]
     else:

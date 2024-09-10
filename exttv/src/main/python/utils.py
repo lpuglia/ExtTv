@@ -52,21 +52,41 @@ def init(path):
     os.makedirs(full_database_path(), exist_ok=True)
     xbmc.log = Logger()
 
-def reload_module(module_name):
-    if module_name in globals():
-        importlib.reload(globals()[module_name])
-    else:
-        globals()[module_name] = importlib.import_module(module_name)
+def reload_module(module_name, plugin_name):
+    # Define the full addons path
+    addons_path = full_addons_path()
+    
+    # Remove paths starting with .//exttv_addon/
+    sys.path = [path for path in sys.path if not path.startswith(addons_path)]
+    
+    # Clear the module cache
+    importlib.invalidate_caches()
+    
+    # Filter out existing modules related to home_path
+    filtered_modules = {}
+    for k, v in sys.modules.items():
+        if hasattr(v, '__file__') and v.__file__ and home_path in v.__file__:
+            # print('Ignoring file:', k, v, v.__file__)
+            continue
+        elif hasattr(v, '__path__') and hasattr(v.__path__, '_path') and home_path in v.__path__._path[0]:
+            # print('Ignoring path:', k, v, v.__path__)
+            continue
+        else:
+            filtered_modules[k] = v
+    sys.modules = filtered_modules
+    
+    # Add the new plugin path
+    plugin_path = os.path.join(addons_path, plugin_name)
+    sys.path.append(plugin_path)
+    
+    # Import the module if it exists
+    module = importlib.import_module(module_name)
+    return module
 
 def run(argv):
     print(argv)
     plugin_name = argv[0].split("/")[2]
     plugin.plugin_name = plugin_name
-
-    # Remove paths starting with .//exttv_addon/
-    sys.path = [path for path in sys.path if not path.startswith(full_addons_path())]
-
-    sys.path.append(os.path.join(full_addons_path(), plugin_name))
     sys.argv = argv
 
     tree = ET.parse(os.path.join(full_addons_path(), plugin_name)+'/addon.xml')
@@ -79,5 +99,6 @@ def run(argv):
     else:
         raise Exception("Failed to find the library attribute in addon.xml")
 
-    reload_module(library.replace('.py',''))
+    plugin._to_return_items = []
+    reload_module(library.replace('.py',''), plugin_name)
     return plugin._to_return_items
