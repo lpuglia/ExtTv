@@ -1,6 +1,6 @@
+import utils
 import os.path
 from urllib.parse import urlparse
-import requests
 
 class Stat:
     def __init__(self, path):
@@ -120,6 +120,15 @@ def copy(src, dst):
 def rmdir(path):
     os.rmdir(path)
 
+def mkdir(path):
+    try:
+        if not os.path.exists(path):
+            os.mkdir(path)
+        return True
+    except Exception as e:
+        print(f"Error creating directory: {e}")
+        return False
+
 def mkdirs(path):
     try:
         if not os.path.exists(path):
@@ -139,3 +148,13 @@ def listdir(path):
         else:
             files.append(item)
     return folders, files
+
+def translatePath(path):
+    if 'special://' in path:
+        if path.startswith('special://profile/'):
+            return path.replace('special://profile/', utils.full_userdata_path())
+        else:
+            return path.replace('special://', utils.full_home_path())
+    else:
+        return path
+

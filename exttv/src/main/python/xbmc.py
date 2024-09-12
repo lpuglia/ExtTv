@@ -4,9 +4,10 @@ import time
 import json
 import utils
 import platform
-import urllib.parse
+import urllib.parse, urllib.request
 from datetime import datetime
 from types import SimpleNamespace
+import xml.etree.ElementTree as ET
 
 def serialize_namespace(obj):
     if isinstance(obj, SimpleNamespace):
@@ -36,6 +37,18 @@ LOGNONE = 6
 
 PLAYLIST_MUSIC = 0
 PLAYLIST_VIDEO = 1
+
+localized_strings = {}
+try:
+    with urllib.request.urlopen('https://raw.githubusercontent.com/xbmc/xbmc/eaca754dc37ea9796bd2d303c7d5f43089785e4b/addons/resource.language.en_gb/resources/strings.po') as response:
+        content = response.read().decode('utf-8')
+        pattern = re.compile(r'msgctxt\s+"#(\d+)"\nmsgid\s+"(.*?)"\nmsgstr\s+"(.*?)"', re.DOTALL)
+        matches = pattern.findall(content)
+        for match in matches:
+            msgctxt, msgid, msgstr = match
+            localized_strings[int(msgctxt)] = msgstr if msgstr else msgid
+except:
+    print('Couldn\' get strings.po')
 
 def sleep(milliseconds):
     time.sleep(milliseconds / 1000)
@@ -83,16 +96,46 @@ def executeJSONRPC(jsonrpc_request):
     else:
         return None
 
+def getRegion(setting):
+    settings = {
+            'datelong': 'DDDD, D MMMM YYYY',
+            'dateshort': 'DD-MM-YYYY',
+            'time': 'H:mm:ss',
+            'meridiem': 'AM/PM',
+            'tempunit': 'C',
+            'speedunit': 'kmh',
+            'timezone': 'CET',
+            'thousandsseparator': ',',
+            'decimalseparator': '.'
+        }
+    return settings[setting]
+
+def getLocalizedString(string_id):
+    return localized_strings.get(string_id, "")
+
+def getSupportedMedia(media_type):
+    # Dictionary of supported file types for different media types
+    media_types = {
+        'video': '.mp4|.avi|.mov|.mkv|.flv',
+        'music': '.mp3|.wav|.flac|.aac|.ogg',
+        'picture': '.jpg|.png|.bmp|.gif|.tiff'
+    }
+    
+    # Get the supported file types for the given media type
+    return media_types.get(media_type, '')
+
 class Logger:
     def __init__(self):
         self.log_file = os.path.join(utils.full_home_path(), 'kodi.log')
         # Ensure the log directory exists
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+        if not os.path.exists(self.log_file):
+            with open(self.log_file, 'w'): pass
     
-    def __call__(self, level, message):
+    def __call__(self, msg, level=LOGINFO):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(self.log_file, 'a') as file:
-            log_entry = f"{timestamp} - {level}: {message}\n"
+            log_entry = f"{timestamp} - {level}: {msg}\n"
             file.write(log_entry)
 
 def parse_piped_url(url):

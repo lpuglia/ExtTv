@@ -714,7 +714,7 @@ class Dialog:
 class Window():
 
     def __init__(self, existingWindowId=None):
-        super().__init__(existingWindowId)
+        pass
 
     def show(self):
         pass

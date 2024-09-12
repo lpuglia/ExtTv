@@ -287,13 +287,15 @@ fun UpdateDialog() {
                             val owner = matchResult.groupValues[1]
                             val repository = matchResult.groupValues[2]
                             val branch = matchResult.groupValues[3]
-                            Addons.installAddon("$owner/$repository/$branch", true)
+                            // Addons.installAddon("$owner/$repository/$branch", true)
+                            getFromGit("$owner/$repository/$branch", true)
                         }
                     }else{
                         val (zipPath, _) = getLatestZipName(data.sourceURL)
                         if(zipPath!=data.zipURL) { // update if different zip name
                             Status.showToast("Installing updates", Toast.LENGTH_SHORT)
-                            Addons.installAddon(data.sourceURL, true)
+                            // Addons.installAddon(data.sourceURL, true)
+                            getFromRepository(data.pluginName, true)
                         }else{
                             Status.showToast("No updates available", Toast.LENGTH_SHORT)
                         }
@@ -401,9 +403,6 @@ fun RepositoryDialog() {
             val listState = rememberTvLazyListState()
             val focusRequester = remember {FocusRequester()}
 
-            LaunchedEffect(Unit) {
-               focusRequester.requestFocus()
-            }
             TvLazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -422,7 +421,7 @@ fun RepositoryDialog() {
                                     Status.loadingState = LoadingStatus.INSTALLING_ADDON
                                     Status.focusedContextIndex = -1
 
-                                    val pluginName = Addons.installAddon("https://kodi.tv/page-data/addons/omega/${addon.addonid}/page-data.json")
+                                    val pluginName = getFromRepository(addon.addonid)//Addons.installAddon(addon.addonid)
                                     Status.update()
                                     Python.selectAddon(pluginName)
                                 }
@@ -432,7 +431,14 @@ fun RepositoryDialog() {
                             .padding(vertical = 8.dp)
                             .fillMaxWidth()
                             .height(100.dp)
-                            .let { if (index == 0) it.focusRequester(focusRequester) else it },
+                            .let {
+                                    if (index == 0){
+                                        LaunchedEffect(Unit) {
+                                           focusRequester.requestFocus()
+                                        }
+                                        it.focusRequester(focusRequester)
+                                    }else it
+                                 },
 //                            .clickable {
 //                                selectedItem = addon
 //                            },
@@ -591,7 +597,9 @@ fun GithubDialog() {
                                     Status.loadingState = LoadingStatus.INSTALLING_ADDON
                                     Status.focusedContextIndex = -1
 
-                                    val pluginName = Addons.installAddon(url)
+//                                    val pluginName = Addons.installAddon(url)
+                                    val pluginName = getFromGit(url, true)
+
                                     Status.update()
                                     Python.selectAddon(pluginName)
                                 }

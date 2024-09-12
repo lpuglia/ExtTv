@@ -1,14 +1,10 @@
-import re
 import os
 import sys
-import shutil
-import requests
 import base64
-import zipfile
 import urllib.parse
 import json
 import importlib
-import traceback
+import glob
 
 import xml.etree.ElementTree as ET
 
@@ -51,13 +47,34 @@ def init(path):
     os.makedirs(full_addondata_path(), exist_ok=True)
     os.makedirs(full_database_path(), exist_ok=True)
     xbmc.log = Logger()
+    print(f'kodi.log dumped in {workspace}')
 
-def reload_module(module_name, plugin_name):
-    # Define the full addons path
-    addons_path = full_addons_path()
-    
-    # Remove paths starting with .//exttv_addon/
-    sys.path = [path for path in sys.path if not path.startswith(addons_path)]
+def add_dependencies(module_path):
+    root = ET.parse(module_path+'/addon.xml').getroot()
+    requires = [addon.get('addon') for addon in root.find('requires').findall('import')]
+    for require in requires:
+        require_path = os.path.join(full_addons_path(), require)
+        if 'xbmc.python' in require: continue
+
+
+        if os.path.exists(require_path):
+            # Extract unique subfolders containing at least one Python file
+            subfolders = set()
+            for file in glob.glob(os.path.join(require_path, '**', '*.py'), recursive=True):
+                folder_path = os.path.dirname(file)
+                if os.path.isfile(os.path.join(folder_path, '__init__.py')):
+                    parent_dir = os.path.dirname(folder_path)
+                    subfolders.add(parent_dir)
+                else:
+                    subfolders.add(folder_path)
+            for f in subfolders: sys.path.append(f)
+            add_dependencies(require_path)
+        else:
+            print(f"{require_path}: lib not found")
+
+def reload_module(module_name, module_path):    
+    # Remove paths with {home_path}
+    sys.path = [path for path in sys.path if home_path not in path]
     
     # Clear the module cache
     importlib.invalidate_caches()
@@ -75,13 +92,15 @@ def reload_module(module_name, plugin_name):
             filtered_modules[k] = v
     sys.modules = filtered_modules
     
-    # Add the new plugin path
-    plugin_path = os.path.join(addons_path, plugin_name)
-    sys.path.append(plugin_path)
+    sys.path.append(module_path) 
+    add_dependencies(module_path)
     
-    # Import the module if it exists
-    module = importlib.import_module(module_name)
-    return module
+    # import socks
+    try:
+        # import the addon and trigger call to it
+        importlib.import_module(module_name)
+    except SystemExit as e: # some addon try to exit when they finish the call, this prevents it
+        print(f"Caught an exit attempt from {module_path.split('/')[-1]}")
 
 def run(argv):
     print(argv)
@@ -89,16 +108,16 @@ def run(argv):
     plugin.plugin_name = plugin_name
     sys.argv = argv
 
-    tree = ET.parse(os.path.join(full_addons_path(), plugin_name)+'/addon.xml')
-    root = tree.getroot()
+    module_path = os.path.join(full_addons_path(), plugin_name)
+    root = ET.parse(module_path+'/addon.xml').getroot()
     # Find the extension with the specific point attribute
     for extension in root.findall('extension'):
         if extension.get('point') == 'xbmc.python.pluginsource':
-            library = extension.get('library')
+            module_name = extension.get('library').replace('.py','')
             break
     else:
         raise Exception("Failed to find the library attribute in addon.xml")
 
     plugin._to_return_items = []
-    reload_module(library.replace('.py',''), plugin_name)
+    reload_module(module_name, module_path)
     return plugin._to_return_items

@@ -27,9 +27,6 @@ android {
         }
         python {
             buildPython "python.exe"
-            pip {
-                install "-r", "src/main/python/requirements.txt"
-            }
         }
         kotlinOptions {
             jvmTarget = '18'

@@ -1,6 +1,0 @@
-requests==2.27.1
-future
-pyjsparser
-six
-js2py
-bs4

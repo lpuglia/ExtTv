@@ -23,18 +23,8 @@ object AddonManager {
             ?: emptyList()
     }
 
-    fun installAddon(url: String, force: Boolean = false): String {
-        fun isValidUrl(url: String): Boolean {
-            val urlRegex = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$".toRegex()
-            return url.matches(urlRegex)
-        }
-
-        return if (isValidUrl(url)) {
-            getFromRepository(url, force)
-        } else {
-            getFromGit(url, force)
-        }
-    }
+//    fun installAddon(url: String, force: Boolean = false): String {
+//    }
 
     fun uninstallAddon(index: Int) {
             val installedAddons = getAllAddons()

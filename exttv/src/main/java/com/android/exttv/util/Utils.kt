@@ -1,6 +1,7 @@
 package com.android.exttv.util
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -20,6 +21,8 @@ import java.util.regex.Pattern
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
+import javax.xml.parsers.DocumentBuilderFactory
+import com.android.exttv.manager.StatusManager as Status
 
 fun parseText(input: String): AnnotatedString {
     val stripped = input.replace("\n", "; ").trim()//.replace(Regex(";\\s*;+\\s*"), ";")
@@ -119,7 +122,7 @@ fun getFromGit(url: String, force: Boolean = false) : String {
             throw Exception("Failed to get plugin id")
         }
 
-        downloadAndExtractPlugin(zipPath, pluginName, zipPath, false)
+        installAddon(zipPath, pluginName, zipPath, false)
         return pluginName
     } catch (e: Exception) {
         throw Exception("Error occurred while processing URL: ${e.message}", e)
@@ -158,10 +161,11 @@ fun getLatestZipName(url: String): Pair<String, String>{
     }
 }
 
-fun getFromRepository(url: String, force: Boolean = false): String {
+fun getFromRepository(addonId: String, force: Boolean = false): String {
+    val url = "https://kodi.tv/page-data/addons/omega/${addonId}/page-data.json"
     val (zipPath, pluginName) = getLatestZipName(url)
     val mirrorZip = "https://mirrors.kodi.tv/addons/omega/" + zipPath.split("addons/omega/")[1]
-    downloadAndExtractPlugin(mirrorZip, pluginName, url, false)
+    installAddon(mirrorZip, pluginName, url, false)
     return pluginName
 }
 
@@ -210,7 +214,36 @@ data class PluginData(
     val sourceURL: String
 )
 
-fun downloadAndExtractPlugin(zipURL: String, pluginName: String, sourceURL: String, force: Boolean = false) {
+fun installDependencies(pluginPath: File) {
+    val xmlFile = pluginPath.resolve("addon.xml")
+//    if (!xmlFile.exists()) {
+//        throwFileNotFound()
+//    }
+
+    val xmlDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlFile)
+    xmlDoc.documentElement.normalize()
+
+    // Get all <import> nodes within <requires>
+    val importNodes = xmlDoc.getElementsByTagName("import")
+
+    // Iterate through the import nodes and extract the addon attribute
+    for (i in 0 until importNodes.length) {
+        val node = importNodes.item(i)
+        if (node.nodeType == org.w3c.dom.Node.ELEMENT_NODE) {
+            val element = node as org.w3c.dom.Element
+            val addonName = element.getAttribute("addon")
+            if (addonName == "xbmc.python") continue
+            println("Dependency found: $addonName")
+            try{
+                getFromRepository(addonName, false)
+            }catch (e: Exception) {
+                Status.showToast("Error while installing dependency $addonName: ${e.message}", Toast.LENGTH_SHORT)
+            }
+        }
+    }
+}
+
+fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: Boolean = false) {
     Thread {
         val filename = zipURL.substringAfterLast('/')
         val pluginPath = Addons.addonsPath.resolve(pluginName)
@@ -245,6 +278,9 @@ fun downloadAndExtractPlugin(zipURL: String, pluginName: String, sourceURL: Stri
                         pluginPath.resolve("addon.json").writeText(Json.encodeToString(pluginData))
 
                         Log.d("D&E","Plugin $pluginName extracted successfully.")
+
+                        installDependencies(pluginPath)
+
                     } catch (e: Exception) {
                         throw ExtractionError("Failed to extract ${zipFile.toPath()}: ${e.message}")
                     }

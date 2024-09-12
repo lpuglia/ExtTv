@@ -46,14 +46,21 @@ def parse_settings_from_xml(xml_file):
     try:
         tree = ET.parse(xml_file)  # Parse the XML file
         root = tree.getroot()  # Get the root element
-        settings_dict = {}  # Dictionary to store id and default attributes
+        settings_dict = {}  # Dictionary to store id and default values
 
-        # Iterate over <category> elements
-        for category in root.findall('category'):
-            # Iterate over <setting> elements within each <category>
-            for setting in category.findall('setting'):
-                setting_id = setting.get('id')
-                setting_default = setting.get('default')
+        # Iterate over all <setting> elements in the XML tree
+        for setting in root.iter('setting'):
+            setting_id = setting.get('id')
+            setting_default = setting.get('default')
+
+            # If 'default' is an attribute, use it
+            if setting_default is None:
+                default_element = setting.find('default')
+                if default_element is not None:
+                    setting_default = default_element.text
+
+            # Add to dictionary if id and default value are available
+            if setting_id is not None and setting_default is not None:
                 settings_dict[setting_id] = setting_default
 
         return settings_dict
@@ -69,6 +76,7 @@ def parse_po_file(file_path):
 
     messages = {}
     current_msgctxt = None
+    current_msgid = None
     current_msgstr = None
     
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -77,11 +85,14 @@ def parse_po_file(file_path):
             
             if line.startswith('msgctxt'):
                 current_msgctxt = line[10:-1]  # Remove 'msgctxt #' and trailing quote
+            elif line.startswith('msgid'):
+                current_msgid = line[7:-1]  # Remove 'msgid ' and trailing quote
             elif line.startswith('msgstr'):
                 current_msgstr = line[8:-1]  # Remove 'msgstr ' and trailing quote
-                if current_msgctxt and current_msgstr:
-                    messages[current_msgctxt] = current_msgstr
+                if current_msgstr is not None:
+                    messages[current_msgctxt] = current_msgid #(current_msgid, current_msgstr)
                     current_msgctxt = None
+                    current_msgid = None
                     current_msgstr = None
     return messages
 
@@ -92,7 +103,8 @@ class Addon():
             return
         if id=='':
             id = plugin.plugin_name
-        po_file_path = os.path.join(utils.full_addons_path(), f'{id}/resources/language/resource.language.it_it/strings.po')
+        
+        po_file_path = os.path.join(utils.full_addons_path(), f'{id}/resources/language/resource.language.en_gb/strings.po')
         settings_xml_path = os.path.join(utils.full_addons_path(), f'{id}/resources/settings.xml')
         addon_xml_path = os.path.join(utils.full_addons_path(), f'{id}/addon.xml')
 
