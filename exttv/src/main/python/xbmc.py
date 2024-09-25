@@ -88,13 +88,53 @@ def getInfoLabel(label):
     }
     return info_labels.get(label, "Unknown Label")
 
+# Parser to handle incoming JSON-RPC requests
 def executeJSONRPC(jsonrpc_request):
-    response_dict = {}
-    response_dict['{"jsonrpc": "2.0", "method": "Settings.GetSettingValue", "params": {"setting": "lookandfeel.skin"}, "id": 1 }'] = '{"id":1,"jsonrpc":"2.0","result":{"value":"skin.estuary"}}'
-    if jsonrpc_request in response_dict:
-        return response_dict[jsonrpc_request]
-    else:
-        return None
+    try:
+        # Parse the JSON-RPC request
+        request = json.loads(jsonrpc_request)
+
+        # Extract method and parameters
+        method_name = request.get("method")
+        params = request.get("params", {})
+        method_id = request.get("id", None)
+        print(method_name, params, method_id)
+
+        if method_name.startswith('Settings.'):
+            response_tmplt = '{{"id":0,"jsonrpc":"2.0","result":{{"value":{}}}}}'
+            if method_name.endswith('GetSettingValue'):
+                setting = params.get('setting')
+                if setting == "lookandfeel.skin":
+                    return response_tmplt.format("\"skin.estuary\"")
+                elif setting == 'network.usehttpproxy':
+                    return response_tmplt.format("false")
+                elif setting == 'network.httpproxyserver':
+                    return response_tmplt.format("\"\"")
+                elif setting == 'network.httpproxyport':
+                    return response_tmplt.format("0")
+                elif setting == 'network.httpproxyusername':
+                    return response_tmplt.format("\"\"")
+                elif setting == 'network.httpproxypassword':
+                    return response_tmplt.format("\"\"")
+                else:
+                    raise NotImplementedError(f"Setting {setting} not implemented")
+        elif method_name.startswith('Addons.'):
+            response_tmplt = '{{"id":0,"jsonrpc":"2.0","result":{{"addon":{}}}}}'
+            if method_name.endswith('GetAddonDetails'):
+                addon_id = params.get('addonid')
+                if addon_id == 'inputstream.adaptive':
+                    return response_tmplt.format('{ "addonid": "inputstream.adaptive", "name": "InputStream Adaptive", "version": "21.4.4", "summary": "", "description": "", "path": "", "enabled": true, "dependencies": []  }')
+                else:
+                    raise NotImplementedError(f"Addon {addon_id} not implemented")
+        else:
+            raise NotImplementedError(f"Method {method_name} not implemented")
+            
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON-RPC request")
+    except Exception as e:
+        raise ValueError(f"Error executing JSON-RPC request: {e}")
+    return response
+
 
 def getRegion(setting):
     settings = {

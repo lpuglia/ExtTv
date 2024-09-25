@@ -99,7 +99,17 @@ def parse_po_file(file_path):
 class Addon():
 
     def __init__(self, id=""):
+        self.addon = {}
         if id in ['inputstream.adaptive']:
+            self.addon['id'] = 'inputstream.adaptive'
+            self.addon['name'] = 'InputStream Adaptive'
+            self.addon['version'] = '21.4.4'
+            self.addon['author'] = ''
+            self.addon['summary'] = ''
+            self.addon['description'] = ''
+            self.addon['type'] = ''
+            self.addon['icon'] = ''
+            self.addon['fanart'] = ''
             return
         if id=='':
             id = plugin.plugin_name

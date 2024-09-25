@@ -587,7 +587,8 @@ class Dialog:
             state_done.wait()
             return to_return[0]
 
-    def yesno(self, heading, message, nolabel='No', yeslabel='Yes', autoclose=False): # autoclose not implemented
+    def yesno(self, heading, message='', nolabel='No', yeslabel='Yes', autoclose=False, line1=''): # autoclose not implemented
+        if line1 != '': message = line1
         if main_activity is None:
             self.mock_gui.log(f"Dialog - YesNo - Heading: {heading}, Message: {message}")
             return False

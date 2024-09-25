@@ -17,7 +17,7 @@ object AddonManager {
     }
 
     private fun getAllAddons(): List<String> {
-        return addonsPath.listFiles { file -> file.isDirectory }
+        return addonsPath.listFiles { file -> file.isDirectory && file.name.startsWith("plugin.video.") }
             ?.map { it.name }
             ?.sorted() // Ensure the list is sorted
             ?: emptyList()

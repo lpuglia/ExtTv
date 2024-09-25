@@ -337,15 +337,6 @@ fun SectionItem(
             CardView(
                 card = card,
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
-                onClick = {
-                    if(Status.loadingState == LoadingStatus.DONE){
-                        if(Status.selectedIndex < Addons.size){
-                            Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
-                        }else{
-                            Python.playCard(card)
-                        }
-                    }
-                },
                 requestFocus = cardIndex==0 && sectionIndex == Sections.size-1,
                 sectionIndex,
                 cardIndex
@@ -359,7 +350,6 @@ fun SectionItem(
 fun CardView(
     card: SectionManager.CardItem,
     isSelected: Boolean = false,
-    onClick: () -> Unit = {},
     requestFocus: Boolean,
     sectionIndex: Int,
     cardIndex: Int
@@ -393,7 +383,15 @@ fun CardView(
                     Status.bgImage = card.fanartUrl
                 }
                 .let { if (requestFocus) it.focusRequester(focusRequester) else it },
-            onClick = onClick,
+            onClick = {
+                if(Status.loadingState == LoadingStatus.DONE){
+                    if(Status.selectedIndex < Addons.size){
+                        Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
+                    }else{
+                        Python.playCard(card)
+                    }
+                }
+            },
             onLongClick = {
                 Status.showFavouriteMenu = true
                 Status.reboundEnter = true

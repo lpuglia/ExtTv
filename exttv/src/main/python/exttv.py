@@ -16,11 +16,13 @@ def run(argv=""):
         cardView = jclass("com.android.exttv.manager.SectionManager$CardItem")
         movie_list = []
         for item in to_return:
+            video = item[1].info.get('video', {})
+            plot = video.get('plot', '') if video else ''
             movie_list.append(cardView(
                 item[0],
-                item[1].label,
-                item[1].label2,
-                item[1].info.get('video', {}).get('plot', ''),
+                item[1].label if item[1].label else '',
+                item[1].label2 if item[1].label2 else '',
+                plot,
                 item[1].art.get('thumb', ''),
                 item[1].art.get('poster', ''),
                 item[1].art.get('fanart', ''),
@@ -29,5 +31,4 @@ def run(argv=""):
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
         main_activity.showToast(str(e), 1)
-
     return Arrays.asList(movie_list)

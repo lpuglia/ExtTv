@@ -326,7 +326,7 @@ fun fetchUrlContent(url: String): String? {
             response.body?.string()
         }
     } catch (e: IOException) {
-        Log.e("RepositoryDialog", "Failed to fetch data", e)
+        Log.e("RepositoryDialog", "Failed to fetch data, check your connection!", e)
         null
     }
 }

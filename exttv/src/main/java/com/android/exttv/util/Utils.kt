@@ -233,7 +233,8 @@ fun installDependencies(pluginPath: File) {
             val element = node as org.w3c.dom.Element
             val addonName = element.getAttribute("addon")
             if (addonName == "xbmc.python") continue
-            println("Dependency found: $addonName")
+            Status.showToast("Dependency found: $addonName, installing...", Toast.LENGTH_SHORT)
+
             try{
                 getFromRepository(addonName, false)
             }catch (e: Exception) {
