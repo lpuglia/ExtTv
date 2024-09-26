@@ -79,7 +79,8 @@ object PythonManager {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         val runnable = Runnable {
             if(card.isFolder){
-                Sections.removeAndAdd(0, "", Sections.Section(card.label, unfoldCard(card)))
+//                Sections.removeAndAdd(0, "", Sections.Section(card.label, unfoldCard(card)))
+                Sections.replaceCard(0, card, Sections.Section(card.label, unfoldCard(card)))
             }else{
                 exttv?.callAttr("run", card.uri)?.toJava(List::class.java)
             }

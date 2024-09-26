@@ -68,6 +68,31 @@ object SectionManager {
         return true
     }
 
+    fun replaceCard(sectionIndex: Int, cardToReplace: CardItem, newSection: Section): Boolean {
+        // Ensure the sectionIndex is within bounds
+        val sectionKeys = sections.keys.toList()
+        if (sectionIndex !in sectionKeys.indices) return false
+
+        // Get the section by index
+        val sectionKey = sectionKeys[sectionIndex]
+        val section = this[sectionKey] ?: return false
+
+        // Check if the card to replace exists in the section
+        val cardIndex = section.cardList.indexOfFirst { it.uri == cardToReplace.uri }
+        if (cardIndex == -1) return false // Card not found
+
+        // Replace the card list with the newSection's card list
+        val updatedCardList = section.cardList.toMutableList().apply {
+            removeAt(cardIndex)
+            addAll(cardIndex, newSection.cardList) // Insert new cards at the same index
+        }
+
+        // Update the section with the modified card list
+        val updatedSection = section.copy(cardList = updatedCardList)
+        this[sectionKey] = updatedSection
+        return true
+    }
+
     fun getSectionsInOrder(): List<Section> {
         return sections.values.toList()
     }
