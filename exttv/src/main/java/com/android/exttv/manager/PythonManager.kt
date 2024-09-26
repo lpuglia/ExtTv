@@ -26,7 +26,7 @@ object PythonManager {
     fun selectAddon(pluginName: String) {
         Status.selectedIndex = Addons.getAllAddonNames().indexOf(pluginName)
         Status.loadingState = LoadingStatus.SELECTING_ADDON
-        selectSection("plugin://$pluginName/", "Menu")
+        selectSection("plugin://${Addons.getIdByName(pluginName)}/", "Menu")
     }
 
     fun selectFavourite(favouriteName: String) {

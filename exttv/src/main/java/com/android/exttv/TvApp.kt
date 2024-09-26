@@ -1,6 +1,6 @@
-import android.widget.Toast
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +64,7 @@ import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.android.exttv.R
 import com.android.exttv.manager.LoadingStatus
@@ -185,11 +186,20 @@ fun CatalogBrowser() {
                                 selectedContainerColor = Color(0xFF426C75)
                             ),
                             leadingContent = {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = if (isSelected) Color.White else Color.LightGray
-                                )
+                                if (drawerIndex < Addons.size) {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(Status.context.filesDir.path + "/exttv_home/addons/${Addons.getIdByName(drawerItem)}/${Addons.getIconByName(drawerItem)}"),
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop // Adjust content scale as needed
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) Color.White else Color.LightGray
+                                    )
+                                }
                             }
                         ) {
                             Text(
