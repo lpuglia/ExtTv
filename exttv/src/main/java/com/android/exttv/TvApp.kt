@@ -67,8 +67,8 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.android.exttv.R
-import com.android.exttv.manager.LoadingStatus
-import com.android.exttv.manager.SectionManager
+import com.android.exttv.model.LoadingStatus
+import com.android.exttv.model.SectionManager
 import com.android.exttv.util.GithubDialog
 import com.android.exttv.util.RepositoryDialog
 import com.android.exttv.util.UninstallDialog
@@ -82,11 +82,11 @@ import com.android.exttv.util.addonKE
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.nonAddonKE
 import com.android.exttv.util.parseText
-import com.android.exttv.manager.AddonManager as Addons
-import com.android.exttv.manager.FavouriteManager as Favourites
-import com.android.exttv.manager.SectionManager as Sections
-import com.android.exttv.manager.StatusManager as Status
-import com.android.exttv.manager.PythonManager as Python
+import com.android.exttv.model.AddonManager as Addons
+import com.android.exttv.model.FavouriteManager as Favourites
+import com.android.exttv.model.SectionManager as Sections
+import com.android.exttv.model.StatusManager as Status
+import com.android.exttv.model.PythonManager as Python
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

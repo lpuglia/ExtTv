@@ -1,16 +1,16 @@
-package com.android.exttv.manager
+package com.android.exttv.model
 
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
-import com.android.exttv.manager.SectionManager
+import com.android.exttv.model.SectionManager
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import com.android.exttv.manager.AddonManager as Addons
-import com.android.exttv.manager.FavouriteManager as Favourites
-import com.android.exttv.manager.SectionManager as Sections
-import com.android.exttv.manager.StatusManager as Status
+import com.android.exttv.model.AddonManager as Addons
+import com.android.exttv.model.FavouriteManager as Favourites
+import com.android.exttv.model.SectionManager as Sections
+import com.android.exttv.model.StatusManager as Status
 
 object PythonManager {
     private var exttv: PyObject? = null

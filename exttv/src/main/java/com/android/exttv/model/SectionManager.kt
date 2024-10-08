@@ -1,4 +1,4 @@
-package com.android.exttv.manager
+package com.android.exttv.model
 
 import android.annotation.SuppressLint
 import androidx.compose.runtime.getValue

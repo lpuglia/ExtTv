@@ -1,11 +1,14 @@
-package com.android.exttv.manager
+package com.android.exttv.model
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
+import androidx.tvprovider.media.tv.TvContractCompat
+import com.android.exttv.MainActivity
+import com.android.exttv.model.SectionManager.CardItem
+import com.android.exttv.util.TvContractUtil
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.android.exttv.manager.SectionManager.CardItem
+import com.android.exttv.util.TvContractUtil as tvContract
 
 typealias Favourite = List<CardItem>
 
@@ -15,14 +18,11 @@ object FavouriteManager {
 
     // Initialize with SharedPreferences
     fun init(context: Context) {
+        tvContract.init(context as MainActivity)
+        tvContract.printAll(TvContractCompat.Channels.CONTENT_URI)
+        tvContract.printAll(TvContractCompat.PreviewPrograms.CONTENT_URI)
         prefs = context.getSharedPreferences("favourite_prefs", Context.MODE_PRIVATE)
-        val allLists: Map<String, Favourite> = getAllFavourites()
-        for ((listName, cardList) in allLists) {
-            Log.d("Favourites", "List Name: $listName")
-            cardList.forEach { card ->
-                Log.d("Favourites", "Card: $card")
-            }
-        }
+        tvContract.createOrUpdateChannel(getAllFavourites())
     }
 
     // Get all lists with their names and contents

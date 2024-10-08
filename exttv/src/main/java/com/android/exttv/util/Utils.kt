@@ -1,5 +1,8 @@
 package com.android.exttv.util
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.text.AnnotatedString
@@ -10,7 +13,7 @@ import androidx.compose.ui.text.withStyle
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.android.exttv.manager.AddonManager as Addons
+import com.android.exttv.model.AddonManager as Addons
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -22,7 +25,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
-import com.android.exttv.manager.StatusManager as Status
+import com.android.exttv.model.StatusManager as Status
 
 fun parseText(input: String): AnnotatedString {
     val stripped = input.replace("\n", "; ").trim()//.replace(Regex(";\\s*;+\\s*"), ";")
@@ -295,4 +298,22 @@ fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: B
             println("Plugin $pluginName already exists. Skipping download.")
         }
     }.apply { start(); join() }
+}
+
+// Helper function to convert Drawable to Bitmap
+fun drawableToBitmap(drawable: android.graphics.drawable.Drawable): Bitmap {
+    if (drawable is BitmapDrawable) {
+        return drawable.bitmap
+    }
+
+    val bitmap = Bitmap.createBitmap(
+        drawable.intrinsicWidth,
+        drawable.intrinsicHeight,
+        Bitmap.Config.ARGB_8888
+    )
+    val canvas = Canvas(bitmap)
+    drawable.setBounds(0, 0, canvas.width, canvas.height)
+    drawable.draw(canvas)
+
+    return bitmap
 }

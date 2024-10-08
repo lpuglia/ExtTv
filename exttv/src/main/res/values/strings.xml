@@ -17,6 +17,6 @@
     <string name="app_name">ExtTv</string>
     <string name="app_link_play">%1$s://%2$s/play/%3$d/%4$s</string>
     <string name="app_link_view">%1$s://%2$s/view/%3$s</string>
-    <string name="schema">tvrecommendation</string>
+    <string name="schema">exttv</string>
     <string name="host">app</string>
 </resources>

@@ -1,10 +1,9 @@
-package com.android.exttv.manager
+package com.android.exttv.model
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.focus.FocusRequester
 import com.android.exttv.MainActivity
 
 enum class LoadingStatus {
@@ -34,9 +33,9 @@ object StatusManager {
     lateinit var context : MainActivity
     lateinit var showToast : (String?, Int) -> Unit
 
-    fun init(ctxt: MainActivity){
-        context = ctxt
-        showToast = ctxt::showToast
+    fun init(context: MainActivity){
+        this.context = context
+        showToast = context::showToast
         update()
     }
 
