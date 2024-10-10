@@ -81,16 +81,6 @@
                 android:textColor="#dddddd"
                 android:textSize="14sp"
                 android:textStyle="bold" />
-
-            <ImageButton
-                android:id="@+id/btnToggleSubtitles"
-                android:src="@drawable/cc"
-                android:scaleType="fitXY"
-                android:padding="0dp"
-                android:background="@null"
-                android:layout_height="25dp"
-                android:layout_width="35dp" />
-
         </LinearLayout>
 
     </LinearLayout>

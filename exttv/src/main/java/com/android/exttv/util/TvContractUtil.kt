@@ -8,6 +8,7 @@ import android.database.Cursor
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.tvprovider.media.tv.ChannelLogoUtils.storeChannelLogo
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.MainActivity
@@ -54,11 +55,10 @@ object TvContractUtil {
                         }
                     } catch (_: Exception) {}
                 }
-                println(row.toString())
 
             } while (cursor.moveToNext())
         } else {
-            println("Cursor is empty or null.")
+//            println("Cursor is empty or null.")
         }
     }
 
@@ -165,28 +165,37 @@ object TvContractUtil {
         }
     }
 
+    private fun getUri(art: String): Uri{
+        fun isValidUrl(url: String): Boolean {
+            val urlRegex = Regex("^(http|https)://[^\\s/$.?#].[^\\s]*$")
+            return urlRegex.matches(url)
+        }
+
+        if(isValidUrl(art)) {
+            return art.toUri()
+        }else{
+            val artFile = File(context.filesDir, art.substringAfter("/files/"))
+            val artUrl = FileProvider.getUriForFile( context, "${context.packageName}.fileprovider", artFile)
+            for(packageName in arrayOf("com.google.android.tvlauncher", "com.spocky.projengmenu")) {
+                context.grantUriPermission(packageName, artUrl, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            return artUrl
+        }
+    }
+
     @SuppressLint("RestrictedApi")
     private fun programFromCard(channelId: Long, card: CardItem): ContentValues {
         val posterUrl = if (card.posterUrl.isEmpty()) card.thumbnailUrl else card.posterUrl
         val thumbnailUrl = if (card.thumbnailUrl.isEmpty()) card.posterUrl else card.thumbnailUrl
 
-        val posterFile = File(context.filesDir, posterUrl.substringAfter("/files/"))
-        val thumbnailFile = File(context.filesDir, thumbnailUrl.substringAfter("/files/"))
-
-        val thumbnailUri = FileProvider.getUriForFile(
-            context, "${context.packageName}.fileprovider", thumbnailFile
-        )
-        val posterUri =
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", posterFile)
-
-        context.grantUriPermission("com.google.android.tvlauncher", posterUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        context.grantUriPermission("com.google.android.tvlauncher", thumbnailUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val posterUri = getUri(posterUrl)
+        val thumbnailUri = getUri(thumbnailUrl)
 
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)
             put(PreviewPrograms.COLUMN_TYPE, TvContractCompat.PreviewProgramColumns.TYPE_MOVIE)
-            put(PreviewPrograms.COLUMN_TITLE, card.label)
-            put(PreviewPrograms.COLUMN_SHORT_DESCRIPTION, card.label2)
+            put(PreviewPrograms.COLUMN_TITLE, card.label + if(card.label2!="") " - " + card.label2 else "")
+            put(PreviewPrograms.COLUMN_SHORT_DESCRIPTION, card.pluginName)
             put(PreviewPrograms.COLUMN_LONG_DESCRIPTION, card.plot)
             put(PreviewPrograms.COLUMN_POSTER_ART_URI, posterUri.toString())
             put(PreviewPrograms.COLUMN_THUMBNAIL_URI, thumbnailUri.toString())

@@ -24,7 +24,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.PersistableBundle
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
 import android.util.Log
@@ -51,21 +50,10 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
-import com.android.exttv.model.Episode
-import com.android.exttv.model.Program
-import com.android.exttv.model.ProgramDatabase
-import com.android.exttv.model.DisplayerManager
-import com.android.exttv.util.AppLinkHelper
-import com.android.exttv.util.AppLinkHelper.PlaybackAction
-import com.android.exttv.util.RemoteKeyEvent
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.squareup.picasso.Picasso
 import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 import org.conscrypt.Conscrypt
 import java.security.Security
-import java.util.GregorianCalendar
 import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody
@@ -98,8 +86,6 @@ class PlayerActivity : Activity() {
     private lateinit var playerView: PlayerView
     private var trackSelector: DefaultTrackSelector? = null
 
-    private var remoteKeyEvent: RemoteKeyEvent? = null
-    private var currentEpisode: Episode? = null
     private var paused = false
 
     lateinit var player: ExoPlayer
@@ -108,12 +94,6 @@ class PlayerActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val gson = Gson()
-        val mPrefs = getSharedPreferences("test", MODE_PRIVATE)
-        val json = mPrefs.getString("programs", "")
-        val type = object : TypeToken<LinkedHashMap<Int?, Program?>?>() {}.type
-        ProgramDatabase.programs = gson.fromJson(json, type)
 
         Security.insertProviderAt(Conscrypt.newProvider(), 1) //without this I get handshake error
 
@@ -132,17 +112,6 @@ class PlayerActivity : Activity() {
                     ?.let { Json.decodeFromString<ExtTvMediaSource>(it) }
 
                 initializePlayer(true)
-                currentEpisode = Episode().setPageURL(uriString).setTitle("External Video Stream")
-                    .setDescription(uriString).setAirDate(
-                        GregorianCalendar()
-                    )
-                val program =
-                    Program().setType("OnDemand").setVideoUrl(uriString).setEpisode(currentEpisode)
-                remoteKeyEvent = RemoteKeyEvent(this, program.isLive, program.hashCode().toLong())
-
-                val displayerManager =
-                    DisplayerManager(this, false)
-                displayerManager.setTopContainer(currentEpisode)
                 preparePlayer(mediaSource!!)
             }
         }
@@ -153,31 +122,10 @@ class PlayerActivity : Activity() {
 
         setContentView(R.layout.activity_player)
         playerView = findViewById(R.id.video_view)
-
-        val currentProgram = setCurrentProgramFromIntent(intent.data)
-        paused = false
-        initializePlayer(currentProgram!!.isLive)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        return remoteKeyEvent!!.dispatchKeyEvent(event)
-    }
-
-    private val currentEpisodeCursor: Long
-        get() {
-            val position = AppLinkHelper.getEpisodeCursor(
-                currentEpisode,
-                baseContext
-            )
-            val duration = currentEpisode!!.durationLong
-            if (duration == 0L) return position
-            if (position < duration - (duration / 99)) return position // if cursor is before 99% of the duration
-
-            return 0
-        }
-
-    fun setCurrentEpisodeCursor() {
-        AppLinkHelper.setEpisodeCursor(player.currentPosition, currentEpisode, baseContext)
+        return false;
     }
 
     fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
@@ -258,89 +206,11 @@ class PlayerActivity : Activity() {
 
         player.setMediaSource(mediaSourceFactory.createMediaSource(mediaItem))
         player.prepare()
-
-        if (currentEpisode != null) {
-            val position = currentEpisodeCursor
-            if (position != 0L) player.seekTo(position)
-        }
-    }
-
-    private fun setCurrentProgramFromIntent(intentUri: Uri?): Program? {
-        val action = AppLinkHelper.extractAction(intentUri)
-        var program: Program? = null
-        if (AppLinkHelper.PLAYBACK == action.action) {
-            val paction = action as PlaybackAction
-            program = ProgramDatabase.programs[paction.movieId.toInt()]
-            remoteKeyEvent = RemoteKeyEvent(this, program!!.isLive, program.hashCode().toLong())
-
-            if (program.isLive) {
-                val watermark = findViewById<ImageView>(R.id.watermark)
-                Picasso.with(baseContext).load(program.logo).into(watermark)
-            }
-            //        } else if (AppLinkHelper.BROWSE.equals(action.getAction())) {
-        } else {
-            throw IllegalArgumentException("Invalid Action $action")
-        }
-        val plugin_files: MutableSet<String> = LinkedHashSet()
-        val bundle = PersistableBundle()
-        for (p in ProgramDatabase.programs.values) {
-            plugin_files.add(p.scraperURL)
-            bundle.putLong(p.type, p.channelId)
-        }
-//        val syncProgramsJobService = SyncProgramsJobService()
-
-//        for (p in plugin_files) syncProgramsJobService.idMap[p] = HashSet()
-//        for (p in plugin_files) {
-//            syncProgramsJobService.syncProgramManager.add(
-//                syncProgramsJobService.SyncProgramManager(
-//                    this, p, bundle
-//                )
-//            )
-//        }
-        return program
-    }
-
-//    fun showLogIn(currentProgram: Program?) {
-//        val builder = AlertDialog.Builder(this)
-//        // Get the layout inflater
-//        val inflater = this.layoutInflater
-//
-//        // Inflate and set the layout for the dialog
-//        // Pass null as the parent view because its going in the dialog layout
-//        val dialogView = inflater.inflate(R.layout.popup_login, null)
-//        builder.setView(dialogView) // Add action buttons
-//            .setPositiveButton("SignIn") { dialog: DialogInterface?, id: Int ->
-//                val prefs =
-//                    applicationContext.getSharedPreferences("com.android.exttv", 0)
-//                val editor = prefs.edit()
-//                var editText = dialogView.findViewById<EditText>(R.id.username)
-//                editor.putString("username", editText.text.toString())
-//                editText = dialogView.findViewById(R.id.password)
-//                editor.putString("password", editText.text.toString())
-//                editor.apply()
-//                scrape(currentProgram)
-//            }
-//            .setNegativeButton(
-//                "cancel"
-//            ) { dialog: DialogInterface?, id: Int ->
-//                scrape(
-//                    currentProgram
-//                )
-//            }
-//        val alert = builder.create()
-//        alert.show()
-//    }
-
-    fun setCurrentEpisode(episode: Episode?) {
-        currentEpisode = episode
     }
 
     public override fun onPause() {
         super.onPause()
         player.playWhenReady = false
-        if (currentEpisode != null) { //if on-demand program
-            setCurrentEpisodeCursor()
-        }
     }
 
     override fun onUserLeaveHint() { // this function is only called on home button press, not called on standby
@@ -357,16 +227,9 @@ class PlayerActivity : Activity() {
 
     public override fun onStop() {
         super.onStop()
-//        if (scraper!!.isLive) {
-//            player!!.release()
-//            finish()
-//        } else {
-            player.release()
-            paused = true
-            cardsReady = false
-//            scraper!!.cancel()
-//            scraper = null
-//        }
+        player.release()
+        paused = true
+        cardsReady = false
     }
 
     var previousPlaybackState: Int = ExoPlayer.STATE_IDLE
@@ -421,23 +284,6 @@ class PlayerActivity : Activity() {
         // Apply the changes to the track selector
         trackSelector!!.setParameters(parametersBuilder)
     }
-
-//    private fun customizeSubtitlesAppearance() {
-//        // Example customization: White text, semi-transparent black background
-//        val style = CaptionStyleCompat(
-//            Color.YELLOW, Color.TRANSPARENT, Color.TRANSPARENT,
-//            CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null
-//        )
-//
-//        val subtitleView = playerView!!.subtitleView
-//        if (subtitleView != null) {
-//            subtitleView.setStyle(style)
-//            subtitleView.setFixedTextSize(
-//                TypedValue.COMPLEX_UNIT_PX,
-//                resources.getDimension(R.dimen.subtitle_font_size)
-//            )
-//        }
-//    }
 
     @OptIn(UnstableApi::class)
     private fun initializePlayer(isLive: Boolean) {
@@ -577,8 +423,6 @@ class PlayerActivity : Activity() {
                 previousPlaybackState = playbackState
             }
         })
-        enableSubtitlesByDefault()
-        findViewById<View>(R.id.btnToggleSubtitles).setOnClickListener { toggleSubtitles() }
 
 //        customizeSubtitlesAppearance()
 

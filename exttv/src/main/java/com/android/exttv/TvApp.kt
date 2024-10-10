@@ -395,11 +395,7 @@ fun CardView(
                 .let { if (requestFocus) it.focusRequester(focusRequester) else it },
             onClick = {
                 if(Status.loadingState == LoadingStatus.DONE){
-                    if(Status.selectedIndex < Addons.size){
-                        Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
-                    }else{
-                        Python.playCard(card)
-                    }
+                    Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
                 }
             },
             onLongClick = {

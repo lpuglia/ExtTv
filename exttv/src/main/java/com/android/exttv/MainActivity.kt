@@ -94,6 +94,15 @@ class MainActivity : ComponentActivity() {
                 CatalogBrowser()
             }
         }
+
+        val data = intent.data
+        intent.data?.let {
+            val uriString = data.toString()
+            if (uriString.startsWith("exttv://")) {
+                PythonManager.selectSection(uriString.replace("exttv://",""), "prova", -1, 0)
+            }
+        }
+
     }
 
     @SuppressLint("RestrictedApi")

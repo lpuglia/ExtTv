@@ -117,22 +117,31 @@ fun getFromGit(url: String, force: Boolean = false) : String {
         val addonXml = URL(addonXmlUrl).readText()
 
         // Extract plugin name
-        val pattern = Pattern.compile("""id="([^"]+)"""")
+        val pattern = Pattern.compile("""name="([^"]+)"""")
         val matcher = pattern.matcher(addonXml)
         val pluginName = if (matcher.find()) {
             matcher.group(1)
         } else {
+            throw Exception("Failed to get plugin name")
+        }
+
+        // Extract plugin id
+        val patternId = Pattern.compile("""id="([^"]+)"""")
+        val matcherId = patternId.matcher(addonXml)
+        val pluginId = if (matcherId.find()) {
+            matcherId.group(1)
+        } else {
             throw Exception("Failed to get plugin id")
         }
 
-        installAddon(zipPath, pluginName, zipPath, false)
+        installAddon(zipPath, pluginId, zipPath, false)
         return pluginName
     } catch (e: Exception) {
         throw Exception("Error occurred while processing URL: ${e.message}", e)
     }
 }
 
-fun getLatestZipName(url: String): Pair<String, String>{
+fun getLatestZipName(url: String): Triple<String, String, String>{
     try {
         // Make an HTTP GET request to the provided URL
         val connection = URL(url).openConnection() as HttpURLConnection
@@ -153,11 +162,16 @@ fun getLatestZipName(url: String): Pair<String, String>{
                 .getJSONObject(0)
                 .getString("path")
 
-            val pluginName = data.getJSONObject("result")
+            val pluginId = data.getJSONObject("result")
                 .getJSONObject("data")
                 .getJSONObject("addon")
                 .getString("addonid")
-            return Pair(zipPath, pluginName)
+
+            val pluginName = data.getJSONObject("result")
+                .getJSONObject("data")
+                .getJSONObject("addon")
+                .getString("name")
+            return Triple(zipPath, pluginId, pluginName)
         }
     } catch (e: Exception) {
         throw Exception("Failed to fetch or decode JSON data: ${e.message}", e)
@@ -166,9 +180,9 @@ fun getLatestZipName(url: String): Pair<String, String>{
 
 fun getFromRepository(addonId: String, force: Boolean = false): String {
     val url = "https://kodi.tv/page-data/addons/omega/${addonId}/page-data.json"
-    val (zipPath, pluginName) = getLatestZipName(url)
+    val (zipPath, pluginId, pluginName) = getLatestZipName(url)
     val mirrorZip = "https://mirrors.kodi.tv/addons/omega/" + zipPath.split("addons/omega/")[1]
-    installAddon(mirrorZip, pluginName, url, false)
+    installAddon(mirrorZip, pluginId, url, false)
     return pluginName
 }
 
@@ -236,7 +250,7 @@ fun installDependencies(pluginPath: File) {
             val element = node as org.w3c.dom.Element
             val addonName = element.getAttribute("addon")
             if (addonName == "xbmc.python") continue
-            Status.showToast("Dependency found: $addonName, installing...", Toast.LENGTH_SHORT)
+//            Status.showToast("Dependency found: $addonName, installing...", Toast.LENGTH_SHORT)
 
             try{
                 getFromRepository(addonName, false)
