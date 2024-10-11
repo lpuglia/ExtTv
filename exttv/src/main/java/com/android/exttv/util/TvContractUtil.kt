@@ -13,6 +13,7 @@ import androidx.tvprovider.media.tv.ChannelLogoUtils.storeChannelLogo
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.MainActivity
 import com.android.exttv.R
+import com.android.exttv.model.AddonManager
 import com.android.exttv.model.Favourite
 import com.android.exttv.model.SectionManager.CardItem
 import java.io.File
@@ -93,6 +94,9 @@ object TvContractUtil {
 
     @SuppressLint("UseCompatLoadingForDrawables")
     fun createOrUpdateChannel(favourites: Map<String, Favourite>) {
+//        printAll(channelUri)
+//        printAll(programUri)
+
         // Step 1: Get the list of existing channels
         val existingChannels = getChannels()
 
@@ -165,7 +169,7 @@ object TvContractUtil {
         }
     }
 
-    private fun getUri(art: String): Uri{
+    private fun getUri(art: String, pluginName: String): Uri{
         fun isValidUrl(url: String): Boolean {
             val urlRegex = Regex("^(http|https)://[^\\s/$.?#].[^\\s]*$")
             return urlRegex.matches(url)
@@ -174,7 +178,11 @@ object TvContractUtil {
         if(isValidUrl(art)) {
             return art.toUri()
         }else{
-            val artFile = File(context.filesDir, art.substringAfter("/files/"))
+            val artFile = if(art.startsWith("/")){
+                File(context.filesDir, art.substringAfter("/files/"))
+            }else{
+                File(context.filesDir, "exttv_home/addons/$pluginName/$art")
+            }
             val artUrl = FileProvider.getUriForFile( context, "${context.packageName}.fileprovider", artFile)
             for(packageName in arrayOf("com.google.android.tvlauncher", "com.spocky.projengmenu")) {
                 context.grantUriPermission(packageName, artUrl, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -186,20 +194,25 @@ object TvContractUtil {
     @SuppressLint("RestrictedApi")
     private fun programFromCard(channelId: Long, card: CardItem): ContentValues {
         val posterUrl = if (card.posterUrl.isEmpty()) card.thumbnailUrl else card.posterUrl
-        val thumbnailUrl = if (card.thumbnailUrl.isEmpty()) card.posterUrl else card.thumbnailUrl
+        var thumbnailUrl = if (card.thumbnailUrl.isEmpty()) card.posterUrl else card.thumbnailUrl
+        if (posterUrl == thumbnailUrl && card.fanartUrl.isNotEmpty() && card.fanartUrl != "") {
+            thumbnailUrl = card.fanartUrl
+        }
 
-        val posterUri = getUri(posterUrl)
-        val thumbnailUri = getUri(thumbnailUrl)
+        val icon = AddonManager.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
+        val posterUri = getUri(posterUrl, card.pluginName)
+        val thumbnailUri = getUri(thumbnailUrl, card.pluginName)
 
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)
             put(PreviewPrograms.COLUMN_TYPE, TvContractCompat.PreviewProgramColumns.TYPE_MOVIE)
-            put(PreviewPrograms.COLUMN_TITLE, card.label + if(card.label2!="") " - " + card.label2 else "")
-            put(PreviewPrograms.COLUMN_SHORT_DESCRIPTION, card.pluginName)
-            put(PreviewPrograms.COLUMN_LONG_DESCRIPTION, card.plot)
+            put(PreviewPrograms.COLUMN_TITLE, stripTags(card.label) + if(card.label2!="") " - " + stripTags(card.label2) else "")
+            put(PreviewPrograms.COLUMN_SHORT_DESCRIPTION, stripTags(card.plot))
+            put(PreviewPrograms.COLUMN_LONG_DESCRIPTION, stripTags(card.plot))
             put(PreviewPrograms.COLUMN_POSTER_ART_URI, posterUri.toString())
             put(PreviewPrograms.COLUMN_THUMBNAIL_URI, thumbnailUri.toString())
             put(PreviewPrograms.COLUMN_INTENT_URI, "exttv://" + card.uri)
+            put(PreviewPrograms.COLUMN_LOGO_URI, icon.toString())
         }
         return contentValues
     }

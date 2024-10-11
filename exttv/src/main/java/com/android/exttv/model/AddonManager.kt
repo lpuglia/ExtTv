@@ -79,5 +79,9 @@ object AddonManager {
         return getAllAddons().find { it["addon_name"] == addonName }?.get("addon_icon")
     }
 
+    fun getIconByFolderName(addonName: String): String? {
+        return getAllAddons().find { it["folder_name"] == addonName }?.get("addon_icon")
+    }
+
     val size: Int get() = getAllAddons().size
 }

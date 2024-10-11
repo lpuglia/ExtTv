@@ -2,10 +2,8 @@ package com.android.exttv.model
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.MainActivity
 import com.android.exttv.model.SectionManager.CardItem
-import com.android.exttv.util.TvContractUtil
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.android.exttv.util.TvContractUtil as tvContract
@@ -19,10 +17,8 @@ object FavouriteManager {
     // Initialize with SharedPreferences
     fun init(context: Context) {
         tvContract.init(context as MainActivity)
-        tvContract.printAll(TvContractCompat.Channels.CONTENT_URI)
-        tvContract.printAll(TvContractCompat.PreviewPrograms.CONTENT_URI)
         prefs = context.getSharedPreferences("favourite_prefs", Context.MODE_PRIVATE)
-        tvContract.createOrUpdateChannel(getAllFavourites())
+//        tvContract.createOrUpdateChannel(getAllFavourites())
     }
 
     // Get all lists with their names and contents
@@ -37,6 +33,7 @@ object FavouriteManager {
         val jsonString = gson.toJson(allLists)
         prefs.edit().putString("all_favourites", jsonString).apply()
         StatusManager.update()
+        tvContract.createOrUpdateChannel(getAllFavourites())
     }
 
     // Create a new list given the card/cards

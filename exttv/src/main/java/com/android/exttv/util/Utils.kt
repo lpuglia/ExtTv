@@ -78,6 +78,13 @@ fun parseText(input: String): AnnotatedString {
     return annotatedString.toAnnotatedString()
 }
 
+fun stripTags(input: String): String {
+    val regex = "\\[(B|I|LIGHT|UPPERCASE|LOWERCASE|CAPITALIZE)](.*?)\\[/\\1]".toRegex()
+    return regex.replace(input) { matchResult ->
+        matchResult.groupValues[2] // Extract the content without tags
+    }.replace("\n", "-") // Replace newlines with a dash
+}
+
 fun cleanText(input: String): String {
     // Remove color tags
 
