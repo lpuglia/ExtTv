@@ -55,11 +55,11 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
-import com.android.exttv.models.LoadingStatus
-import com.android.exttv.utils.PluginData
-import com.android.exttv.utils.getFromGit
-import com.android.exttv.utils.getFromRepository
-import com.android.exttv.utils.getLatestZipName
+import com.android.exttv.model.LoadingStatus
+import com.android.exttv.util.PluginData
+import com.android.exttv.util.getFromGit
+import com.android.exttv.util.getFromRepository
+import com.android.exttv.util.getLatestZipName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -68,11 +68,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.IOException
 import org.json.JSONObject
-import com.android.exttv.models.AddonManager as Addons
-import com.android.exttv.models.FavouriteManager as Favourites
-import com.android.exttv.models.StatusManager as Status
-import com.android.exttv.models.PythonManager as Python
-import com.android.exttv.models.SectionManager as Sections
+import com.android.exttv.model.AddonManager as Addons
+import com.android.exttv.model.FavouriteManager as Favourites
+import com.android.exttv.model.StatusManager as Status
+import com.android.exttv.model.PythonManager as Python
+import com.android.exttv.model.SectionManager as Sections
 
 @Composable
 fun NewPlaylistMenu() {

@@ -1,4 +1,4 @@
-package com.android.exttv.utils
+package com.android.exttv.util
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -18,7 +18,7 @@ import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import okio.GzipSource
 import okio.buffer
-import com.android.exttv.models.AddonManager as Addons
+import com.android.exttv.model.AddonManager as Addons
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -31,7 +31,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
-import com.android.exttv.models.StatusManager as Status
+import com.android.exttv.model.StatusManager as Status
 
 fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
     val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder()

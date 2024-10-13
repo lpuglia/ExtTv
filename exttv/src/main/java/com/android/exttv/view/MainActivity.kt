@@ -15,10 +15,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.tv.material3.MaterialTheme
-import com.android.exttv.models.AddonManager
-import com.android.exttv.models.FavouriteManager
-import com.android.exttv.models.PythonManager
-import com.android.exttv.models.StatusManager
+import com.android.exttv.model.AddonManager
+import com.android.exttv.model.FavouriteManager
+import com.android.exttv.model.PythonManager
+import com.android.exttv.model.StatusManager
 
 class MainActivity : ComponentActivity() {
 

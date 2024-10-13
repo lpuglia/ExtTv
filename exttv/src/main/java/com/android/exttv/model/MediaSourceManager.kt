@@ -1,4 +1,4 @@
-package com.android.exttv.models
+package com.android.exttv.model
 
 import android.net.Uri
 import androidx.media3.common.C
@@ -11,11 +11,11 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import com.android.exttv.utils.clientFactory
+import com.android.exttv.util.clientFactory
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-class MediaSourceManager {
+object MediaSourceManager {
 
     @Serializable
     data class License(

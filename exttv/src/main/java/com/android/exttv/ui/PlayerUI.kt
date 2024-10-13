@@ -7,8 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.android.exttv.models.MediaSourceManager
-
+import com.android.exttv.model.MediaSourceManager
 
 @Composable
 fun PlayerView(extTvMediaSource: String?) {
@@ -21,9 +20,8 @@ fun PlayerView(extTvMediaSource: String?) {
     exoPlayer.playWhenReady = true
     exoPlayer.stop()
 
-    val mediaSourceManager = remember { MediaSourceManager() }
     val mediaSource = extTvMediaSource?.let {
-        mediaSourceManager.preparePlayer(it)
+        MediaSourceManager.preparePlayer(it)
     }
     mediaSource?.let {
         exoPlayer.setMediaSource(it)

@@ -1,4 +1,4 @@
-package com.android.exttv.utils
+package com.android.exttv.util
 
 import android.annotation.SuppressLint
 import android.content.ContentUris
@@ -13,9 +13,9 @@ import androidx.tvprovider.media.tv.ChannelLogoUtils.storeChannelLogo
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.view.MainActivity
 import com.android.exttv.R
-import com.android.exttv.models.AddonManager
-import com.android.exttv.models.Favourite
-import com.android.exttv.models.SectionManager.CardItem
+import com.android.exttv.model.AddonManager
+import com.android.exttv.model.Favourite
+import com.android.exttv.model.SectionManager.CardItem
 import java.io.File
 import androidx.tvprovider.media.tv.TvContractCompat.PreviewPrograms as PreviewPrograms
 import androidx.tvprovider.media.tv.TvContractCompat.Channels as Channels
