@@ -10,9 +10,14 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
+import okio.GzipSource
+import okio.buffer
 import com.android.exttv.models.AddonManager as Addons
 import org.json.JSONObject
 import java.io.File
@@ -20,12 +25,57 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import com.android.exttv.models.StatusManager as Status
+
+fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
+    val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder()
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            val newRequestBuilder = chain.request().newBuilder()
+            for ((key, value) in headers) {
+                newRequestBuilder.header(key, value)
+            }
+            chain.proceed(newRequestBuilder.build())
+        }
+        .addInterceptor { chain ->
+            val request = chain.request()
+            val originalResponse = chain.proceed(request)
+            val contentEncoding = originalResponse.header("Content-Encoding")
+
+            if (contentEncoding != null && contentEncoding.equals("gzip", ignoreCase = true)) {
+                val responseBody = originalResponse.body
+                val gzipSource = GzipSource(responseBody!!.source())
+                val decompressedBody = ResponseBody.create(responseBody.contentType(), -1, gzipSource.buffer())
+
+                originalResponse.newBuilder()
+                    .header("Content-Encoding", "identity")
+                    .removeHeader("Content-Length")
+                    .body(decompressedBody)
+                    .build()
+            } else {
+                originalResponse
+            }
+
+        }
+//        if (requiresProxy) initClientProxy(clientBuilder)
+//        val cookieManager = CookieManager()
+//        val cookieJar = object : CookieJar {override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+//            for (cookie in cookies) {
+//                cookieManager.cookieStore.add(url.toUri(), cookie)
+//            }
+//        }
+//        }
+//        clientBuilder.cookieJar(cookieJar)
+    return OkHttpDataSource.Factory(clientBuilder.build())
+}
 
 fun parseText(input: String): AnnotatedString {
     val stripped = input.replace("\n", "; ").trim()//.replace(Regex(";\\s*;+\\s*"), ";")
