@@ -4,7 +4,7 @@ import traceback
 
 from java import jclass
 from java.util import Arrays
-main_activity = jclass("com.android.exttv.MainActivity").getInstance()
+main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
 
 utils.init(os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../'))) # very important to normalize
 
@@ -13,7 +13,7 @@ def run(argv=""):
     movie_list = []
     try:
         to_return = utils.run([argv.split("?")[0], '3', argv[argv.find("?"):] if "?" in argv else ""])
-        cardView = jclass("com.android.exttv.model.SectionManager$CardItem")
+        cardView = jclass("com.android.exttv.models.SectionManager$CardItem")
         movie_list = []
         for item in to_return:
             video = item[1].info.get('video', {})

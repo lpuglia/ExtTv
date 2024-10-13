@@ -1,12 +1,12 @@
-package com.android.exttv.model
+package com.android.exttv.models
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.android.exttv.MainActivity
-import com.android.exttv.model.SectionManager.CardItem
+import com.android.exttv.view.MainActivity
+import com.android.exttv.models.SectionManager.CardItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.android.exttv.util.TvContractUtil as tvContract
+import com.android.exttv.utils.TvContract as tvContract
 
 typealias Favourite = List<CardItem>
 

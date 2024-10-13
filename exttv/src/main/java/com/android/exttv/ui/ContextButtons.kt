@@ -1,4 +1,4 @@
-package com.android.exttv.util
+package com.android.exttv.ui
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
-import com.android.exttv.model.AddonManager as Addons
-import com.android.exttv.model.StatusManager as Status
+import com.android.exttv.models.AddonManager as Addons
+import com.android.exttv.models.StatusManager as Status
 
 var uninstallReqs = mutableListOf<FocusRequester>()
 var updateReqs = mutableListOf<FocusRequester>()
@@ -50,7 +50,7 @@ fun FavouriteButtons(
                 .padding(end = 10.dp)
                 .width(50.dp)
                 .focusRequester(removeFavReqs.last())
-                .onKeyEvent { event -> removeFavButtonKE(event, favouriteIndex)},
+                .onKeyEvent { event -> removeFavButtonKE(event, favouriteIndex) },
             colors = ButtonDefaults.colors(
                 containerColor = Color(0xFF1D2E31),
                 focusedContainerColor = Color(0xFF2B474D)

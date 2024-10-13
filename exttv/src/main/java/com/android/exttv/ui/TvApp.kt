@@ -67,26 +67,26 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.android.exttv.R
-import com.android.exttv.model.LoadingStatus
-import com.android.exttv.model.SectionManager
-import com.android.exttv.util.GithubDialog
-import com.android.exttv.util.RepositoryDialog
-import com.android.exttv.util.UninstallDialog
-import com.android.exttv.util.ContextButtons
-import com.android.exttv.util.FavouriteButtons
-import com.android.exttv.util.FavouriteMenu
-import com.android.exttv.util.NewPlaylistMenu
-import com.android.exttv.util.RemoveDialog
-import com.android.exttv.util.UpdateDialog
-import com.android.exttv.util.addonKE
-import com.android.exttv.util.cleanText
-import com.android.exttv.util.nonAddonKE
-import com.android.exttv.util.parseText
-import com.android.exttv.model.AddonManager as Addons
-import com.android.exttv.model.FavouriteManager as Favourites
-import com.android.exttv.model.SectionManager as Sections
-import com.android.exttv.model.StatusManager as Status
-import com.android.exttv.model.PythonManager as Python
+import com.android.exttv.models.LoadingStatus
+import com.android.exttv.models.SectionManager
+import com.android.exttv.ui.GithubDialog
+import com.android.exttv.ui.RepositoryDialog
+import com.android.exttv.ui.UninstallDialog
+import com.android.exttv.ui.ContextButtons
+import com.android.exttv.ui.FavouriteButtons
+import com.android.exttv.ui.FavouriteMenu
+import com.android.exttv.ui.NewPlaylistMenu
+import com.android.exttv.ui.RemoveDialog
+import com.android.exttv.ui.UpdateDialog
+import com.android.exttv.ui.addonKE
+import com.android.exttv.utils.cleanText
+import com.android.exttv.ui.nonAddonKE
+import com.android.exttv.utils.parseText
+import com.android.exttv.models.AddonManager as Addons
+import com.android.exttv.models.FavouriteManager as Favourites
+import com.android.exttv.models.SectionManager as Sections
+import com.android.exttv.models.StatusManager as Status
+import com.android.exttv.models.PythonManager as Python
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

@@ -1,4 +1,4 @@
-package com.android.exttv.util
+package com.android.exttv.utils
 
 import android.annotation.SuppressLint
 import android.content.ContentUris
@@ -11,16 +11,16 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.tvprovider.media.tv.ChannelLogoUtils.storeChannelLogo
 import androidx.tvprovider.media.tv.TvContractCompat
-import com.android.exttv.MainActivity
+import com.android.exttv.view.MainActivity
 import com.android.exttv.R
-import com.android.exttv.model.AddonManager
-import com.android.exttv.model.Favourite
-import com.android.exttv.model.SectionManager.CardItem
+import com.android.exttv.models.AddonManager
+import com.android.exttv.models.Favourite
+import com.android.exttv.models.SectionManager.CardItem
 import java.io.File
 import androidx.tvprovider.media.tv.TvContractCompat.PreviewPrograms as PreviewPrograms
 import androidx.tvprovider.media.tv.TvContractCompat.Channels as Channels
 
-object TvContractUtil {
+object TvContract {
     lateinit var context: MainActivity
     private val channelUri: Uri = Channels.CONTENT_URI
     private val programUri: Uri = PreviewPrograms.CONTENT_URI

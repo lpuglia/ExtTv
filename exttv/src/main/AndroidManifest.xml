@@ -25,7 +25,7 @@
         android:theme="@style/Theme.Leanback">
 
         <activity
-            android:name="com.android.exttv.MainActivity"
+            android:name="com.android.exttv.view.MainActivity"
             android:usesCleartextTraffic="true"
             android:banner="@drawable/banner"
             android:icon="@drawable/icon_ch"
@@ -48,7 +48,7 @@
         </activity>
 
         <activity
-            android:name="com.android.exttv.PlayerActivity"
+            android:name="com.android.exttv.view.PlayerActivity"
             android:theme="@style/PlayerTheme"
             android:exported="true">
 
@@ -67,7 +67,7 @@
 
         <service
             android:usesCleartextTraffic="true"
-            android:name=".SyncProgramsJobService"
+            android:name=".service.SyncProgramsJobService"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 

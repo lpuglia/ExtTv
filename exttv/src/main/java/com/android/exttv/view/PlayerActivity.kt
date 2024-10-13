@@ -1,4 +1,4 @@
-package com.android.exttv
+package com.android.exttv.view
 
 import android.net.Uri
 import android.os.Bundle
@@ -199,7 +199,7 @@ class PlayerActivity : AppCompatActivity() {
         // Proper usage of AndroidView and DisposableEffect
         AndroidView(
             modifier = Modifier.fillMaxSize(),
-            factory = { context ->
+            factory = {
                 PlayerView(context).apply {
                     player = exoPlayer
                 }

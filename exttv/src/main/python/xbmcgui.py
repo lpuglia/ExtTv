@@ -8,7 +8,7 @@ try:
     from android.app import AlertDialog, ProgressDialog
     from android.content import DialogInterface
     import threading
-    main_activity = jclass("com.android.exttv.MainActivity").getInstance()
+    main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
 
     def run_on_ui_thread(func):
         def wrapper():

@@ -1,10 +1,10 @@
-package com.android.exttv.model
+package com.android.exttv.models
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.android.exttv.MainActivity
+import com.android.exttv.view.MainActivity
 
 enum class LoadingStatus {
     DONE,

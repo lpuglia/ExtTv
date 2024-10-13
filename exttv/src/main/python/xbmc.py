@@ -18,8 +18,8 @@ try:
     from android.content import Intent
     from android.net import Uri
     from java import jclass
-    PlayerActivity = jclass("com.android.exttv.PlayerActivity")
-    main_activity = jclass("com.android.exttv.MainActivity").getInstance()
+    PlayerActivity = jclass("com.android.exttv.view.PlayerActivity")
+    main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
 except ImportError as e:
      print("Could not import MainActivity", e)
      main_activity = None

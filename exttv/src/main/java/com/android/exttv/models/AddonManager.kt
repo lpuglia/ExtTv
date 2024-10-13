@@ -1,4 +1,4 @@
-package com.android.exttv.model
+package com.android.exttv.models
 
 import android.content.Context
 import android.util.Log

@@ -1,4 +1,4 @@
-package com.android.exttv;
+package com.android.exttv.service;
 
 import android.app.Service;
 import android.content.Intent;
