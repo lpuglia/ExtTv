@@ -8,7 +8,15 @@ import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
@@ -20,6 +28,7 @@ import androidx.media3.exoplayer.drm.FrameworkMediaDrm
 import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.PlayerView
 import kotlinx.serialization.Serializable
@@ -55,9 +64,6 @@ class PlayerActivity : AppCompatActivity() {
         val art: Map<String, String>
     )
 
-    private lateinit var playerView: PlayerView
-    lateinit var player: ExoPlayer
-
     private var doubleBackToExitPressedOnce = false
     private val backPressInterval: Long = 2000 // 2 seconds
 
@@ -88,9 +94,6 @@ class PlayerActivity : AppCompatActivity() {
         val policy = ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
 
-        setContentView(R.layout.activity_player)
-        playerView = findViewById(R.id.video_view)
-
         val data = intent.data
         data?.let {
             val uriString = data.toString()
@@ -98,13 +101,41 @@ class PlayerActivity : AppCompatActivity() {
                 val mediaSource = data.getQueryParameter("media_source")
                     ?.let { Json.decodeFromString<ExtTvMediaSource>(it) }
 
-                player = ExoPlayer.Builder(this).build()
-                player.playWhenReady = true
-                playerView.controllerShowTimeoutMs = 0
-                playerView.player = player
-                preparePlayer(mediaSource!!)
+                setContent {
+                    PlayerViewComposable(mediaSource)
+                }
             }
         }
+    }
+
+    private fun preparePlayer(mediaSource: ExtTvMediaSource): MediaSource {
+
+        val mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.source))
+
+        val mediaDataSourceFactory = clientFactory(mediaSource.headers)
+
+        val mediaSourceFactory = when (mediaSource.streamType) {
+            "application/dash+xml" -> {
+                val manifestDataSourceFactory = clientFactory(mediaSource.license.headers)
+                val playreadyCallback = HttpMediaDrmCallback(mediaSource.license.licenseKey, manifestDataSourceFactory)
+
+                val drmManager = DefaultDrmSessionManager.Builder()
+                    .setUuidAndExoMediaDrmProvider(
+                        if (mediaSource.license.licenseType == "com.widevine.alpha") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
+                        FrameworkMediaDrm.DEFAULT_PROVIDER
+                    )
+                    .build(playreadyCallback)
+
+                DashMediaSource.Factory(mediaDataSourceFactory).setDrmSessionManagerProvider { drmManager }
+            }
+            "application/x-mpegURL" -> HlsMediaSource.Factory(mediaDataSourceFactory)
+            "extractor" -> ProgressiveMediaSource.Factory(mediaDataSourceFactory)
+            "mp4", "mkv", "" -> DefaultMediaSourceFactory(mediaDataSourceFactory)
+            else -> {
+                throw IllegalArgumentException("Unsupported media source type: ${mediaSource.streamType}")
+            }
+        }
+        return mediaSourceFactory.createMediaSource(mediaItem)
     }
 
     private fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
@@ -151,38 +182,35 @@ class PlayerActivity : AppCompatActivity() {
         return OkHttpDataSource.Factory(clientBuilder.build())
     }
 
-    fun preparePlayer(mediaSource: ExtTvMediaSource) {
-
-        player.stop()
-
-        val mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.source))
-
-        val mediaDataSourceFactory = clientFactory(mediaSource.headers)
-
-        val mediaSourceFactory = when (mediaSource.streamType) {
-            "application/dash+xml" -> {
-                val manifestDataSourceFactory = clientFactory(mediaSource.license.headers)
-                val playreadyCallback = HttpMediaDrmCallback(mediaSource.license.licenseKey, manifestDataSourceFactory)
-
-                val drmManager = DefaultDrmSessionManager.Builder()
-                    .setUuidAndExoMediaDrmProvider(
-                        if (mediaSource.license.licenseType == "com.widevine.alpha") C.WIDEVINE_UUID else C.CLEARKEY_UUID,
-                        FrameworkMediaDrm.DEFAULT_PROVIDER
-                    )
-                    .build(playreadyCallback)
-
-                DashMediaSource.Factory(mediaDataSourceFactory).setDrmSessionManagerProvider { drmManager }
-            }
-            "application/x-mpegURL" -> HlsMediaSource.Factory(mediaDataSourceFactory)
-            "extractor" -> ProgressiveMediaSource.Factory(mediaDataSourceFactory)
-            "mp4", "mkv", "" -> DefaultMediaSourceFactory(mediaDataSourceFactory)
-            else -> {
-                throw IllegalArgumentException("Unsupported media source type: ${mediaSource.streamType}")
+    @Composable
+    fun PlayerViewComposable(extTvMediaSource: ExtTvMediaSource?) {
+        val context = LocalContext.current
+        val exoPlayer = remember {
+            ExoPlayer.Builder(context).build().apply {
+                // Set up your player (media source, etc.) here
             }
         }
+        exoPlayer.playWhenReady = true
+        exoPlayer.stop()
+        val mediaSource = preparePlayer(extTvMediaSource!!)
+        exoPlayer.setMediaSource(mediaSource)
+        exoPlayer.prepare()
 
-        player.setMediaSource(mediaSourceFactory.createMediaSource(mediaItem))
-        player.prepare()
+        // Proper usage of AndroidView and DisposableEffect
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { context ->
+                PlayerView(context).apply {
+                    player = exoPlayer
+                }
+            }
+        )
+
+        DisposableEffect(exoPlayer) {
+            onDispose {
+                exoPlayer.release()
+            }
+        }
     }
 
 }
