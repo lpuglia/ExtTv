@@ -1,8 +1,7 @@
-import sys
 from typing import List, Tuple
 import xbmcgui
 from xbmc import Player
-from enum import Enum
+import utils
 
 # Dummy constants for sorting methods
 SORT_METHOD_NONE = 0
@@ -77,10 +76,13 @@ class PluginRecorder:
 plugin_recorder = PluginRecorder()
 
 def addDirectoryItem(handle: int, url: str, listitem: xbmcgui.ListItem, isFolder: bool = False, totalItems: int = 0):
+    utils.parent_uri_map[url] = utils.last_uri
     plugin_recorder.record_call('directory_item', (url, listitem, isFolder))
     # print(f"Called addDirectoryItems with handle: {handle} and dirItems: {dirItems}")
 
 def addDirectoryItems(handle, items: List[Tuple[str, xbmcgui.ListItem, bool]], totalItems: int = 0):
+    for item in items:
+        utils.parent_uri_map[item[0]] = utils.last_uri
     plugin_recorder.record_call('directory_items', items)
     # print(f"Called addDirectoryItems with handle: {handle} and dirItems: {dirItems}")
 

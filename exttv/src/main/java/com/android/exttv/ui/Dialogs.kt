@@ -282,7 +282,7 @@ fun UpdateDialog() {
         confirmButton = {
             Button(
                 onClick = {
-                    val json = Addons.addonsPath.resolve("${Addons[indexAddon]}/addon.json").readText()
+                    val json = Addons.addonsPath.resolve("${Addons.getIdByName(Addons[indexAddon])}/addon.json").readText()
                     val data = Json.decodeFromString(PluginData.serializer(), json)
                     if(data.sourceURL == data.zipURL){
                         val regex = Regex("""https://github\.com/([^/]+)/([^/]+)/archive/refs/heads/([^/]+)\.zip""")
@@ -292,6 +292,7 @@ fun UpdateDialog() {
                             val repository = matchResult.groupValues[2]
                             val branch = matchResult.groupValues[3]
                             // Addons.installAddon("$owner/$repository/$branch", true)
+                            Status.showToast("Installing updates", Toast.LENGTH_SHORT)
                             getFromGit("$owner/$repository/$branch", true)
                         }
                     }else{

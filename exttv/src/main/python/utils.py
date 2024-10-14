@@ -20,6 +20,9 @@ userdata_path = 'exttv_home/userdata/'
 addondata_path = 'exttv_home/userdata/addon_data/'
 database_path = 'exttv_home/userdata/Database/'
 
+last_uri = ''
+parent_uri_map = {}
+
 def full_home_path():
     return os.path.join(workspace, home_path)
 
@@ -104,6 +107,8 @@ def reload_module(module_name, module_path):
 
 def run(argv):
     print(argv)
+    global last_uri
+    last_uri =  argv[0]+argv[2]
     plugin_name = argv[0].split("/")[2]
     plugin.plugin_name = plugin_name
     sys.argv = argv

@@ -14,6 +14,7 @@ object SectionManager {
     )
     data class CardItem(
         val uri: String,
+        val uriParent: String,
         val label : String,
         val label2 : String,
         val plot : String,

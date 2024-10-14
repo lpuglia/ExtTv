@@ -4,6 +4,7 @@ import traceback
 
 from java import jclass
 from java.util import Arrays
+
 main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
 
 utils.init(os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../'))) # very important to normalize
@@ -20,6 +21,7 @@ def run(argv=""):
             plot = video.get('plot', '') if video else ''
             movie_list.append(cardView(
                 item[0],
+                utils.parent_uri_map[item[0]],
                 item[1].label if item[1].label else '',
                 item[1].label2 if item[1].label2 else '',
                 plot,
