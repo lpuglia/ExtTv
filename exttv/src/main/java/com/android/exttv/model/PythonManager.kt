@@ -32,15 +32,22 @@ object PythonManager {
     fun selectFavourite(favouriteName: String) {
         Status.selectedIndex = Addons.size + Favourites.indexOf(favouriteName)
         Status.loadingState = LoadingStatus.SELECTING_SECTION
-        Sections.removeAndAdd(0, "", Sections.Section(favouriteName, Favourites.getFavourite(favouriteName)))
-        Status.loadingState = LoadingStatus.SECTION_LOADED
+        val runnable = Runnable {
+            Sections.removeAndAdd(0, "", Sections.Section(favouriteName, Favourites.getFavourite(favouriteName)))
+            Status.loadingState = LoadingStatus.SECTION_LOADED
+        }
+        Thread(runnable).start()
+    }
+
+    fun getSection(uri: String): List<SectionManager.CardItem> {
+        return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<SectionManager.CardItem>
     }
 
     fun selectSection(uri: String, title: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         val runnable = Runnable {
             // returned value from exttv.py
-            val newSection = Sections.Section(title, exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<SectionManager.CardItem>)
+            val newSection = Sections.Section(title, getSection(uri))
 
             if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, uri, newSection)) {
                 Sections.updateSelectedSection(sectionIndex, cardIndex)

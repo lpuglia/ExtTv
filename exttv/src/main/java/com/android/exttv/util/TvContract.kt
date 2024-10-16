@@ -14,7 +14,6 @@ import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.view.MainActivity
 import com.android.exttv.R
 import com.android.exttv.model.AddonManager
-import com.android.exttv.model.Favourite
 import com.android.exttv.model.SectionManager.CardItem
 import java.io.File
 import androidx.tvprovider.media.tv.TvContractCompat.PreviewPrograms as PreviewPrograms
@@ -93,7 +92,7 @@ object TvContract {
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun createOrUpdateChannel(favourites: Map<String, Favourite>) {
+    fun createOrUpdateChannel(favourites: Map<String, List<CardItem>>) {
 //        printAll(channelUri)
 //        printAll(programUri)
 
@@ -115,10 +114,10 @@ object TvContract {
 
             // Step 4: Delete programs that are no longer in the card list
             for (programName in existingPrograms.keys) {
-                if(programName !in cards.map { it.label }) {
+//                if(programName !in cards.map { it.label }) {
                     existingPrograms[programName]?.let { context.contentResolver.delete(it, null, null) }
                     Log.d("Programs", "Deleted program $programName from channel $channelName")
-                }
+//                }
             }
 
             // Step 5: Update or create programs based on cards
@@ -153,20 +152,20 @@ object TvContract {
 
     @SuppressLint("RestrictedApi")
     private fun updateOrAddProgram(channelId: Long, card: CardItem, existingPrograms: Map<String, Uri>) {
-        if (card.label !in existingPrograms) {
+//        if (card.label !in existingPrograms) {
             Log.d("Programs", "Adding new program ${card.label}.")
             context.contentResolver.insert(
                 PreviewPrograms.CONTENT_URI,
                 programFromCard(channelId, card)
             )
-        } else {
-            Log.d("Programs", "Program for ${card.label} exists, updating.")
-            context.contentResolver.update(
-                existingPrograms[card.label]!!,
-                programFromCard(channelId, card),
-                null,null
-            )
-        }
+//        } else {
+//            Log.d("Programs", "Program for ${card.label} exists, updating.")
+//            context.contentResolver.update(
+//                existingPrograms[card.label]!!,
+//                programFromCard(channelId, card),
+//                null,null
+//            )
+//        }
     }
 
     private fun getUri(art: String, pluginName: String): Uri{

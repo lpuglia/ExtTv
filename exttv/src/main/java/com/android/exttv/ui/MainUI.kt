@@ -174,9 +174,7 @@ fun CatalogBrowser() {
                                     true
                                 else if (drawerItem == "Add from GitHub") Status.showGithubDialog =
                                     true
-                                else if (drawerIndex < Addons.size) Python.selectAddon(
-                                    drawerItem
-                                )
+                                else if (drawerIndex < Addons.size) Python.selectAddon(drawerItem)
                                 else Python.selectFavourite(drawerItem)
                             },
                             colors = NavigationDrawerItemDefaults.colors(

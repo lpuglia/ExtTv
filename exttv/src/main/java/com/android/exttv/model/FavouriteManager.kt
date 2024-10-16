@@ -2,13 +2,15 @@ package com.android.exttv.model
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import com.android.exttv.view.MainActivity
 import com.android.exttv.model.SectionManager.CardItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.android.exttv.util.TvContract as tvContract
 
-typealias Favourite = List<CardItem>
+data class Favourite(val uri: String, val uriParent: String, val label: String, val isFolder: Boolean)
+typealias Favourites = List<Favourite>
 
 object FavouriteManager {
     private lateinit var prefs: SharedPreferences
@@ -18,73 +20,103 @@ object FavouriteManager {
     fun init(context: Context) {
         tvContract.init(context as MainActivity)
         prefs = context.getSharedPreferences("favourite_prefs", Context.MODE_PRIVATE)
-//        tvContract.createOrUpdateChannel(getAllFavourites())
+        tvContract.createOrUpdateChannel(getAllFavouriteCards())
     }
 
     // Get all lists with their names and contents
-    private fun getAllFavourites(): Map<String, Favourite> {
+    private fun getAllFavourites(): Map<String, Favourites> {
         val jsonString = prefs.getString("all_favourites", null) ?: return emptyMap()
-        val type = object : TypeToken<Map<String, Favourite>>() {}.type
+        val type = object : TypeToken<Map<String, Favourites>>() {}.type
         return gson.fromJson(jsonString, type)
     }
 
+    // Get all favourite cards from all favourites
+    private fun getAllFavouriteCards(): Map<String, List<CardItem>> {
+        val toReturn = mutableMapOf<String, List<CardItem>>()
+        for (listName in getAllFavouriteNames()) {
+            getFavourite(listName).let { toReturn[listName] = it }
+        }
+        return toReturn
+    }
+
     // Save all lists and their names in a single entry
-    private fun saveAllData(allLists: Map<String, Favourite>) {
+    private fun saveAllData(allLists: Map<String, Favourites>) {
         val jsonString = gson.toJson(allLists)
         prefs.edit().putString("all_favourites", jsonString).apply()
         StatusManager.update()
-        tvContract.createOrUpdateChannel(getAllFavourites())
+        Thread {
+            tvContract.createOrUpdateChannel(getAllFavouriteCards())
+        }.start()
     }
 
     // Create a new list given the card/cards
-    fun createFavourite(listName: String, cards: Favourite) {
+    fun createFavourite(listName: String, favList: Favourites) {
         val allLists = getAllFavourites().toMutableMap()
-        allLists[listName] = cards
+        allLists[listName] = favList
         saveAllData(allLists)
     }
 
     // Add a new card to a specific list or create a new list if it doesn't exist
     fun addCardOrCreateFavourite(listName: String, card: CardItem) {
         val allLists = getAllFavourites().toMutableMap()
-        val cardList = allLists.getOrPut(listName) { mutableListOf() } as MutableList<CardItem>
-        cardList.add(card)
-        allLists[listName] = cardList
+        val favList = allLists.getOrPut(listName) { mutableListOf() } as MutableList<Favourite>
+        favList.add(Favourite(card.uri, card.uriParent, card.label, card.isFolder))
+        allLists[listName] = favList
         saveAllData(allLists)
     }
 
     // Remove a card from a specific list
     fun removeCardFromFavourite(listName: String, card: CardItem) {
         val allLists = getAllFavourites().toMutableMap()
-        val cardList = allLists[listName]?.toMutableList() ?: return
-        cardList.removeAll { it.uri == card.uri }
-        if (cardList.isEmpty()) {
+        val favList = allLists[listName]?.toMutableList() ?: return
+        favList.removeAll { it.uri == card.uri }
+        if (favList.isEmpty()) {
             allLists.remove(listName)
         } else {
-            allLists[listName] = cardList
+            allLists[listName] = favList
         }
         saveAllData(allLists)
     }
 
     // Move a card to a new position in the list
-    fun moveCardInFavourite(listName: String, cardId: String, newPosition: Int) {
+    fun moveCardInFavourite(listName: String, favUri: String, newPosition: Int) {
         val allLists = getAllFavourites().toMutableMap()
-        val cardList = allLists[listName]?.toMutableList() ?: return
-        val card = cardList.find { it.uri == cardId } ?: return
+        val favList = allLists[listName]?.toMutableList() ?: return
+        val fav = favList.find { it.uri == favUri } ?: return
 
-        cardList.remove(card)
+        favList.remove(fav)
         when {
-            newPosition < 0 -> cardList.add(0, card)
-            newPosition >= cardList.size -> cardList.add(card)
-            else -> cardList.add(newPosition, card)
+            newPosition < 0 -> favList.add(0, fav)
+            newPosition >= favList.size -> favList.add(fav)
+            else -> favList.add(newPosition, fav)
         }
 
-        allLists[listName] = cardList
+        allLists[listName] = favList
         saveAllData(allLists)
     }
 
-    // Retrieve a list of CardItem
-    fun getFavourite(listName: String): Favourite {
-        return getAllFavourites()[listName] ?: emptyList()
+    // Retrieve a list of favourites
+    fun getFavourite(listName: String): List<CardItem> {
+        val cache = mutableMapOf<String, List<CardItem>>()
+        val toReturn = mutableListOf<CardItem>()
+        val favourites = getAllFavourites()[listName]
+
+        for (fav in favourites ?: emptyList()) {
+            if(fav.uriParent !in cache) {
+                cache[fav.uriParent] = PythonManager.getSection(fav.uriParent)
+            }
+            var favCard = cache[fav.uriParent]?.find { it.uri == fav.uri }
+            // if uri was not found in the list, maybe the uri has been changed slightly
+            // attempt a second match, this is not perfect and may not work
+            // can't do much if addon developer doesn't provide a stable uri
+            if (favCard == null) {
+                favCard = cache[fav.uriParent]?.find { it.label == fav.label && it.isFolder == fav.isFolder }
+            }
+            if (favCard != null) {
+                toReturn.add(favCard)
+            }
+        }
+        return toReturn
     }
 
     // Delete a list entirely
