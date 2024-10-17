@@ -2,8 +2,6 @@ package com.android.exttv.model
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.net.Uri
-import com.android.exttv.view.MainActivity
 import com.android.exttv.model.SectionManager.CardItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -15,12 +13,13 @@ typealias Favourites = List<Favourite>
 object FavouriteManager {
     private lateinit var prefs: SharedPreferences
     private val gson = Gson()
+    private var isInitialized = false
 
     // Initialize with SharedPreferences
     fun init(context: Context) {
-        tvContract.init(context as MainActivity)
+        if (isInitialized) return
         prefs = context.getSharedPreferences("favourite_prefs", Context.MODE_PRIVATE)
-        tvContract.createOrUpdateChannel(getAllFavouriteCards())
+        isInitialized = true
     }
 
     // Get all lists with their names and contents
@@ -31,7 +30,7 @@ object FavouriteManager {
     }
 
     // Get all favourite cards from all favourites
-    private fun getAllFavouriteCards(): Map<String, List<CardItem>> {
+    fun getAllFavouriteCards(): Map<String, List<CardItem>> {
         val toReturn = mutableMapOf<String, List<CardItem>>()
         for (listName in getAllFavouriteNames()) {
             getFavourite(listName).let { toReturn[listName] = it }
@@ -45,7 +44,7 @@ object FavouriteManager {
         prefs.edit().putString("all_favourites", jsonString).apply()
         StatusManager.update()
         Thread {
-            tvContract.createOrUpdateChannel(getAllFavouriteCards())
+            tvContract.createOrUpdateChannel(StatusManager.context, getAllFavouriteCards())
         }.start()
     }
 

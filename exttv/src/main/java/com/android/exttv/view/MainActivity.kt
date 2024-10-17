@@ -19,6 +19,7 @@ import com.android.exttv.model.AddonManager
 import com.android.exttv.model.FavouriteManager
 import com.android.exttv.model.PythonManager
 import com.android.exttv.model.StatusManager
+import com.android.exttv.service.scheduleSyncJob
 
 class MainActivity : ComponentActivity() {
 
@@ -106,6 +107,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        scheduleSyncJob(this)
         instance = this
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
@@ -119,7 +121,7 @@ class MainActivity : ComponentActivity() {
             intent.data?.let {
                 val uriString = data.toString()
                 if (uriString.startsWith("exttv://")) {
-                    PythonManager.selectSection(uriString.replace("exttv://",""), "prova", -1, 0)
+                    PythonManager.selectSection(uriString.replace("exttv://",""), "Main", -1, 0)
                 }
             }
         }else {
@@ -129,7 +131,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
     }
 
     @SuppressLint("RestrictedApi")

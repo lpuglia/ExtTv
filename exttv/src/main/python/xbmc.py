@@ -7,7 +7,6 @@ import platform
 import urllib.parse, urllib.request
 from datetime import datetime
 from types import SimpleNamespace
-import xml.etree.ElementTree as ET
 
 def serialize_namespace(obj):
     if isinstance(obj, SimpleNamespace):

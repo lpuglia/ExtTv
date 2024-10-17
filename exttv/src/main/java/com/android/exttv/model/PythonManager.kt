@@ -1,6 +1,7 @@
 package com.android.exttv.model
 
 import android.app.Activity
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import com.android.exttv.model.SectionManager
@@ -14,13 +15,14 @@ import com.android.exttv.model.StatusManager as Status
 
 object PythonManager {
     private var exttv: PyObject? = null
+    private var isInitialized = false
 
-    fun init(context: Activity) {
+    fun init(context: Context) {
+        if (isInitialized) return
         if (exttv != null && Sections.isNotEmpty) return
         if (!Python.isStarted()) Python.start(AndroidPlatform(context))
-        Thread {
-            exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
-        }.apply { start(); join() }
+        exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
+        isInitialized = true
     }
 
     fun selectAddon(pluginName: String) {

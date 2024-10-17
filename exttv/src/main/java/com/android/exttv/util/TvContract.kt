@@ -3,6 +3,7 @@ package com.android.exttv.util
 import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
@@ -20,24 +21,18 @@ import androidx.tvprovider.media.tv.TvContractCompat.PreviewPrograms as PreviewP
 import androidx.tvprovider.media.tv.TvContractCompat.Channels as Channels
 
 object TvContract {
-    lateinit var context: MainActivity
     private val channelUri: Uri = Channels.CONTENT_URI
     private val programUri: Uri = PreviewPrograms.CONTENT_URI
 
-    fun init(context: MainActivity) {
-        this.context = context
-    }
-
-    private fun getCursor(contentUri: Uri, projection: Array<String>? = null, selection: String? = null,
+    private fun getCursor(context: Context, contentUri: Uri, projection: Array<String>? = null, selection: String? = null,
                           selectionArgs: Array<String>? = null, sortOrder: String? = null): Cursor? {
-        val cursor = context.contentResolver.query(
-            contentUri, projection, selection, selectionArgs, sortOrder)
+        val cursor = context.contentResolver.query(contentUri, projection, selection, selectionArgs, sortOrder)
         return cursor
     }
 
     @SuppressLint("Range")
-    fun printAll(contentUri: Uri) {
-        val cursor = getCursor(contentUri)
+    fun printAll(context: Context, contentUri: Uri) {
+        val cursor = getCursor(context, contentUri)
         if (cursor != null && cursor.moveToFirst()) {
             do {
                 // Get the column count
@@ -63,9 +58,9 @@ object TvContract {
     }
 
     @SuppressLint("Range")
-    private fun getChannels(): MutableMap<String, Uri> {
+    private fun getChannels(context: Context): MutableMap<String, Uri> {
         val channels = mutableMapOf<String, Uri>()
-        getCursor(channelUri)?.use {
+        getCursor(context, channelUri)?.use {
             while (it.moveToNext()) {
                 val channelId = it.getLong(it.getColumnIndex(PreviewPrograms._ID))
                 val channelName = it.getString(it.getColumnIndex(Channels.COLUMN_DISPLAY_NAME))
@@ -76,9 +71,9 @@ object TvContract {
     }
 
     @SuppressLint("RestrictedApi", "Range")
-    private fun getPrograms(channelId: Long): Map<String, Uri> {
+    private fun getPrograms(context: Context, channelId: Long): Map<String, Uri> {
         val programs = mutableMapOf<String, Uri>()
-        getCursor(programUri)?.use {
+        getCursor(context, programUri)?.use {
             while (it.moveToNext()) {
                 val channelIdColumn = it.getLong(it.getColumnIndex(PreviewPrograms.COLUMN_CHANNEL_ID))
                 if (channelId == channelIdColumn){
@@ -92,12 +87,12 @@ object TvContract {
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun createOrUpdateChannel(favourites: Map<String, List<CardItem>>) {
+    fun createOrUpdateChannel(context: Context, favourites: Map<String, List<CardItem>>) {
 //        printAll(channelUri)
 //        printAll(programUri)
 
         // Step 1: Get the list of existing channels
-        val existingChannels = getChannels()
+        val existingChannels = getChannels(context)
 
         // Step 2: Delete channels that are no longer in favourites
         for (channelName in existingChannels.keys) {
@@ -109,8 +104,8 @@ object TvContract {
 
         // Step 3: Update or create channels based on favourites
         for ((channelName, cards) in favourites) {
-            val channelId = updateOrAddChannel(channelName, existingChannels)
-            val existingPrograms = getPrograms(channelId)
+            val channelId = updateOrAddChannel(context, channelName, existingChannels)
+            val existingPrograms = getPrograms(context, channelId)
 
             // Step 4: Delete programs that are no longer in the card list
             for (programName in existingPrograms.keys) {
@@ -122,14 +117,14 @@ object TvContract {
 
             // Step 5: Update or create programs based on cards
             for (card in cards) {
-                updateOrAddProgram(channelId, card, existingPrograms)
+                updateOrAddProgram(context, channelId, card, existingPrograms)
             }
 
         }
     }
 
     @SuppressLint("RestrictedApi", "UseCompatLoadingForDrawables")
-    private fun updateOrAddChannel(channelName: String, existingChannels: MutableMap<String, Uri>): Long {
+    private fun updateOrAddChannel(context: Context, channelName: String, existingChannels: MutableMap<String, Uri>): Long {
         if (channelName !in existingChannels) {
             Log.d("Channels", "Adding new channel ${channelName}.")
             val contentValues = ContentValues().apply {
@@ -151,12 +146,12 @@ object TvContract {
     }
 
     @SuppressLint("RestrictedApi")
-    private fun updateOrAddProgram(channelId: Long, card: CardItem, existingPrograms: Map<String, Uri>) {
+    private fun updateOrAddProgram(context: Context, channelId: Long, card: CardItem, existingPrograms: Map<String, Uri>) {
 //        if (card.label !in existingPrograms) {
             Log.d("Programs", "Adding new program ${card.label}.")
             context.contentResolver.insert(
                 PreviewPrograms.CONTENT_URI,
-                programFromCard(channelId, card)
+                programFromCard(context, channelId, card)
             )
 //        } else {
 //            Log.d("Programs", "Program for ${card.label} exists, updating.")
@@ -168,7 +163,7 @@ object TvContract {
 //        }
     }
 
-    private fun getUri(art: String, pluginName: String): Uri{
+    private fun getUri(context: Context, art: String, pluginName: String): Uri{
         fun isValidUrl(url: String): Boolean {
             val urlRegex = Regex("^(http|https)://[^\\s/$.?#].[^\\s]*$")
             return urlRegex.matches(url)
@@ -191,16 +186,16 @@ object TvContract {
     }
 
     @SuppressLint("RestrictedApi")
-    private fun programFromCard(channelId: Long, card: CardItem): ContentValues {
+    private fun programFromCard(context: Context, channelId: Long, card: CardItem): ContentValues {
         val posterUrl = if (card.posterUrl.isEmpty()) card.thumbnailUrl else card.posterUrl
         var thumbnailUrl = if (card.thumbnailUrl.isEmpty()) card.posterUrl else card.thumbnailUrl
         if (posterUrl == thumbnailUrl && card.fanartUrl.isNotEmpty() && card.fanartUrl != "") {
             thumbnailUrl = card.fanartUrl
         }
 
-        val icon = AddonManager.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
-        val posterUri = getUri(posterUrl, card.pluginName)
-        val thumbnailUri = getUri(thumbnailUrl, card.pluginName)
+        val icon = AddonManager.getIconByFolderName(card.pluginName)?.let { getUri(context, it, card.pluginName) }
+        val posterUri = getUri(context, posterUrl, card.pluginName)
+        val thumbnailUri = getUri(context, thumbnailUrl, card.pluginName)
 
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)
