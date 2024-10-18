@@ -34,11 +34,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     // Method to show a Toast, callable from Python
     fun showToast(message: String?, duration: Int) {
         runOnUiThread {
-            Toast.makeText(this@MainActivity, message, duration).show()
+            Toast.makeText(applicationContext, message, duration).show()
         }
     }
 
@@ -50,7 +49,7 @@ class MainActivity : ComponentActivity() {
         }
 
         try {
-            this.startActivity(intent)
+            applicationContext.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             showToast("No application found to open the magnet.\nSupported applications: Amnis, Splayer, Stremio, ...", Toast.LENGTH_LONG)
         }
@@ -66,7 +65,6 @@ class MainActivity : ComponentActivity() {
         if (parts.size != 4) {
             throw IllegalArgumentException("Invalid command format")
         }
-
         var (_, action, type, url) = parts
         when(action) {
             "android.intent.action.VIEW" -> {
@@ -79,9 +77,11 @@ class MainActivity : ComponentActivity() {
 
         val intent = Intent(action).apply {
             data = Uri.parse(url)
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
-        this.startActivity(intent)
+        applicationContext.startActivity(intent)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -107,8 +107,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        scheduleSyncJob(this)
         instance = this
+//        scheduleSyncJob(this)
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
         AddonManager.init(this)

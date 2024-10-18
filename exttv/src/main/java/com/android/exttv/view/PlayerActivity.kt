@@ -50,7 +50,7 @@ class PlayerActivity : AppCompatActivity() {
         val data = intent.data
         data?.let {
             val uriString = data.toString()
-            if (uriString.startsWith("exttv://")) {
+            if (uriString.startsWith("exttv_player://")) {
                 val mediaSource = data.getQueryParameter("media_source")
 
                 setContent {

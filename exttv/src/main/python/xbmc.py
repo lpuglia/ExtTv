@@ -14,10 +14,7 @@ def serialize_namespace(obj):
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 try:
-    from android.content import Intent
-    from android.net import Uri
     from java import jclass
-    PlayerActivity = jclass("com.android.exttv.view.PlayerActivity")
     main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
 except ImportError as e:
      print("Could not import MainActivity", e)
@@ -53,7 +50,6 @@ def sleep(milliseconds):
     time.sleep(milliseconds / 1000)
 
 def executebuiltin(command, wait=False):
-    print(command)
     pattern = r"PlayMedia\(plugin://plugin.video.xbmctorrent/play/(.*?)\)"
     match = re.search(pattern, command)
     if match:
@@ -189,7 +185,7 @@ def parse_piped_url(url):
 class Player():
 
     def play(self, playlist, xlistitem = None, windowed = False, startpos = -1):
-        base_url = "exttv://app/?"
+        base_url = "exttv_player://app/?"
         if hasattr(playlist, 'playlist_type'):
             extra_info = playlist.playlist_items[0][1]
             url = playlist.playlist_items[0][0]
@@ -217,9 +213,7 @@ class Player():
 
         query_string = urllib.parse.urlencode({'media_source' : json.dumps(media_source, default=serialize_namespace)})
         full_url = base_url + query_string
-        intent = Intent(main_activity.getApplicationContext(), PlayerActivity)
-        intent.setData(Uri.parse(full_url))
-        main_activity.startActivity(intent)
+        main_activity.executeStartActivity(f'StartAndroidActivity("", "android.intent.action.VIEW", "", "{full_url}")')
 
     def isPlaying(self):
         return True

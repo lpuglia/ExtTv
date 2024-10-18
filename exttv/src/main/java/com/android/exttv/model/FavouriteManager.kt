@@ -7,8 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.android.exttv.util.TvContract as tvContract
 
-data class Favourite(val uri: String, val uriParent: String, val label: String, val isFolder: Boolean)
-typealias Favourites = List<Favourite>
+typealias Favourites = List<CardItem>
 
 object FavouriteManager {
     private lateinit var prefs: SharedPreferences
@@ -58,8 +57,8 @@ object FavouriteManager {
     // Add a new card to a specific list or create a new list if it doesn't exist
     fun addCardOrCreateFavourite(listName: String, card: CardItem) {
         val allLists = getAllFavourites().toMutableMap()
-        val favList = allLists.getOrPut(listName) { mutableListOf() } as MutableList<Favourite>
-        favList.add(Favourite(card.uri, card.uriParent, card.label, card.isFolder))
+        val favList = allLists.getOrPut(listName) { mutableListOf() } as MutableList<CardItem>
+        favList.add(card)
         allLists[listName] = favList
         saveAllData(allLists)
     }

@@ -30,7 +30,6 @@
             android:usesCleartextTraffic="true"
             android:banner="@drawable/banner"
             android:icon="@drawable/icon_ch"
-            android:label="@string/app_name"
             android:logo="@drawable/icon_ch"
             android:exported="true">
             <intent-filter>
@@ -42,8 +41,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <!-- Accepts URIs that begin with your custom scheme -->
-                <data android:scheme="@string/schema"/>
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="exttv" />
             </intent-filter>
 
         </activity>
@@ -52,6 +51,13 @@
             android:name="com.android.exttv.view.PlayerActivity"
             android:theme="@style/PlayerTheme"
             android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="exttv_player" />
+            </intent-filter>
 
             <!-- New intent filter for external video content -->
             <intent-filter>
