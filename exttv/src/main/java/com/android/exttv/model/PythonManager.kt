@@ -15,14 +15,11 @@ import com.android.exttv.model.StatusManager as Status
 
 object PythonManager {
     private var exttv: PyObject? = null
-    private var isInitialized = false
 
     fun init(context: Context) {
-        if (isInitialized) return
         if (exttv != null && Sections.isNotEmpty) return
         if (!Python.isStarted()) Python.start(AndroidPlatform(context))
         exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
-        isInitialized = true
     }
 
     fun selectAddon(pluginName: String) {

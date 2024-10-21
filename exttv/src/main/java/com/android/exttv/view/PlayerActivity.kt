@@ -23,7 +23,7 @@ class PlayerActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (doubleBackToExitPressedOnce) {
-                finishAffinity()
+                finish()
                 return true
             }
 

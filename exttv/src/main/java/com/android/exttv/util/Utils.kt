@@ -1,8 +1,13 @@
 package com.android.exttv.util
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.text.AnnotatedString
@@ -11,6 +16,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.android.exttv.view.MainActivity
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -32,6 +38,68 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import com.android.exttv.model.StatusManager as Status
+
+object ToastUtils {
+    private val handler = Handler(Looper.getMainLooper())
+
+    @JvmStatic
+    fun showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        handler.post {
+            Toast.makeText(Status.appContext, message, duration).show()
+        }
+    }
+}
+
+object IntentUtils {
+    @JvmStatic
+    fun fireMagnetIntent(magnetUri: String) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse(magnetUri)
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+        try {
+            Status.appContext.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            ToastUtils.showToast(
+                "No application found to open the magnet.\nSupported applications: Amnis, Splayer, Stremio, ...",
+                Toast.LENGTH_LONG
+            )
+        }
+    }
+
+    @JvmStatic
+    fun executeStartActivity(command: String) {
+        Log.d("python", "Executing command: $command")
+        val parts = command.removeSurrounding("StartAndroidActivity(", ")")
+            .split(",")
+            .map { it.trim().removeSurrounding("\"") }
+
+        // Check that we have exactly 4 parameters
+        if (parts.size != 4) {
+            throw IllegalArgumentException("Invalid command format")
+        }
+        var (_, action, type, url) = parts
+        when (action) {
+            "android.intent.action.VIEW" -> {
+                action = Intent.ACTION_VIEW
+            }
+
+            else -> {
+                throw IllegalArgumentException("Invalid action")
+            }
+        }
+
+        val intent = Intent(action).apply {
+            data = Uri.parse(url)
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+        Status.appContext.startActivity(intent)
+    }
+}
 
 fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
     val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder()
@@ -78,7 +146,7 @@ fun clientFactory(headers: Map<String, String>): OkHttpDataSource.Factory {
 }
 
 fun parseText(input: String): AnnotatedString {
-    val stripped = input.replace("\n", "; ").trim()//.replace(Regex(";\\s*;+\\s*"), ";")
+    val stripped = input.replace("\n", " ◆ ").trim()//.replace(Regex(";\\s*;+\\s*"), ";")
     val annotatedString = AnnotatedString.Builder()
     val regex = "\\[(B|I|LIGHT|UPPERCASE|LOWERCASE|CAPITALIZE)](.*?)\\[/\\1]".toRegex()
 
@@ -132,7 +200,7 @@ fun stripTags(input: String): String {
     val regex = "\\[(B|I|LIGHT|UPPERCASE|LOWERCASE|CAPITALIZE)](.*?)\\[/\\1]".toRegex()
     return regex.replace(input) { matchResult ->
         matchResult.groupValues[2] // Extract the content without tags
-    }.replace("\n", "-") // Replace newlines with a dash
+    }.replace("\n", " ◆ ") // Replace newlines with a diamond
 }
 
 fun cleanText(input: String): String {
@@ -312,7 +380,7 @@ fun installDependencies(pluginPath: File) {
             try{
                 getFromRepository(addonName, false)
             }catch (e: Exception) {
-                Status.showToast("Error while installing dependency $addonName: ${e.message}", Toast.LENGTH_SHORT)
+                ToastUtils.showToast("Error while installing dependency $addonName: ${e.message}", Toast.LENGTH_SHORT)
             }
         }
     }

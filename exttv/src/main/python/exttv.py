@@ -5,7 +5,7 @@ import traceback
 from java import jclass
 from java.util import Arrays
 
-main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
+toast_utils = jclass("com.android.exttv.util.ToastUtils")
 
 utils.init(os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../'))) # very important to normalize
 
@@ -32,5 +32,5 @@ def run(argv=""):
             ))
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
-        main_activity.showToast(str(e), 1)
+        toast_utils.showToast(str(e), 1)
     return Arrays.asList(movie_list)

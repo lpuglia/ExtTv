@@ -2,14 +2,10 @@ package com.android.exttv.view
 
 import CatalogBrowser
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
-import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -21,67 +17,18 @@ import com.android.exttv.model.PythonManager
 import com.android.exttv.model.StatusManager
 import com.android.exttv.service.scheduleSyncJob
 
+
 class MainActivity : ComponentActivity() {
 
     companion object {
-        private var instance: MainActivity? = null
+        private lateinit var instance: MainActivity
         private var doubleBackToExitPressedOnce = false
         private val backPressInterval: Long = 2000 // 2 seconds
 
         @JvmStatic // Optional annotation for Java interop
-        fun getInstance(): MainActivity? {
+        fun getInstance(): MainActivity {
             return instance
         }
-    }
-
-    // Method to show a Toast, callable from Python
-    fun showToast(message: String?, duration: Int) {
-        runOnUiThread {
-            Toast.makeText(applicationContext, message, duration).show()
-        }
-    }
-
-    fun fireMagnetIntent(magnetUri: String) {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse(magnetUri)
-            addCategory(Intent.CATEGORY_BROWSABLE)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        try {
-            applicationContext.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            showToast("No application found to open the magnet.\nSupported applications: Amnis, Splayer, Stremio, ...", Toast.LENGTH_LONG)
-        }
-    }
-
-    fun executeStartActivity(command: String) {
-        Log.d("python", "Executing command: $command")
-        val parts = command.removeSurrounding("StartAndroidActivity(", ")")
-            .split(",")
-            .map { it.trim().removeSurrounding("\"") }
-
-        // Check that we have exactly 4 parameters
-        if (parts.size != 4) {
-            throw IllegalArgumentException("Invalid command format")
-        }
-        var (_, action, type, url) = parts
-        when(action) {
-            "android.intent.action.VIEW" -> {
-                action = Intent.ACTION_VIEW
-            }
-            else -> {
-                throw IllegalArgumentException("Invalid action")
-            }
-        }
-
-        val intent = Intent(action).apply {
-            data = Uri.parse(url)
-            addCategory(Intent.CATEGORY_BROWSABLE)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        applicationContext.startActivity(intent)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -108,13 +55,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         instance = this
-//        scheduleSyncJob(this)
-        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
-        StrictMode.setThreadPolicy(policy)
-        AddonManager.init(this)
-        PythonManager.init(this)
-        FavouriteManager.init(this)
-        StatusManager.init(this)
+        StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitAll().build())
+        AddonManager.init(applicationContext)
+        PythonManager.init(applicationContext)
+        FavouriteManager.init(applicationContext)
+        StatusManager.init(applicationContext)
+        StatusManager.update()
 
         val data = intent.data
         if(data != null) {
@@ -125,10 +71,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }else {
+            scheduleSyncJob(applicationContext)
             setContent {
                 MaterialTheme {
                     CatalogBrowser()
                 }
+            }
+        }
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        println("onRestart")
+        setContent {
+            MaterialTheme {
+                CatalogBrowser()
             }
         }
     }

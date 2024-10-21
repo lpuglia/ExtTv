@@ -12,13 +12,10 @@ typealias Favourites = List<CardItem>
 object FavouriteManager {
     private lateinit var prefs: SharedPreferences
     private val gson = Gson()
-    private var isInitialized = false
 
     // Initialize with SharedPreferences
     fun init(context: Context) {
-        if (isInitialized) return
         prefs = context.getSharedPreferences("favourite_prefs", Context.MODE_PRIVATE)
-        isInitialized = true
     }
 
     // Get all lists with their names and contents
@@ -43,7 +40,7 @@ object FavouriteManager {
         prefs.edit().putString("all_favourites", jsonString).apply()
         StatusManager.update()
         Thread {
-            tvContract.createOrUpdateChannel(StatusManager.context, getAllFavouriteCards())
+            tvContract.createOrUpdateChannel(getAllFavouriteCards())
         }.start()
     }
 

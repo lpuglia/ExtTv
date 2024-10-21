@@ -57,6 +57,7 @@ import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.model.LoadingStatus
 import com.android.exttv.util.PluginData
+import com.android.exttv.util.ToastUtils
 import com.android.exttv.util.getFromGit
 import com.android.exttv.util.getFromRepository
 import com.android.exttv.util.getLatestZipName
@@ -292,17 +293,17 @@ fun UpdateDialog() {
                             val repository = matchResult.groupValues[2]
                             val branch = matchResult.groupValues[3]
                             // Addons.installAddon("$owner/$repository/$branch", true)
-                            Status.showToast("Installing updates", Toast.LENGTH_SHORT)
+                            ToastUtils.showToast("Installing updates", Toast.LENGTH_SHORT)
                             getFromGit("$owner/$repository/$branch", true)
                         }
                     }else{
                         val (zipPath, _) = getLatestZipName(data.sourceURL)
                         if(zipPath!=data.zipURL) { // update if different zip name
-                            Status.showToast("Installing updates", Toast.LENGTH_SHORT)
+                            ToastUtils.showToast("Installing updates", Toast.LENGTH_SHORT)
                             // Addons.installAddon(data.sourceURL, true)
                             getFromRepository(data.pluginName, true)
                         }else{
-                            Status.showToast("No updates available", Toast.LENGTH_SHORT)
+                            ToastUtils.showToast("No updates available", Toast.LENGTH_SHORT)
                         }
                     }
                     Status.showUpdateDialog = false
@@ -376,7 +377,7 @@ fun RepositoryDialog() {
             }
         }
     } else {
-        Status.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
+        ToastUtils.showToast("Failed to fetch addons", Toast.LENGTH_LONG)
         Status.showRepositoryDialog = false
     }
     Status.loadingState = LoadingStatus.DONE

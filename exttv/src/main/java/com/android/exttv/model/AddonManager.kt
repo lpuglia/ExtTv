@@ -7,15 +7,12 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 object AddonManager {
     var addonsPath = File("")
-    private var isInitialized = false
 
     fun init(context: Context) {
-        if (isInitialized) return // Skip if already initialized
         addonsPath = File(context.filesDir, "exttv_home/addons")
         if (!addonsPath.exists() || !addonsPath.isDirectory) {
             addonsPath.mkdirs()
         }
-        isInitialized = true // Mark as initialized
     }
 
     private fun getAllAddons(): List<Map<String, String>> {

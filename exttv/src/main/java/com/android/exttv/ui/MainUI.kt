@@ -186,7 +186,7 @@ fun CatalogBrowser() {
                             leadingContent = {
                                 if (drawerIndex < Addons.size) {
                                     Image(
-                                        painter = rememberAsyncImagePainter(Status.context.filesDir.path + "/exttv_home/addons/${Addons.getIdByName(drawerItem)}/${Addons.getIconByName(drawerItem)}"),
+                                        painter = rememberAsyncImagePainter(Status.appContext.filesDir.path + "/exttv_home/addons/${Addons.getIdByName(drawerItem)}/${Addons.getIconByName(drawerItem)}"),
                                         contentDescription = null,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop // Adjust content scale as needed
@@ -245,9 +245,9 @@ fun CatalogBrowser() {
 @Composable
 fun Content() {
     val placeholderDrawable = ResourcesCompat.getDrawable(
-        Status.context.resources,
+        Status.appContext.resources,
         R.drawable.placeholder,
-        Status.context.theme
+        Status.appContext.theme
     )
 
     fun Modifier.fadingEdge(brush: Brush) = this

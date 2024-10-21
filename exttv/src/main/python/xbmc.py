@@ -15,10 +15,10 @@ def serialize_namespace(obj):
 
 try:
     from java import jclass
-    main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
+    intent_utils = jclass("com.android.exttv.util.IntentUtils")
 except ImportError as e:
      print("Could not import MainActivity", e)
-     main_activity = None
+     intent_utils = None
 
 
 # Redefine the constants with their values
@@ -56,9 +56,9 @@ def executebuiltin(command, wait=False):
         magnet_encoded = match.group(1)
         magnet_decoded = urllib.parse.unquote(magnet_encoded)
         print("Magnet URI (Decoded):", magnet_decoded)
-        main_activity.fireMagnetIntent(magnet_decoded)
+        intent_utils.fireMagnetIntent(magnet_decoded)
     elif command.startswith('StartAndroidActivity'):
-        main_activity.executeStartActivity(command)
+        intent_utils.executeStartActivity(command)
     else:
         print(f"executebuiltin: pretending to execute builtin: {command}")
     return True
@@ -213,7 +213,7 @@ class Player():
 
         query_string = urllib.parse.urlencode({'media_source' : json.dumps(media_source, default=serialize_namespace)})
         full_url = base_url + query_string
-        main_activity.executeStartActivity(f'StartAndroidActivity("", "android.intent.action.VIEW", "", "{full_url}")')
+        intent_utils.executeStartActivity(f'StartAndroidActivity("", "android.intent.action.VIEW", "", "{full_url}")')
 
     def isPlaying(self):
         return True

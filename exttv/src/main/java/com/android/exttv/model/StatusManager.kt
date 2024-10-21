@@ -1,10 +1,10 @@
 package com.android.exttv.model
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.android.exttv.view.MainActivity
 
 enum class LoadingStatus {
     DONE,
@@ -30,13 +30,10 @@ object StatusManager {
     var drawerItems by mutableStateOf(listOf<String>())
     var bgImage by mutableStateOf("")
 
-    lateinit var context : MainActivity
-    lateinit var showToast : (String?, Int) -> Unit
+    lateinit var appContext: Context
 
-    fun init(context: MainActivity){
-        this.context = context
-        showToast = context::showToast
-        update()
+    fun init(context: Context){
+        appContext = context
     }
 
     fun update() {

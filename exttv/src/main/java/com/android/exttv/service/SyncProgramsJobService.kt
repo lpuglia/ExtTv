@@ -13,6 +13,7 @@ import com.android.exttv.model.AddonManager
 import com.android.exttv.model.FavouriteManager
 import com.android.exttv.model.FavouriteManager.getAllFavouriteCards
 import com.android.exttv.model.PythonManager
+import com.android.exttv.model.StatusManager
 import com.android.exttv.util.TvContract
 
 class BootReceiver : BroadcastReceiver() {
@@ -49,11 +50,12 @@ class SyncProgramsJobService : JobService() {
         AddonManager.init(applicationContext)
         PythonManager.init(applicationContext)
         FavouriteManager.init(applicationContext)
+        StatusManager.init(applicationContext)
     }
 
     override fun onStartJob(params: JobParameters?): Boolean {
         Log.d("SyncProgramsJobService", "Service Started")
-        TvContract.createOrUpdateChannel(applicationContext, getAllFavouriteCards())
+        TvContract.createOrUpdateChannel(getAllFavouriteCards())
         return false
     }
 
