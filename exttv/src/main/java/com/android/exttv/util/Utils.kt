@@ -16,7 +16,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.media3.datasource.okhttp.OkHttpDataSource
-import com.android.exttv.view.MainActivity
+import com.android.exttv.model.AddonManager
+import com.android.exttv.model.FavouriteManager
+import com.android.exttv.model.StatusManager.drawerItems
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -38,6 +40,11 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import com.android.exttv.model.StatusManager as Status
+
+fun updateSection() {
+    drawerItems = AddonManager.getAllAddonNames() + FavouriteManager.getAllFavouriteNames() +
+            listOf("Add from Repository", "Add from GitHub")
+}
 
 object ToastUtils {
     private val handler = Handler(Looper.getMainLooper())
@@ -393,6 +400,7 @@ fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: B
 
         if (force || !pluginPath.exists()) {
             try {
+                ToastUtils.showToast("Installing $pluginName", Toast.LENGTH_SHORT)
                 val connection = URL(zipURL).openConnection() as HttpURLConnection
                 connection.inputStream.use { input ->
                     val cache = Addons.addonsPath.resolve("../cache")

@@ -82,6 +82,7 @@ import com.android.exttv.ui.addonKE
 import com.android.exttv.util.cleanText
 import com.android.exttv.ui.nonAddonKE
 import com.android.exttv.util.parseText
+import com.android.exttv.util.updateSection
 import com.android.exttv.model.AddonManager as Addons
 import com.android.exttv.model.FavouriteManager as Favourites
 import com.android.exttv.model.SectionManager as Sections
@@ -91,6 +92,7 @@ import com.android.exttv.model.PythonManager as Python
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CatalogBrowser() {
+    updateSection()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
     val drawerItemRequesters = mutableListOf<FocusRequester>()
     val drawerWidth by animateDpAsState(

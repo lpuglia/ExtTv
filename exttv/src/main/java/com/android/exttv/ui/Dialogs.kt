@@ -61,6 +61,7 @@ import com.android.exttv.util.ToastUtils
 import com.android.exttv.util.getFromGit
 import com.android.exttv.util.getFromRepository
 import com.android.exttv.util.getLatestZipName
+import com.android.exttv.util.updateSection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -213,7 +214,7 @@ fun RemoveDialog() {
                                 Status.selectedIndex -= 1
                             }
                             Favourites.deleteFavourite(favouriteIndex)
-                            Status.update()
+                            updateSection()
                         }
                     }
                 }
@@ -254,7 +255,7 @@ fun UninstallDialog() {
                                 Status.selectedIndex -= 1
                             }
                             Addons.uninstallAddon(indexAddon)
-                            Status.update()
+                            updateSection()
                         }
                     }
                 }
@@ -428,7 +429,7 @@ fun RepositoryDialog() {
                                     Status.focusedContextIndex = -1
 
                                     val pluginName = getFromRepository(addon.addonid)//Addons.installAddon(addon.addonid)
-                                    Status.update()
+                                    updateSection()
                                     Python.selectAddon(pluginName)
                                 }
                             }
@@ -606,7 +607,7 @@ fun GithubDialog() {
 //                                    val pluginName = Addons.installAddon(url)
                                     val pluginName = getFromGit(url, true)
 
-                                    Status.update()
+                                    updateSection()
                                     Python.selectAddon(pluginName)
                                 }
                             }

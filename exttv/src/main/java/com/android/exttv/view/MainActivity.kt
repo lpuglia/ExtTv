@@ -17,24 +17,22 @@ import com.android.exttv.model.PythonManager
 import com.android.exttv.model.StatusManager
 import com.android.exttv.service.scheduleSyncJob
 
-
 class MainActivity : ComponentActivity() {
 
     companion object {
         private lateinit var instance: MainActivity
-        private var doubleBackToExitPressedOnce = false
-        private val backPressInterval: Long = 2000 // 2 seconds
-
         @JvmStatic // Optional annotation for Java interop
         fun getInstance(): MainActivity {
             return instance
         }
     }
 
+    private var doubleBackToExitPressedOnce = false
+    private val backPressInterval: Long = 2000 // 2 seconds
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (doubleBackToExitPressedOnce) {
-                // Navigate to home screen
                 finishAffinity() // This will close the app and go back to the home screen
                 return true
             }
@@ -60,7 +58,6 @@ class MainActivity : ComponentActivity() {
         PythonManager.init(applicationContext)
         FavouriteManager.init(applicationContext)
         StatusManager.init(applicationContext)
-        StatusManager.update()
 
         val data = intent.data
         if(data != null) {

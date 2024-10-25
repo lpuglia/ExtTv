@@ -33,11 +33,6 @@ object StatusManager {
     lateinit var appContext: Context
 
     fun init(context: Context){
-        appContext = context
-    }
-
-    fun update() {
-        drawerItems = AddonManager.getAllAddonNames() + FavouriteManager.getAllFavouriteNames() +
-                listOf("Add from Repository", "Add from GitHub")
+        if (!::appContext.isInitialized) appContext = context
     }
 }

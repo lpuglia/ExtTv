@@ -6,12 +6,14 @@ import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
 object AddonManager {
-    var addonsPath = File("")
+    lateinit var addonsPath : File
 
     fun init(context: Context) {
-        addonsPath = File(context.filesDir, "exttv_home/addons")
-        if (!addonsPath.exists() || !addonsPath.isDirectory) {
-            addonsPath.mkdirs()
+        if (!::addonsPath.isInitialized) {
+            addonsPath = File(context.filesDir, "exttv_home/addons")
+            if (!addonsPath.exists() || !addonsPath.isDirectory) {
+                addonsPath.mkdirs()
+            }
         }
     }
 

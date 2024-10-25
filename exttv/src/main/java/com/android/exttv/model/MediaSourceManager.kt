@@ -1,8 +1,10 @@
 package com.android.exttv.model
 
 import android.net.Uri
+import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
@@ -36,6 +38,7 @@ object MediaSourceManager {
         val art: Map<String, String>
     )
 
+    @OptIn(UnstableApi::class)
     fun preparePlayer(source: String): MediaSource {
         val mediaSource = source.let { Json.decodeFromString<ExtTvMediaSource>(it) }
         val mediaItem = MediaItem.fromUri(Uri.parse(mediaSource.source))
