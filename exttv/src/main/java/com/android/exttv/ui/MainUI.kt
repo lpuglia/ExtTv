@@ -346,7 +346,6 @@ fun SectionItem(
         itemsIndexed(section.cardList) { cardIndex, card ->
             CardView(
                 card = card,
-                isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
                 sectionIndex,
                 cardIndex
             )
@@ -358,13 +357,12 @@ fun SectionItem(
 @Composable
 fun CardView(
     card: SectionManager.CardItem,
-    isSelected: Boolean = false,
     sectionIndex: Int,
     cardIndex: Int
 ) {
     val focusRequester = FocusRequester()
-
-    val bgModifier = if (isSelected) {
+    // modify the background color based on the selected card
+    val bgModifier = if (Sections.getSelectedSection(sectionIndex) == cardIndex) {
         Modifier.background(Color(0x44BB0000))
     } else {
         Modifier.background(Color(0x00000000))
@@ -378,7 +376,6 @@ fun CardView(
     )
     Column(
         modifier = Modifier
-//            .background(Color.Red)
             .width(200.dp)
     ){
         var isFocused by remember { mutableStateOf(false) }

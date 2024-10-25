@@ -47,6 +47,9 @@ object PythonManager {
 
             if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, uri, newSection)) {
                 Sections.updateSelectedSection(sectionIndex, cardIndex)
+            }else if(newSection.cardList.isEmpty()){
+                // selected section should change when selecting a playable item
+                Sections.updateSelectedSection(sectionIndex, cardIndex)
             }
 
             try {
