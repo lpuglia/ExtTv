@@ -25,28 +25,24 @@ object PythonManager {
 
     fun selectAddon(pluginName: String) {
         Status.selectedIndex = Addons.getAllAddonNames().indexOf(pluginName)
-        Status.loadingState = LoadingStatus.SELECTING_ADDON
         selectSection("plugin://${Addons.getIdByName(pluginName)}/", "Menu")
     }
 
     fun selectFavourite(favouriteName: String) {
         Status.selectedIndex = Addons.size + Favourites.indexOf(favouriteName)
-        Status.loadingState = LoadingStatus.SELECTING_SECTION
-        val runnable = Runnable {
-            Sections.removeAndAdd(0, "", Sections.Section(favouriteName, Favourites.getFavourite(favouriteName)))
-            Status.loadingState = LoadingStatus.SECTION_LOADED
-        }
-        Thread(runnable).start()
+        selectSection(favouriteName, favouriteName)
     }
 
     fun getSection(uri: String): List<SectionManager.CardItem> {
-        return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<SectionManager.CardItem>
+        if(uri.startsWith("plugin://"))
+            return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<SectionManager.CardItem>
+        else
+            return Favourites.getFavourite(uri)
     }
 
     fun selectSection(uri: String, title: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         val runnable = Runnable {
-            // returned value from exttv.py
             val newSection = Sections.Section(title, getSection(uri))
 
             if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, uri, newSection)) {
@@ -57,9 +53,13 @@ object PythonManager {
                 Handler(Looper.getMainLooper()).post {
                     if(sectionIndex==-1 && newSection.cardList.isEmpty()){
                         Sections.clearSections()
-                    }else{
-                        Status.loadingState = LoadingStatus.SECTION_LOADED
+                    }else if(newSection.cardList.isNotEmpty()){
+                        // if selected card is adding a new section, then focus on the new section
+                        Sections.focusedIndex += 1
+                        Sections.focusedCardIndex = 0
                     }
+                    // this must be outside to guarantee that spinner is hidden
+                    Status.loadingState = LoadingStatus.DONE;
                 }
             } catch (e: InterruptedException) {
                 e.printStackTrace()

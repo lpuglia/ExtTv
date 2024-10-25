@@ -440,9 +440,7 @@ fun RepositoryDialog() {
                             .height(100.dp)
                             .let {
                                     if (index == 0){
-                                        LaunchedEffect(Unit) {
-                                           focusRequester.requestFocus()
-                                        }
+                                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
                                         it.focusRequester(focusRequester)
                                     }else it
                                  },

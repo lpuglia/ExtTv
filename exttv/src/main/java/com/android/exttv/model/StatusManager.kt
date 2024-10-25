@@ -10,9 +10,7 @@ enum class LoadingStatus {
     DONE,
     FETCHING_ADDON,
     INSTALLING_ADDON,
-    SELECTING_ADDON,
     SELECTING_SECTION,
-    SECTION_LOADED,
 }
 
 object StatusManager {

@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
             intent.data?.let {
                 val uriString = data.toString()
                 if (uriString.startsWith("exttv://")) {
-                    PythonManager.selectSection(uriString.replace("exttv://",""), "Main", -1, 0)
+                    PythonManager.selectSection(uriString.replace("exttv://",""), "Main")
                 }
             }
         }else {

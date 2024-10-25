@@ -93,7 +93,7 @@ import com.android.exttv.model.PythonManager as Python
 @Composable
 fun CatalogBrowser() {
     updateSection()
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Open)
+    val drawerState = rememberDrawerState(initialValue = if(Sections.isEmpty) DrawerValue.Open else DrawerValue.Closed)
     val drawerItemRequesters = mutableListOf<FocusRequester>()
     val drawerWidth by animateDpAsState(
         targetValue = if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp,
@@ -347,7 +347,6 @@ fun SectionItem(
             CardView(
                 card = card,
                 isSelected = Sections.getSelectedSection(sectionIndex)==cardIndex,
-                requestFocus = cardIndex==0 && sectionIndex == Sections.size-1,
                 sectionIndex,
                 cardIndex
             )
@@ -360,7 +359,6 @@ fun SectionItem(
 fun CardView(
     card: SectionManager.CardItem,
     isSelected: Boolean = false,
-    requestFocus: Boolean,
     sectionIndex: Int,
     cardIndex: Int
 ) {
@@ -389,10 +387,14 @@ fun CardView(
                 .padding(start = 10.dp)
                 .height(120.dp)
                 .onFocusChanged {
+                    if (it.isFocused) {
+                        Sections.focusedIndex = sectionIndex
+                        Sections.focusedCardIndex = cardIndex
+                    }
                     isFocused = it.isFocused
                     Status.bgImage = card.fanartUrl
                 }
-                .let { if (requestFocus) it.focusRequester(focusRequester) else it },
+                .focusRequester(focusRequester),
             onClick = {
                 if(Status.loadingState == LoadingStatus.DONE){
                     Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
@@ -401,8 +403,6 @@ fun CardView(
             onLongClick = {
                 Status.showFavouriteMenu = true
                 Status.reboundEnter = true
-                Sections.focusedIndex = sectionIndex
-                Sections.focusedCardIndex = cardIndex
             },
             colors = CardDefaults.colors(containerColor = Color(0x00000000)),
         ) {
@@ -453,8 +453,7 @@ fun CardView(
         Spacer(modifier = Modifier.height(10.dp))
     }
     LaunchedEffect(Status.loadingState) {
-        if (requestFocus && Sections.isNotEmpty && Status.loadingState==LoadingStatus.SECTION_LOADED) {
-            Status.loadingState = LoadingStatus.DONE
+        if (Sections.focusedIndex == sectionIndex && Sections.focusedCardIndex == cardIndex){
             focusRequester.requestFocus()
         }
     }
