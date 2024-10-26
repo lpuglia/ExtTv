@@ -15,6 +15,9 @@ import com.android.exttv.model.FavouriteManager.getAllFavouriteCards
 import com.android.exttv.model.PythonManager
 import com.android.exttv.model.StatusManager
 import com.android.exttv.util.TvContract
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -54,8 +57,11 @@ class SyncProgramsJobService : JobService() {
     }
 
     override fun onStartJob(params: JobParameters?): Boolean {
-        Log.d("SyncProgramsJobService", "Service Started")
-        TvContract.createOrUpdateChannel(getAllFavouriteCards())
+        val scope = CoroutineScope(Dispatchers.IO)
+        scope.launch {
+            Log.d("SyncProgramsJobService", "Service Started")
+            TvContract.createOrUpdateChannel(getAllFavouriteCards())
+        }
         return false
     }
 
