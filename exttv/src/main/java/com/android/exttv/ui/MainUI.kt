@@ -252,6 +252,12 @@ fun Content() {
         Status.appContext.theme
     )
 
+    val listState = rememberTvLazyListState()
+    LaunchedEffect(Sections.getSectionsInOrder()) {
+        if(Sections.isNotEmpty)
+            listState.scrollToItem(Sections.focusedIndex)
+    }
+
     fun Modifier.fadingEdge(brush: Brush) = this
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
         .drawWithContent {
@@ -265,7 +271,8 @@ fun Content() {
         val leftRightFade = Brush.horizontalGradient(0f to Color.Transparent, 0.1f to Color.Red)
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(Status.bgImage)//.error(placeholderDrawable)
+                .data(Status.bgImage)
+                .error(placeholderDrawable)
                 .build(),
             contentDescription = null,
             modifier = Modifier
@@ -306,6 +313,7 @@ fun Content() {
             .padding(start = 80.dp)
     ) {
         TvLazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Bottom
         )
