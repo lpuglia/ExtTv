@@ -87,7 +87,7 @@ object IntentUtils {
         if (parts.size != 4) {
             throw IllegalArgumentException("Invalid command format")
         }
-        var (_, action, type, url) = parts
+        var (_, action, _, url) = parts
         when (action) {
             "android.intent.action.VIEW" -> {
                 action = Intent.ACTION_VIEW
@@ -400,7 +400,7 @@ fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: B
 
         if (force || !pluginPath.exists()) {
             try {
-                ToastUtils.showToast("Installing $pluginName", Toast.LENGTH_SHORT)
+//                ToastUtils.showToast("Installing $pluginName", Toast.LENGTH_SHORT)
                 val connection = URL(zipURL).openConnection() as HttpURLConnection
                 connection.inputStream.use { input ->
                     val cache = Addons.addonsPath.resolve("../cache")

@@ -14,6 +14,7 @@ import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.R
 import com.android.exttv.model.AddonManager
 import com.android.exttv.model.SectionManager.CardItem
+import kotlinx.serialization.json.Json
 import java.io.File
 import androidx.tvprovider.media.tv.TvContractCompat.PreviewPrograms as PreviewPrograms
 import androidx.tvprovider.media.tv.TvContractCompat.Channels as Channels
@@ -195,6 +196,7 @@ object TvContract {
         val icon = AddonManager.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
         val posterUri = getUri(posterUrl, card.pluginName)
         val thumbnailUri = getUri(thumbnailUrl, card.pluginName)
+        val json = Json.encodeToString(CardItem.serializer(), card)
 
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)
@@ -204,7 +206,7 @@ object TvContract {
             put(PreviewPrograms.COLUMN_LONG_DESCRIPTION, stripTags(card.plot))
             put(PreviewPrograms.COLUMN_POSTER_ART_URI, posterUri.toString())
             put(PreviewPrograms.COLUMN_THUMBNAIL_URI, thumbnailUri.toString())
-            put(PreviewPrograms.COLUMN_INTENT_URI, "exttv://" + card.uri)
+            put(PreviewPrograms.COLUMN_INTENT_URI, "exttv://$json")
             put(PreviewPrograms.COLUMN_LOGO_URI, icon.toString())
         }
         return contentValues

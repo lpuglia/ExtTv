@@ -3,7 +3,6 @@ package com.android.exttv.model
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import com.android.exttv.model.SectionManager
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
@@ -25,31 +24,39 @@ object PythonManager {
 
     fun selectAddon(pluginName: String) {
         Status.selectedIndex = Addons.getAllAddonNames().indexOf(pluginName)
-        selectSection("plugin://${Addons.getIdByName(pluginName)}/", "Menu")
+        Sections.focusedIndex = -1
+        Sections.focusedCardIndex = -1
+        selectSection(Sections.CardItem("plugin://${Addons.getIdByName(pluginName)}/", "Menu"))
     }
 
     fun selectFavourite(favouriteName: String) {
         Status.selectedIndex = Addons.size + Favourites.indexOf(favouriteName)
-        selectSection(favouriteName, favouriteName)
+        Sections.focusedIndex = -1
+        Sections.focusedCardIndex = -1
+        selectSection(Sections.CardItem("favourite://${favouriteName}", favouriteName))
     }
 
-    fun getSection(uri: String): List<SectionManager.CardItem> {
-        if(uri.startsWith("plugin://"))
-            return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<SectionManager.CardItem>
-        else
-            return Favourites.getFavourite(uri)
+    fun getSection(uri: String): List<Sections.CardItem> {
+        if (uri.startsWith("plugin://")) {
+            return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<Sections.CardItem>
+        }else if(uri.startsWith("favourite://")){
+            return Favourites.getFavourite(uri.replace("favourite://", ""))
+        }else{
+            return emptyList()
+        }
     }
 
-    fun selectSection(uri: String, title: String, sectionIndex: Int = -1, cardIndex: Int = 0) {
+    fun selectSection(card: Sections.CardItem, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         val runnable = Runnable {
-            val newSection = Sections.Section(title, getSection(uri))
+            val newSection = Sections.Section(card.label, getSection(card.uri))
 
-            if(newSection.cardList.isNotEmpty() && Sections.removeAndAdd(sectionIndex+1, uri, newSection)) {
+            if(card.isFolder){
+                // if newSection is empty, this will be taken care of in removeAndAdd
+                Sections.removeAndAdd(sectionIndex+1, card.uri, newSection)
                 Sections.updateSelectedSection(sectionIndex, cardIndex)
-            }else if(newSection.cardList.isEmpty()){
-                // selected section should change when selecting a playable item
-                Sections.updateSelectedSection(sectionIndex, cardIndex)
+            }else{
+//                Sections.updateSelectedSection(sectionIndex, cardIndex)
             }
 
             try {

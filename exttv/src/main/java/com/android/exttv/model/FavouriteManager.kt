@@ -113,6 +113,10 @@ object FavouriteManager {
             if (favCard != null) {
                 toReturn.add(favCard)
             }
+            // keep the card if it wasn't possible to find it, maybe it still works
+            if (favCard == null) {
+                toReturn.add(fav)
+            }
         }
         return toReturn
     }

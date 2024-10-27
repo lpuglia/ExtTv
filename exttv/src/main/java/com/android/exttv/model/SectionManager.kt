@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.serialization.Serializable
 
 @SuppressLint("MutableCollectionMutableState")
 object SectionManager {
@@ -12,16 +13,17 @@ object SectionManager {
         val title: String,
         val cardList: List<CardItem>,
     )
+    @Serializable
     data class CardItem(
         val uri: String,
-        val uriParent: String,
         val label : String,
-        val label2 : String,
-        val plot : String,
-        val thumbnailUrl: String,
-        val posterUrl: String,
-        val fanartUrl: String,
-        val isFolder: Boolean,
+        val label2 : String = "",
+        val plot : String = "",
+        val thumbnailUrl: String = "",
+        val posterUrl: String = "",
+        val fanartUrl: String = "",
+        val isFolder: Boolean = true,
+        val uriParent: String = "",
     ) {
         val pluginName: String
             get() = uri.split("://")[1].split("/")[0]
@@ -33,41 +35,50 @@ object SectionManager {
 
     private val selectedIndices: MutableList<Int?> = mutableListOf()
 
-    fun removeAndAdd(index: Int, key: String, newSection: Section): Boolean {
-        // Convert the map keys to a list to easily access by index
-        val keys = sections.keys.toList()
+fun removeAndAdd(index: Int, key: String, newSection: Section) {
+    // Convert the map keys to a list to easily access by index
+    val keys = sections.keys.toList()
 
-        // Compare newSection with the section at index-1 if index is greater than 0
-        if (index > 0 && sections[keys[index - 1]]?.cardList == newSection.cardList) {
-            return false// Ignore the addition if the newSection is equal to the last added section
+    // Compare newSection with the section at index-1 if index is greater than 0
+//        if (index > 0 && sections[keys[index - 1]]?.cardList == newSection.cardList) {
+//            return false// Ignore the addition if the newSection is equal to the last added section
+//        }
+
+    // Check if the newSection is empty
+    if (newSection.cardList.isEmpty()) {
+        // If empty, remove all entries after the given index and return
+        for (i in keys.size - 1 downTo index) {
+            this.remove(keys[i])
+            selectedIndices.removeAt(i)
+        }
+        return
+    }
+
+    // Ensure the index is within the bounds
+    if (index in keys.indices) {
+
+        // Remove all entries after the given index
+        for (i in keys.size - 1 downTo index + 1) {
+            this.remove(keys[i])
+            selectedIndices.removeAt(i)
         }
 
-        // Ensure the index is within the bounds
-        if (index in keys.indices) {
-
-            // Remove all entries after the given index
-            for (i in keys.size - 1 downTo index + 1) {
-                this.remove(keys[i])
-                selectedIndices.removeAt(i)
-            }
-
-            // Replace the entry at the given index or add new if index is out of current bounds
-            if (index < keys.size) {
-                val keyAtIndex = keys[index]
-                this[keyAtIndex] = newSection
-                selectedIndices[index] = null // Reset selected index for the new section
-            } else {
-                // If the index is out of bounds (greater than current size), add the new section
-                this[key] = newSection
-                selectedIndices.add(null)
-            }
+        // Replace the entry at the given index or add new if index is out of current bounds
+        if (index < keys.size) {
+            val keyAtIndex = keys[index]
+            this[keyAtIndex] = newSection
+            selectedIndices[index] = null // Reset selected index for the new section
         } else {
-            // If index is out of bounds, just add the new section
+            // If the index is out of bounds (greater than current size), add the new section
             this[key] = newSection
             selectedIndices.add(null)
         }
-        return true
+    } else {
+        // If index is out of bounds, just add the new section
+        this[key] = newSection
+        selectedIndices.add(null)
     }
+}
 
     fun replaceCard(sectionIndex: Int, cardToReplace: CardItem, newSection: Section): Boolean {
         // Ensure the sectionIndex is within bounds

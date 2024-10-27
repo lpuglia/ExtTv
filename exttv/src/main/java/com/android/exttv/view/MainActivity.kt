@@ -14,8 +14,10 @@ import androidx.tv.material3.MaterialTheme
 import com.android.exttv.model.AddonManager
 import com.android.exttv.model.FavouriteManager
 import com.android.exttv.model.PythonManager
+import com.android.exttv.model.SectionManager
 import com.android.exttv.model.StatusManager
 import com.android.exttv.service.scheduleSyncJob
+import kotlinx.serialization.json.Json
 
 class MainActivity : ComponentActivity() {
 
@@ -64,7 +66,8 @@ class MainActivity : ComponentActivity() {
             intent.data?.let {
                 val uriString = data.toString()
                 if (uriString.startsWith("exttv://")) {
-                    PythonManager.selectSection(uriString.replace("exttv://",""), "Main")
+                    val intentCardItem = Json.decodeFromString(SectionManager.CardItem.serializer(), uriString.replace("exttv://",""))
+                    PythonManager.selectSection(intentCardItem)
                 }
             }
         }else {

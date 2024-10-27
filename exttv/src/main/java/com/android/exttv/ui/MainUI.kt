@@ -394,7 +394,7 @@ fun CardView(
                 .focusRequester(focusRequester),
             onClick = {
                 if(Status.loadingState == LoadingStatus.DONE){
-                    Python.selectSection(card.uri, card.label, sectionIndex, cardIndex)
+                    Python.selectSection(card, sectionIndex, cardIndex)
                 }
             },
             onLongClick = {

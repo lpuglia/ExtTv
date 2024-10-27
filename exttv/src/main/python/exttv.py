@@ -21,7 +21,6 @@ def run(argv=""):
             plot = video.get('plot', '') if video else ''
             movie_list.append(cardView(
                 item[0],
-                utils.parent_uri_map[item[0]],
                 item[1].label if item[1].label else '',
                 item[1].label2 if item[1].label2 else '',
                 plot,
@@ -29,6 +28,7 @@ def run(argv=""):
                 item[1].art.get('poster', ''),
                 item[1].art.get('fanart', ''),
                 item[2], # isFolder
+                utils.parent_uri_map[item[0]],
             ))
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
