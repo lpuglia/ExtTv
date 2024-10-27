@@ -185,7 +185,7 @@ def parse_piped_url(url):
 class Player():
 
     def play(self, playlist, xlistitem = None, windowed = False, startpos = -1):
-        base_url = "exttv_player://app/?"
+        base_url = "exttv_player://app?"
         if hasattr(playlist, 'playlist_type'):
             extra_info = playlist.playlist_items[0][1]
             url = playlist.playlist_items[0][0]
