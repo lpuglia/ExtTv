@@ -338,6 +338,11 @@ fun SectionItem(
         listState.scrollToItem(0)
     }
 
+    LaunchedEffect(Sections.focusedCardIndex) {
+        if(Sections.focusedCardIndex>=0 && sectionIndex==Sections.focusedIndex)
+            listState.scrollToItem(Sections.focusedCardIndex)
+    }
+
     Text(
         text = parseText(cleanText(section.title)),
         color = Color.White,
