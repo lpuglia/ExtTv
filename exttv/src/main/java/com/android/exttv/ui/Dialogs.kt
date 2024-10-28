@@ -55,7 +55,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
-import com.android.exttv.model.LoadingStatus
+import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.util.PluginData
 import com.android.exttv.util.ToastUtils
 import com.android.exttv.util.getFromGit
@@ -70,11 +70,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.IOException
 import org.json.JSONObject
-import com.android.exttv.model.AddonManager as Addons
-import com.android.exttv.model.FavouriteManager as Favourites
-import com.android.exttv.model.StatusManager as Status
-import com.android.exttv.model.PythonManager as Python
-import com.android.exttv.model.SectionManager as Sections
+import com.android.exttv.model.manager.AddonManager as Addons
+import com.android.exttv.model.manager.FavouriteManager as Favourites
+import com.android.exttv.model.manager.StatusManager as Status
+import com.android.exttv.model.manager.PythonManager as Python
+import com.android.exttv.model.manager.SectionManager as Sections
 
 @Composable
 fun NewPlaylistMenu() {

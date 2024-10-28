@@ -9,7 +9,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.android.exttv.model.MediaSourceManager
+import com.android.exttv.model.manager.MediaSourceManager
 
 @OptIn(UnstableApi::class)
 @Composable

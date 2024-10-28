@@ -16,9 +16,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.media3.datasource.okhttp.OkHttpDataSource
-import com.android.exttv.model.AddonManager
-import com.android.exttv.model.FavouriteManager
-import com.android.exttv.model.StatusManager.drawerItems
+import com.android.exttv.model.manager.AddonManager
+import com.android.exttv.model.manager.FavouriteManager
+import com.android.exttv.model.manager.StatusManager.drawerItems
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -26,7 +26,7 @@ import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import okio.GzipSource
 import okio.buffer
-import com.android.exttv.model.AddonManager as Addons
+import com.android.exttv.model.manager.AddonManager as Addons
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -39,7 +39,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
-import com.android.exttv.model.StatusManager as Status
+import com.android.exttv.model.manager.StatusManager as Status
 
 fun updateSection() {
     drawerItems = AddonManager.getAllAddonNames() + FavouriteManager.getAllFavouriteNames() +

@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
-import com.android.exttv.model.AddonManager as Addons
-import com.android.exttv.model.StatusManager as Status
+import com.android.exttv.model.manager.AddonManager as Addons
+import com.android.exttv.model.manager.StatusManager as Status
 
 var uninstallReqs = mutableListOf<FocusRequester>()
 var updateReqs = mutableListOf<FocusRequester>()

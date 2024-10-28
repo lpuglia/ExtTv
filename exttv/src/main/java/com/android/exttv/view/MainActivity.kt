@@ -11,11 +11,11 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.tv.material3.MaterialTheme
-import com.android.exttv.model.AddonManager
-import com.android.exttv.model.FavouriteManager
-import com.android.exttv.model.PythonManager
-import com.android.exttv.model.SectionManager
-import com.android.exttv.model.StatusManager
+import com.android.exttv.model.manager.AddonManager
+import com.android.exttv.model.manager.FavouriteManager
+import com.android.exttv.model.manager.PythonManager
+import com.android.exttv.model.manager.StatusManager
+import com.android.exttv.model.data.CardItem
 import com.android.exttv.service.scheduleSyncJob
 import kotlinx.serialization.json.Json
 
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
             intent.data?.let {
                 val uriString = data.toString()
                 if (uriString.startsWith("exttv://")) {
-                    val intentCardItem = Json.decodeFromString(SectionManager.CardItem.serializer(), uriString.replace("exttv://",""))
+                    val intentCardItem = Json.decodeFromString(CardItem.serializer(), uriString.replace("exttv://",""))
                     PythonManager.selectSection(intentCardItem)
                 }
             }

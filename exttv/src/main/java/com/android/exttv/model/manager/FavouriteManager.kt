@@ -1,8 +1,8 @@
-package com.android.exttv.model
+package com.android.exttv.model.manager
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.android.exttv.model.SectionManager.CardItem
+import com.android.exttv.model.data.CardItem
 import com.android.exttv.util.updateSection
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken

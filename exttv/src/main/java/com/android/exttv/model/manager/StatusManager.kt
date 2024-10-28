@@ -1,4 +1,4 @@
-package com.android.exttv.model
+package com.android.exttv.model.manager
 
 import android.content.Context
 import androidx.compose.runtime.getValue

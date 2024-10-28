@@ -67,8 +67,8 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.android.exttv.R
-import com.android.exttv.model.LoadingStatus
-import com.android.exttv.model.SectionManager
+import com.android.exttv.model.data.CardItem
+import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.ui.GithubDialog
 import com.android.exttv.ui.RepositoryDialog
 import com.android.exttv.ui.UninstallDialog
@@ -83,11 +83,11 @@ import com.android.exttv.util.cleanText
 import com.android.exttv.ui.nonAddonKE
 import com.android.exttv.util.parseText
 import com.android.exttv.util.updateSection
-import com.android.exttv.model.AddonManager as Addons
-import com.android.exttv.model.FavouriteManager as Favourites
-import com.android.exttv.model.SectionManager as Sections
-import com.android.exttv.model.StatusManager as Status
-import com.android.exttv.model.PythonManager as Python
+import com.android.exttv.model.manager.AddonManager as Addons
+import com.android.exttv.model.manager.FavouriteManager as Favourites
+import com.android.exttv.model.manager.SectionManager as Sections
+import com.android.exttv.model.manager.StatusManager as Status
+import com.android.exttv.model.manager.PythonManager as Python
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -369,7 +369,7 @@ fun SectionItem(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CardView(
-    card: SectionManager.CardItem,
+    card: CardItem,
     sectionIndex: Int,
     cardIndex: Int
 ) {

@@ -12,13 +12,13 @@ import androidx.core.net.toUri
 import androidx.tvprovider.media.tv.ChannelLogoUtils.storeChannelLogo
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.R
-import com.android.exttv.model.AddonManager
-import com.android.exttv.model.SectionManager.CardItem
+import com.android.exttv.model.data.CardItem
 import kotlinx.serialization.json.Json
 import java.io.File
 import androidx.tvprovider.media.tv.TvContractCompat.PreviewPrograms as PreviewPrograms
 import androidx.tvprovider.media.tv.TvContractCompat.Channels as Channels
-import com.android.exttv.model.StatusManager as Status
+import com.android.exttv.model.manager.AddonManager as Addons
+import com.android.exttv.model.manager.StatusManager as Status
 
 object TvContract {
     private val channelUri: Uri = Channels.CONTENT_URI
@@ -193,7 +193,7 @@ object TvContract {
             thumbnailUrl = card.fanartUrl
         }
 
-        val icon = AddonManager.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
+        val icon = Addons.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
         val posterUri = getUri(posterUrl, card.pluginName)
         val thumbnailUri = getUri(thumbnailUrl, card.pluginName)
         val json = Json.encodeToString(CardItem.serializer(), card)

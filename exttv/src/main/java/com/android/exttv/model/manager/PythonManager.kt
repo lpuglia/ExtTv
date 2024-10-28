@@ -1,15 +1,16 @@
-package com.android.exttv.model
+package com.android.exttv.model.manager
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import com.android.exttv.model.data.CardItem
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import com.android.exttv.model.AddonManager as Addons
-import com.android.exttv.model.FavouriteManager as Favourites
-import com.android.exttv.model.SectionManager as Sections
-import com.android.exttv.model.StatusManager as Status
+import com.android.exttv.model.manager.AddonManager as Addons
+import com.android.exttv.model.manager.FavouriteManager as Favourites
+import com.android.exttv.model.manager.SectionManager as Sections
+import com.android.exttv.model.manager.StatusManager as Status
 
 object PythonManager {
     private lateinit var exttv: PyObject
@@ -26,19 +27,19 @@ object PythonManager {
         Status.selectedIndex = Addons.getAllAddonNames().indexOf(pluginName)
         Sections.focusedIndex = -1
         Sections.focusedCardIndex = -1
-        selectSection(Sections.CardItem("plugin://${Addons.getIdByName(pluginName)}/", "Menu"))
+        selectSection(CardItem("plugin://${Addons.getIdByName(pluginName)}/", "Menu"))
     }
 
     fun selectFavourite(favouriteName: String) {
         Status.selectedIndex = Addons.size + Favourites.indexOf(favouriteName)
         Sections.focusedIndex = -1
         Sections.focusedCardIndex = -1
-        selectSection(Sections.CardItem("favourite://${favouriteName}", favouriteName))
+        selectSection(CardItem("favourite://${favouriteName}", favouriteName))
     }
 
-    fun getSection(uri: String): List<Sections.CardItem> {
+    fun getSection(uri: String): List<CardItem> {
         if (uri.startsWith("plugin://")) {
-            return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<Sections.CardItem>
+            return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<CardItem>
         }else if(uri.startsWith("favourite://")){
             return Favourites.getFavourite(uri.replace("favourite://", ""))
         }else{
@@ -46,7 +47,7 @@ object PythonManager {
         }
     }
 
-    fun selectSection(card: Sections.CardItem, sectionIndex: Int = -1, cardIndex: Int = 0) {
+    fun selectSection(card: CardItem, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         val runnable = Runnable {
             val newSection = Sections.Section(card.label, getSection(card.uri))
@@ -78,12 +79,12 @@ object PythonManager {
         Thread(runnable).start()
     }
 
-    fun unfoldCard(card: Sections.CardItem, visitedUris: MutableSet<String> = mutableSetOf()): List<Sections.CardItem> {
+    fun unfoldCard(card: CardItem, visitedUris: MutableSet<String> = mutableSetOf()): List<CardItem> {
         if (card.uri in visitedUris) return emptyList()
         visitedUris.add(card.uri)
 
-        val childCards = exttv?.callAttr("run", card.uri)?.toJava(List::class.java) as List<Sections.CardItem>
-        val allCards = mutableListOf<Sections.CardItem>()
+        val childCards = exttv?.callAttr("run", card.uri)?.toJava(List::class.java) as List<CardItem>
+        val allCards = mutableListOf<CardItem>()
 
         for (child in childCards) {
             if (child.isFolder) allCards.addAll(unfoldCard(child, visitedUris))

@@ -9,11 +9,11 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import com.android.exttv.model.AddonManager
-import com.android.exttv.model.FavouriteManager
-import com.android.exttv.model.FavouriteManager.getAllFavouriteCards
-import com.android.exttv.model.PythonManager
-import com.android.exttv.model.StatusManager
+import com.android.exttv.model.manager.AddonManager
+import com.android.exttv.model.manager.FavouriteManager
+import com.android.exttv.model.manager.FavouriteManager.getAllFavouriteCards
+import com.android.exttv.model.manager.PythonManager
+import com.android.exttv.model.manager.StatusManager
 import com.android.exttv.util.TvContract
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

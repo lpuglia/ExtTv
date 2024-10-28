@@ -1,4 +1,4 @@
-package com.android.exttv.model
+package com.android.exttv.model.manager
 
 import android.net.Uri
 import androidx.annotation.OptIn
@@ -13,30 +13,11 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import com.android.exttv.model.data.ExtTvMediaSource
 import com.android.exttv.util.clientFactory
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 object MediaSourceManager {
-
-    @Serializable
-    data class License(
-        val headers: Map<String, String> = emptyMap(),
-        val licenseType: String = "",
-        val licenseKey: String = ""
-    )
-
-    @Serializable
-    data class ExtTvMediaSource(
-        val headers: Map<String, String> = emptyMap(),
-        val source: String,
-        val streamType: String,
-        val license: License = License(),
-        val label: String,
-        val label2: String,
-        val plot: String,
-        val art: Map<String, String>
-    )
 
     @OptIn(UnstableApi::class)
     fun preparePlayer(source: String): MediaSource {

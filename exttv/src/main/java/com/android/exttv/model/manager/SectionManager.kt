@@ -1,11 +1,11 @@
-package com.android.exttv.model
+package com.android.exttv.model.manager
 
 import android.annotation.SuppressLint
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import kotlinx.serialization.Serializable
+import com.android.exttv.model.data.CardItem
 
 @SuppressLint("MutableCollectionMutableState")
 object SectionManager {
@@ -13,21 +13,6 @@ object SectionManager {
         val title: String,
         val cardList: List<CardItem>,
     )
-    @Serializable
-    data class CardItem(
-        val uri: String,
-        val label : String,
-        val label2 : String = "",
-        val plot : String = "",
-        val thumbnailUrl: String = "",
-        val posterUrl: String = "",
-        val fanartUrl: String = "",
-        val isFolder: Boolean = true,
-        val uriParent: String = "",
-    ) {
-        val pluginName: String
-            get() = uri.split("://")[1].split("/")[0]
-    }
 
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)
@@ -48,7 +33,7 @@ fun removeAndAdd(index: Int, key: String, newSection: Section) {
     if (newSection.cardList.isEmpty()) {
         // If empty, remove all entries after the given index and return
         for (i in keys.size - 1 downTo index) {
-            this.remove(keys[i])
+            remove(keys[i])
             selectedIndices.removeAt(i)
         }
         return
@@ -59,7 +44,7 @@ fun removeAndAdd(index: Int, key: String, newSection: Section) {
 
         // Remove all entries after the given index
         for (i in keys.size - 1 downTo index + 1) {
-            this.remove(keys[i])
+            remove(keys[i])
             selectedIndices.removeAt(i)
         }
 
