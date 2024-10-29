@@ -2,6 +2,7 @@ package com.android.exttv.model.manager
 
 import android.content.Context
 import android.util.Log
+import com.android.exttv.util.getFromRepository
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -13,6 +14,22 @@ object AddonManager {
             addonsPath = File(context.filesDir, "exttv_home/addons")
             if (!addonsPath.exists() || !addonsPath.isDirectory) {
                 addonsPath.mkdirs()
+                // chances are that this is the first time the app is run, install dependencies
+                for(defaultAddon in arrayOf(
+                    "metadata.album.universal",
+                    "metadata.artists.universal",
+                    "metadata.common.allmusic.com",
+                    "metadata.common.fanart.tv",
+                    "metadata.common.musicbrainz.org",
+                    "metadata.common.theaudiodb.com",
+                    "metadata.generic.albums",
+                    "metadata.generic.artists",
+                    // "metadata.local", // not sure where this is pulled from
+                    "metadata.themoviedb.org.python",
+                    "metadata.tvshows.themoviedb.org.python"
+                )){
+                    getFromRepository(defaultAddon)
+                }
             }
         }
     }

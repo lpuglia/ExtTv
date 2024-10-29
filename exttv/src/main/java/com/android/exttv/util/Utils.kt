@@ -28,6 +28,8 @@ import okio.GzipSource
 import okio.buffer
 import com.android.exttv.model.manager.AddonManager as Addons
 import org.json.JSONObject
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -286,14 +288,6 @@ fun getLatestZipName(url: String): Triple<String, String, String>{
             // Parse the JSON response
             val data = JSONObject(inputStream.bufferedReader().use { it.readText() })
 
-            // Extract the necessary fields from the JSON
-            val zipPath = data.getJSONObject("result")
-                .getJSONObject("data")
-                .getJSONObject("addon")
-                .getJSONArray("platforms")
-                .getJSONObject(0)
-                .getString("path")
-
             val pluginId = data.getJSONObject("result")
                 .getJSONObject("data")
                 .getJSONObject("addon")
@@ -303,18 +297,38 @@ fun getLatestZipName(url: String): Triple<String, String, String>{
                 .getJSONObject("data")
                 .getJSONObject("addon")
                 .getString("name")
-            return Triple(zipPath, pluginId, pluginName)
+
+            // Connect to the URL and parse the HTML
+            val baseUrl = "https://mirrors.kodi.tv/addons/omega/${pluginId}/"
+            val document: Document = Jsoup.connect(baseUrl).get()
+
+            // Extract zip file links from the table rows
+            val links = document.select("table#list tbody tr td a")
+
+            // Filter the links to find zip files and extract their versions
+            val zipFiles = links
+                .map { it.attr("href") }
+                .filter { it.endsWith(".zip") }
+                .map { it.substringAfterLast('-').removeSuffix(".zip") } // Get version part
+                .sortedWith(compareByDescending { it }) // Sort by version in descending order
+
+            // Find the latest version's zip file link
+            if (zipFiles.isNotEmpty()) {
+                val latestVersion = zipFiles.first()
+                return Triple("$baseUrl${pluginId}-$latestVersion.zip", pluginId, pluginName)
+            } else {
+                throw Exception("No valid zip files URL found in $url")
+            }
         }
     } catch (e: Exception) {
-        throw Exception("Failed to fetch or decode JSON data: ${e.message}", e)
+        throw Exception("Failed to fetch or decode HTML data: ${e.message}", e)
     }
 }
 
 fun getFromRepository(addonId: String, force: Boolean = false): String {
     val url = "https://kodi.tv/page-data/addons/omega/${addonId}/page-data.json"
     val (zipPath, pluginId, pluginName) = getLatestZipName(url)
-    val mirrorZip = "https://mirrors.kodi.tv/addons/omega/" + zipPath.split("addons/omega/")[1]
-    installAddon(mirrorZip, pluginId, url, false)
+    installAddon(zipPath, pluginId, url, false)
     return pluginName
 }
 
@@ -385,6 +399,8 @@ fun installDependencies(pluginPath: File) {
 //            Status.showToast("Dependency found: $addonName, installing...", Toast.LENGTH_SHORT)
 
             try{
+                if(addonName.startsWith("xbmc.") || Addons.addonsPath.resolve(addonName).exists())
+                    return
                 getFromRepository(addonName, false)
             }catch (e: Exception) {
                 ToastUtils.showToast("Error while installing dependency $addonName: ${e.message}", Toast.LENGTH_SHORT)
@@ -396,7 +412,14 @@ fun installDependencies(pluginPath: File) {
 fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: Boolean = false) {
     Thread {
         val filename = zipURL.substringAfterLast('/')
-        val pluginPath = Addons.addonsPath.resolve(pluginName)
+        var pluginPath = Addons.addonsPath.resolve(pluginName)
+
+        // sanitize plugin name, some plugin names end with .python
+        pluginPath = if (pluginPath.name.endsWith(".python")) {
+            File(pluginPath.path.removeSuffix(".python"))
+        } else {
+            pluginPath
+        }
 
         if (force || !pluginPath.exists()) {
             try {
