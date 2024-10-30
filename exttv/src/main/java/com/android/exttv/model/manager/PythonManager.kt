@@ -17,7 +17,6 @@ object PythonManager {
 
     fun init(context: Context) {
         if (!::exttv.isInitialized) {
-            if (Sections.isNotEmpty) return
             if (!Python.isStarted()) Python.start(AndroidPlatform(context))
             exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
         }
@@ -37,13 +36,19 @@ object PythonManager {
         selectSection(CardItem("favourite://${favouriteName}", favouriteName))
     }
 
+    // add Mutex to prevent multiple threads from accessing Python engine at the same time
+    private val lock = Any()
     fun getSection(uri: String): List<CardItem> {
-        if (uri.startsWith("plugin://")) {
-            return exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<CardItem>
-        }else if(uri.startsWith("favourite://")){
-            return Favourites.getFavourite(uri.replace("favourite://", ""))
-        }else{
-            return emptyList()
+        return synchronized(lock) {
+            when {
+                uri.startsWith("plugin://") -> {
+                    exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<CardItem>
+                }
+                uri.startsWith("favourite://") -> {
+                    Favourites.getFavourite(uri.replace("favourite://", ""))
+                }
+                else -> emptyList()
+            }
         }
     }
 
