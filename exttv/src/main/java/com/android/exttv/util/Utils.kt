@@ -35,6 +35,8 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import java.util.zip.ZipFile
@@ -100,8 +102,10 @@ object IntentUtils {
             }
         }
 
+        val cardToPlay = Status.lastSelectedCard.copy(mediaSource = url)
+
         val intent = Intent(action).apply {
-            data = Uri.parse(url)
+            data = Uri.parse("exttv_player://app?" + URLEncoder.encode(Json.encodeToString(cardToPlay), StandardCharsets.UTF_8.toString()))
             addCategory(Intent.CATEGORY_BROWSABLE)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }

@@ -11,7 +11,12 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.util.UnstableApi
+import com.android.exttv.model.data.CardItem
+import com.android.exttv.model.data.ExtTvMediaSource
+import kotlinx.serialization.json.Json
 import org.conscrypt.Conscrypt
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.security.Security
 
 @UnstableApi
@@ -49,13 +54,11 @@ class PlayerActivity : AppCompatActivity() {
 
         val data = intent.data
         data?.let {
-            val uriString = data.toString()
-            if (uriString.startsWith("exttv_player://")) {
-                val mediaSource = data.getQueryParameter("media_source")
-
-                setContent {
-                    PlayerView(mediaSource)
-                }
+            val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
+            val card = Json.decodeFromString(CardItem.serializer(), serializedCard)
+            val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
+            setContent {
+                PlayerView(mediaSource)
             }
         }
     }

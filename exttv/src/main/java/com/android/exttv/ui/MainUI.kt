@@ -160,11 +160,11 @@ fun CatalogBrowser() {
                         if (drawerIndex < Addons.size) {
                             ContextButtons(drawerIndex)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, drawerIndex) }
-                            isSelected = Status.selectedIndex == drawerIndex
+                            isSelected = Status.selectedAddonIndex == drawerIndex
                         } else if (drawerIndex < Addons.size + Favourites.size) {
                             FavouriteButtons(drawerIndex - Addons.size)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, drawerIndex) }
-                            isSelected = Status.selectedIndex == drawerIndex
+                            isSelected = Status.selectedAddonIndex == drawerIndex
                         } else {
                             modifier = modifier.onKeyEvent { event -> nonAddonKE(event) }
                         }
@@ -230,11 +230,11 @@ fun CatalogBrowser() {
     RemoveDialog(); UpdateDialog(); FavouriteMenu();
     NewPlaylistMenu();
 
-    LaunchedEffect(drawerState.currentValue, Status.selectedIndex) {
+    LaunchedEffect(drawerState.currentValue, Status.selectedAddonIndex) {
         if (drawerState.currentValue == DrawerValue.Open)
-            if (Status.selectedIndex >= 0) {
-                listState.scrollToItem(Status.selectedIndex)
-                drawerItemRequesters[Status.selectedIndex].requestFocus()
+            if (Status.selectedAddonIndex >= 0) {
+                listState.scrollToItem(Status.selectedAddonIndex)
+                drawerItemRequesters[Status.selectedAddonIndex].requestFocus()
             }
         if (Sections.isEmpty && Status.loadingState == LoadingStatus.DONE) { // keep the drawer open when sections is empty and Done
             drawerState.setValue(DrawerValue.Open)

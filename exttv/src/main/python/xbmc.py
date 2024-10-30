@@ -185,7 +185,6 @@ def parse_piped_url(url):
 class Player():
 
     def play(self, playlist, xlistitem = None, windowed = False, startpos = -1):
-        base_url = "exttv_player://app?"
         if hasattr(playlist, 'playlist_type'):
             extra_info = playlist.playlist_items[0][1]
             url = playlist.playlist_items[0][0]
@@ -211,9 +210,8 @@ class Player():
         media_source.plot = extra_info.info['plot'] if 'plot' in extra_info.info else ''
         media_source.art = extra_info.art
 
-        query_string = urllib.parse.urlencode({'media_source' : json.dumps(media_source, default=serialize_namespace)})
-        full_url = base_url + query_string
-        intent_utils.executeStartActivity(f'StartAndroidActivity("", "android.intent.action.VIEW", "", "{full_url}")')
+        query_string = urllib.parse.quote(json.dumps(media_source, default=serialize_namespace))
+        intent_utils.executeStartActivity(f'StartAndroidActivity("", "android.intent.action.VIEW", "", "{query_string}")')
 
     def isPlaying(self):
         return True

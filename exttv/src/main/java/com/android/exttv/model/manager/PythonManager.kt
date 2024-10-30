@@ -23,14 +23,14 @@ object PythonManager {
     }
 
     fun selectAddon(pluginName: String) {
-        Status.selectedIndex = Addons.getAllAddonNames().indexOf(pluginName)
+        Status.selectedAddonIndex = Addons.getAllAddonNames().indexOf(pluginName)
         Sections.focusedIndex = -1
         Sections.focusedCardIndex = -1
         selectSection(CardItem("plugin://${Addons.getIdByName(pluginName)}/", "Menu"))
     }
 
     fun selectFavourite(favouriteName: String) {
-        Status.selectedIndex = Addons.size + Favourites.indexOf(favouriteName)
+        Status.selectedAddonIndex = Addons.size + Favourites.indexOf(favouriteName)
         Sections.focusedIndex = -1
         Sections.focusedCardIndex = -1
         selectSection(CardItem("favourite://${favouriteName}", favouriteName))
@@ -54,6 +54,7 @@ object PythonManager {
 
     fun selectSection(card: CardItem, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
+        Status.lastSelectedCard = card
         val runnable = Runnable {
             val newSection = Sections.Section(card.label, getSection(card.uri))
 

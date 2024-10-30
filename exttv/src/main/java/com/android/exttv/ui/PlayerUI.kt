@@ -9,11 +9,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.android.exttv.model.data.ExtTvMediaSource
 import com.android.exttv.model.manager.MediaSourceManager
 
 @OptIn(UnstableApi::class)
 @Composable
-fun PlayerView(extTvMediaSource: String?) {
+fun PlayerView(extTvMediaSource: ExtTvMediaSource) {
     val context = LocalContext.current
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
@@ -23,9 +24,8 @@ fun PlayerView(extTvMediaSource: String?) {
     exoPlayer.playWhenReady = true
     exoPlayer.stop()
 
-    val mediaSource = extTvMediaSource?.let {
-        MediaSourceManager.preparePlayer(it)
-    }
+    val mediaSource = MediaSourceManager.preparePlayer(extTvMediaSource)
+    
     mediaSource?.let {
         exoPlayer.setMediaSource(it)
         exoPlayer.prepare()

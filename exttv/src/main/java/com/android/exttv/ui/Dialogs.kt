@@ -207,11 +207,11 @@ fun RemoveDialog() {
                     coroutineScope.launch {
                         withContext(Dispatchers.IO) {
                             Status.focusedContextIndex = -1
-                            if (Status.selectedIndex == favouriteIndex+Addons.size) {
-                                Status.selectedIndex = -1
+                            if (Status.selectedAddonIndex == favouriteIndex+Addons.size) {
+                                Status.selectedAddonIndex = -1
                                 Sections.clearSections()
-                            } else if (Status.selectedIndex > favouriteIndex+Addons.size) {
-                                Status.selectedIndex -= 1
+                            } else if (Status.selectedAddonIndex > favouriteIndex+Addons.size) {
+                                Status.selectedAddonIndex -= 1
                             }
                             Favourites.deleteFavourite(favouriteIndex)
                             updateSection()
@@ -248,11 +248,11 @@ fun UninstallDialog() {
                     coroutineScope.launch {
                         withContext(Dispatchers.IO) {
                             Status.focusedContextIndex = -1
-                            if (Status.selectedIndex == indexAddon) {
-                                Status.selectedIndex = -1
+                            if (Status.selectedAddonIndex == indexAddon) {
+                                Status.selectedAddonIndex = -1
                                 Sections.clearSections()
-                            } else if (Status.selectedIndex > indexAddon) {
-                                Status.selectedIndex -= 1
+                            } else if (Status.selectedAddonIndex > indexAddon) {
+                                Status.selectedAddonIndex -= 1
                             }
                             Addons.uninstallAddon(indexAddon)
                             updateSection()
