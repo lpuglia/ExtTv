@@ -82,7 +82,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        println("onRestart")
         setContent {
             MaterialTheme {
                 CatalogBrowser()

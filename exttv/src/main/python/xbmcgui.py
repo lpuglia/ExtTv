@@ -8,7 +8,8 @@ try:
     from android.app import AlertDialog, ProgressDialog
     from android.content import DialogInterface
     import threading
-    main_activity = jclass("com.android.exttv.view.MainActivity").getInstance()
+
+    main_activity = jclass("com.android.exttv.view.MainActivity")
 
     def run_on_ui_thread(func):
         def wrapper():
@@ -16,7 +17,7 @@ try:
                 def run(self):
                     func()
 
-            main_activity.runOnUiThread(R())
+            main_activity.getInstance().runOnUiThread(R())
         return wrapper
 
 except ImportError as e:
@@ -60,7 +61,7 @@ class DialogProgressBG:
         state_done = threading.Event()
         @run_on_ui_thread
         def instantiate_dialog():
-            self.dialog = ProgressDialog(main_activity)
+            self.dialog = ProgressDialog(main_activity.getInstance())
             state_done.set()
         instantiate_dialog()
         state_done.wait()
@@ -137,7 +138,7 @@ class DialogProgress:
         state_done = threading.Event()
         @run_on_ui_thread
         def instantiate_dialog():
-            self.dialog = ProgressDialog(main_activity)
+            self.dialog = ProgressDialog(main_activity.getInstance())
             state_done.set()
         instantiate_dialog()
         state_done.wait()
@@ -509,7 +510,7 @@ class WindowXMLDialog:
 
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity)
+                builder = AlertDialog.Builder(main_activity.getInstance())
                 builder.setTitle(self.xmlField[1].getLabel())
                 
                 prova = self
@@ -563,7 +564,7 @@ class Dialog:
             
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity)
+                builder = AlertDialog.Builder(main_activity.getInstance())
                 builder.setTitle(heading)
                 builder.setMessage(message)
 
@@ -598,7 +599,7 @@ class Dialog:
             
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity)
+                builder = AlertDialog.Builder(main_activity.getInstance())
                 builder.setTitle(heading)
                 builder.setMessage(message)
 
@@ -642,7 +643,7 @@ class Dialog:
 
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity)
+                builder = AlertDialog.Builder(main_activity.getInstance())
                 builder.setTitle(heading)
                 builder.setMessage(message)
 
@@ -687,7 +688,7 @@ class Dialog:
 
         @run_on_ui_thread
         def show_dialog():
-            builder = AlertDialog.Builder(main_activity)
+            builder = AlertDialog.Builder(main_activity.getInstance())
             builder.setTitle(heading)
             
             class OnClickListener(dynamic_proxy(DialogInterface.OnClickListener)):
