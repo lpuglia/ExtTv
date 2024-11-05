@@ -80,8 +80,10 @@ object TvContract {
                 val channelIdColumn = it.getLong(it.getColumnIndex(PreviewPrograms.COLUMN_CHANNEL_ID))
                 if (channelId == channelIdColumn){
                     val programId = it.getLong(it.getColumnIndex(PreviewPrograms._ID))
-                    val programTitle = it.getString(it.getColumnIndex(PreviewPrograms.COLUMN_TITLE))
-                    programs[programTitle] = ContentUris.withAppendedId(programUri, programId)
+                    val intentUri = it.getString(it.getColumnIndex(PreviewPrograms.COLUMN_INTENT_URI))
+                    // get the actual label of the card without stripping the tags
+                    val favCardItem = Json.decodeFromString(FavCardData.serializer(), intentUri.replace("exttv://",""))
+                    programs[favCardItem.card.label] = ContentUris.withAppendedId(programUri, programId)
                 }
             }
         }
@@ -111,10 +113,10 @@ object TvContract {
 
             // Step 4: Delete programs that are no longer in the card list
             for (programName in existingPrograms.keys) {
-//                if(programName !in cards.map { it.label }) {
+                if(programName !in cards.map { it.label }) {
                     existingPrograms[programName]?.let { Status.appContext.contentResolver.delete(it, null, null) }
                     Log.d("Programs", "Deleted program $programName from channel $channelName")
-//                }
+                }
             }
 
             // Step 5: Update or create programs based on cards
@@ -154,20 +156,20 @@ object TvContract {
         existingPrograms: Map<String, Uri>,
         channelName: String
     ) {
-//        if (card.label !in existingPrograms) {
+        if (card.label !in existingPrograms) {
             Log.d("Programs", "Adding new program ${card.label}.")
             Status.appContext.contentResolver.insert(
                 PreviewPrograms.CONTENT_URI,
                 programFromCard(channelId, card, channelName)
             )
-//        } else {
-//            Log.d("Programs", "Program for ${card.label} exists, updating.")
-//            Status.appContext.contentResolver.update(
-//                existingPrograms[card.label]!!,
-//                programFromCard(channelId, card),
-//                null,null
-//            )
-//        }
+        } else {
+            Log.d("Programs", "Program for ${card.label} exists, updating.")
+            Status.appContext.contentResolver.update(
+                existingPrograms[card.label]!!,
+                programFromCard(channelId, card, channelName),
+                null,null
+            )
+        }
     }
 
     private fun getUri(art: String, pluginName: String): Uri{
