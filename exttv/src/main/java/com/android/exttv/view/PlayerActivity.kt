@@ -24,6 +24,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private var doubleBackToExitPressedOnce = false
     private val backPressInterval: Long = 2000 // 2 seconds
+    private lateinit var card: CardItem
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -55,7 +56,7 @@ class PlayerActivity : AppCompatActivity() {
         val data = intent.data
         data?.let {
             val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
-            val card = Json.decodeFromString(CardItem.serializer(), serializedCard)
+            card = Json.decodeFromString(CardItem.serializer(), serializedCard)
             val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
             setContent {
                 PlayerView(mediaSource)

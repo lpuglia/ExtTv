@@ -254,7 +254,7 @@ fun Content() {
 
     val listState = rememberTvLazyListState()
     LaunchedEffect(Sections.getSectionsInOrder()) {
-        if(Sections.isNotEmpty)
+        if(Sections.isNotEmpty && Sections.focusedIndex>=0)
             listState.scrollToItem(Sections.focusedIndex)
     }
 

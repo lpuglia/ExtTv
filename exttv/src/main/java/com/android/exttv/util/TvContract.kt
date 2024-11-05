@@ -13,6 +13,8 @@ import androidx.tvprovider.media.tv.ChannelLogoUtils.storeChannelLogo
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.R
 import com.android.exttv.model.data.CardItem
+import com.android.exttv.model.data.FavCardData
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import androidx.tvprovider.media.tv.TvContractCompat.PreviewPrograms as PreviewPrograms
@@ -117,7 +119,7 @@ object TvContract {
 
             // Step 5: Update or create programs based on cards
             for (card in cards) {
-                updateOrAddProgram(channelId, card, existingPrograms)
+                updateOrAddProgram(channelId, card, existingPrograms, channelName)
             }
 
         }
@@ -146,12 +148,17 @@ object TvContract {
     }
 
     @SuppressLint("RestrictedApi")
-    private fun updateOrAddProgram(channelId: Long, card: CardItem, existingPrograms: Map<String, Uri>) {
+    private fun updateOrAddProgram(
+        channelId: Long,
+        card: CardItem,
+        existingPrograms: Map<String, Uri>,
+        channelName: String
+    ) {
 //        if (card.label !in existingPrograms) {
             Log.d("Programs", "Adding new program ${card.label}.")
             Status.appContext.contentResolver.insert(
                 PreviewPrograms.CONTENT_URI,
-                programFromCard(channelId, card)
+                programFromCard(channelId, card, channelName)
             )
 //        } else {
 //            Log.d("Programs", "Program for ${card.label} exists, updating.")
@@ -186,7 +193,7 @@ object TvContract {
     }
 
     @SuppressLint("RestrictedApi")
-    private fun programFromCard(channelId: Long, card: CardItem): ContentValues {
+    private fun programFromCard(channelId: Long, card: CardItem, channelName: String): ContentValues {
         val posterUrl = if (card.posterUrl.isEmpty()) card.thumbnailUrl else card.posterUrl
         var thumbnailUrl = if (card.thumbnailUrl.isEmpty()) card.posterUrl else card.thumbnailUrl
         if (posterUrl == thumbnailUrl && card.fanartUrl.isNotEmpty() && card.fanartUrl != "") {
@@ -196,7 +203,8 @@ object TvContract {
         val icon = Addons.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
         val posterUri = getUri(posterUrl, card.pluginName)
         val thumbnailUri = getUri(thumbnailUrl, card.pluginName)
-        val json = Json.encodeToString(CardItem.serializer(), card)
+        val cardData = FavCardData(favName = channelName, card = card)
+        val json = Json.encodeToString(cardData)
 
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)

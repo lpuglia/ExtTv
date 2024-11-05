@@ -15,7 +15,7 @@ import com.android.exttv.model.manager.AddonManager
 import com.android.exttv.model.manager.FavouriteManager
 import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.StatusManager
-import com.android.exttv.model.data.CardItem
+import com.android.exttv.model.data.FavCardData
 import com.android.exttv.service.scheduleSyncJob
 import kotlinx.serialization.json.Json
 
@@ -60,31 +60,22 @@ class MainActivity : ComponentActivity() {
         PythonManager.init(applicationContext)
         FavouriteManager.init(applicationContext)
         StatusManager.init(applicationContext)
+        scheduleSyncJob(applicationContext)
 
-        val data = intent.data
-        if(data != null) {
-            intent.data?.let {
-                val uriString = data.toString()
-                if (uriString.startsWith("exttv://")) {
-                    val intentCardItem = Json.decodeFromString(CardItem.serializer(), uriString.replace("exttv://",""))
-                    PythonManager.selectSection(intentCardItem)
-                }
-            }
-        }else {
-            scheduleSyncJob(applicationContext)
-            setContent {
-                MaterialTheme {
-                    CatalogBrowser()
-                }
-            }
-        }
-    }
-
-    override fun onRestart() {
-        super.onRestart()
         setContent {
             MaterialTheme {
                 CatalogBrowser()
+            }
+        }
+
+        if(intent.data != null) {
+            intent.data?.let {
+                val uriString = intent.data.toString()
+                if (uriString.startsWith("exttv://")) {
+                    val favCardItem = Json.decodeFromString(FavCardData.serializer(), uriString.replace("exttv://",""))
+                    PythonManager.selectSection(favCardItem.card)
+                    PythonManager.selectFavourite(favCardItem.favName)
+                }
             }
         }
     }
