@@ -59,7 +59,7 @@ class PlayerActivity : AppCompatActivity() {
             card = Json.decodeFromString(CardItem.serializer(), serializedCard)
             val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
             setContent {
-                PlayerView(mediaSource)
+                PlayerView(card, mediaSource)
             }
         }
     }
