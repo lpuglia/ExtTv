@@ -272,6 +272,7 @@ fun Content() {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(Status.bgImage)
+//                .placeholder(placeholderDrawable) // Set the placeholder here
                 .error(placeholderDrawable)
                 .build(),
             contentDescription = null,
@@ -400,9 +401,9 @@ fun CardView(
                     if (it.isFocused) {
                         Sections.focusedIndex = sectionIndex
                         Sections.focusedCardIndex = cardIndex
+                        Status.bgImage = card.secondaryArt
                     }
                     isFocused = it.isFocused
-                    Status.bgImage = card.fanartUrl
                 }
                 .focusRequester(focusRequester),
             onClick = {
@@ -419,8 +420,8 @@ fun CardView(
             Box() {
                 AsyncImage(
                     model =  ImageRequest.Builder(LocalContext.current)
-                        .data(card.thumbnailUrl)
-//                        .placeholder(ColorPainter(Color.Gray)) // Set the placeholder here
+                        .data(card.primaryArt)
+//                        .placeholder(placeholderDrawable) // Set the placeholder here
                         .error(placeholderDrawable) // Optional: set an error placeholder
                         .build(),
                     contentDescription = card.label,
@@ -453,7 +454,7 @@ fun CardView(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White,
                 modifier = Modifier
-                    .alpha(if (isFocused) 1f else 0f)
+//                    .alpha(if (isFocused) 1f else 0f)
                     .padding(start = 10.dp, top = 5.dp, end = 10.dp)
                     .width(200.dp)
                     .basicMarquee(iterations = if (isFocused) 100 else 0),

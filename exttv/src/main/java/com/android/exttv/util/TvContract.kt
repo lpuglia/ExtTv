@@ -196,15 +196,9 @@ object TvContract {
 
     @SuppressLint("RestrictedApi")
     private fun programFromCard(channelId: Long, card: CardItem, channelName: String): ContentValues {
-        val posterUrl = if (card.posterUrl.isEmpty()) card.thumbnailUrl else card.posterUrl
-        var thumbnailUrl = if (card.thumbnailUrl.isEmpty()) card.posterUrl else card.thumbnailUrl
-        if (posterUrl == thumbnailUrl && card.fanartUrl.isNotEmpty() && card.fanartUrl != "") {
-            thumbnailUrl = card.fanartUrl
-        }
-
         val icon = Addons.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
-        val posterUri = getUri(posterUrl, card.pluginName)
-        val thumbnailUri = getUri(thumbnailUrl, card.pluginName)
+        val posterUri = getUri(card.primaryArt, card.pluginName)
+        val thumbnailUri = getUri(card.secondaryArt, card.pluginName)
         val cardData = FavCardData(favName = channelName, card = card)
         val json = Json.encodeToString(cardData)
 
