@@ -25,16 +25,11 @@ import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -50,14 +45,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import androidx.tv.foundation.lazy.list.TvLazyColumn
-import androidx.tv.foundation.lazy.list.TvLazyRow
 import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
-import androidx.tv.material3.Card
-import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ModalNavigationDrawer
 import androidx.tv.material3.NavigationDrawerItem
 import androidx.tv.material3.NavigationDrawerItemDefaults
@@ -67,7 +58,6 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.android.exttv.R
-import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.ui.GithubDialog
 import com.android.exttv.ui.RepositoryDialog
@@ -77,11 +67,10 @@ import com.android.exttv.ui.FavouriteButtons
 import com.android.exttv.ui.FavouriteMenu
 import com.android.exttv.ui.NewPlaylistMenu
 import com.android.exttv.ui.RemoveDialog
+import com.android.exttv.ui.SectionView
 import com.android.exttv.ui.UpdateDialog
 import com.android.exttv.ui.addonKE
-import com.android.exttv.util.cleanText
 import com.android.exttv.ui.nonAddonKE
-import com.android.exttv.util.parseText
 import com.android.exttv.util.updateSection
 import com.android.exttv.model.manager.AddonManager as Addons
 import com.android.exttv.model.manager.FavouriteManager as Favourites
@@ -320,152 +309,11 @@ fun Content() {
         )
         {
             itemsIndexed(Sections.getSectionsInOrder()) { index, section ->
-                SectionItem(
+                SectionView(
                     section = section,
                     sectionIndex = index
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun SectionItem(
-    section: Sections.Section,
-    sectionIndex: Int
-) {
-    val listState = rememberTvLazyListState()
-    LaunchedEffect(section.cardList) {
-        listState.scrollToItem(0)
-    }
-
-    LaunchedEffect(Sections.focusedCardIndex) {
-        if(Sections.focusedCardIndex>=0 && sectionIndex==Sections.focusedIndex)
-            listState.scrollToItem(Sections.focusedCardIndex)
-    }
-
-    Text(
-        text = parseText(cleanText(section.title)),
-        color = Color.White,
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.padding(start = 40.dp, top = 10.dp, bottom = 10.dp) // Add padding below the title
-    )
-    TvLazyRow(
-        state = listState,
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
-    ) {
-        itemsIndexed(section.cardList) { cardIndex, card ->
-            CardView(
-                card = card,
-                sectionIndex,
-                cardIndex
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun CardView(
-    card: CardItem,
-    sectionIndex: Int,
-    cardIndex: Int
-) {
-    val focusRequester = FocusRequester()
-    // modify the background color based on the selected card
-    val bgModifier = if (Sections.getSelectedSection(sectionIndex) == cardIndex) {
-        Modifier.background(Color(0x44BB0000))
-    } else {
-        Modifier.background(Color(0x00000000))
-    }
-    val context = LocalContext.current
-
-    val placeholderDrawable = ResourcesCompat.getDrawable(
-        context.resources,
-        R.drawable.placeholder,
-        context.theme
-    )
-    Column(
-        modifier = Modifier
-            .width(200.dp)
-    ){
-        var isFocused by remember { mutableStateOf(false) }
-        Card(
-            modifier = Modifier
-                .padding(start = 10.dp)
-                .height(120.dp)
-                .onFocusChanged {
-                    if (it.isFocused) {
-                        Sections.focusedIndex = sectionIndex
-                        Sections.focusedCardIndex = cardIndex
-                        Status.bgImage = card.secondaryArt
-                    }
-                    isFocused = it.isFocused
-                }
-                .focusRequester(focusRequester),
-            onClick = {
-                if(Status.loadingState == LoadingStatus.DONE){
-                    Python.selectSection(card, sectionIndex, cardIndex)
-                }
-            },
-            onLongClick = {
-                Status.showFavouriteMenu = true
-                Status.reboundEnter = true
-            },
-            colors = CardDefaults.colors(containerColor = Color(0x00000000)),
-        ) {
-            Box() {
-                AsyncImage(
-                    model =  ImageRequest.Builder(LocalContext.current)
-                        .data(card.primaryArt)
-//                        .placeholder(placeholderDrawable) // Set the placeholder here
-                        .error(placeholderDrawable) // Optional: set an error placeholder
-                        .build(),
-                    contentDescription = card.label,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0x88000000)),
-                    contentScale = ContentScale.Crop
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-//                        .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent overlay
-                        .then(bgModifier)
-                )
-            }
-        }
-        Text(
-            text = parseText(cleanText(card.label)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
-            modifier = Modifier
-                .padding(start = 10.dp, top = 20.dp, end = 10.dp)
-                .width(200.dp)
-                .basicMarquee(iterations = if (isFocused) 100 else 0),
-            overflow = TextOverflow.Ellipsis,
-        )
-        if(card.plot.isNotEmpty()){
-            Text(
-                text = parseText(cleanText(card.plot)),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White,
-                modifier = Modifier
-//                    .alpha(if (isFocused) 1f else 0f)
-                    .padding(start = 10.dp, top = 5.dp, end = 10.dp)
-                    .width(200.dp)
-                    .basicMarquee(iterations = if (isFocused) 100 else 0),
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-    }
-    LaunchedEffect(Status.loadingState) {
-        if (Sections.focusedIndex == sectionIndex && Sections.focusedCardIndex == cardIndex){
-            focusRequester.requestFocus()
         }
     }
 }

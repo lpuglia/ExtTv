@@ -50,8 +50,8 @@ class PlayerActivity : AppCompatActivity() {
         Security.insertProviderAt(Conscrypt.newProvider(), 1) //without this I get handshake error
 
         // disable strict mode because ScraperManager.postfinished may need to scrape a proxy when onDemand is called
-        val policy = ThreadPolicy.Builder().permitAll().build()
-        StrictMode.setThreadPolicy(policy)
+//        val policy = ThreadPolicy.Builder().permitAll().build()
+//        StrictMode.setThreadPolicy(policy)
 
         val data = intent.data
         data?.let {
