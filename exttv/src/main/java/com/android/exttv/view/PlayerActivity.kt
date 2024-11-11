@@ -4,8 +4,6 @@ import PlayerView
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.StrictMode
-import android.os.StrictMode.ThreadPolicy
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -13,11 +11,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.util.UnstableApi
 import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.data.ExtTvMediaSource
+import com.android.exttv.model.manager.PythonManager
 import kotlinx.serialization.json.Json
-import org.conscrypt.Conscrypt
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import java.security.Security
 
 @UnstableApi
 class PlayerActivity : AppCompatActivity() {
@@ -47,12 +44,6 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Security.insertProviderAt(Conscrypt.newProvider(), 1) //without this I get handshake error
-
-        // disable strict mode because ScraperManager.postfinished may need to scrape a proxy when onDemand is called
-//        val policy = ThreadPolicy.Builder().permitAll().build()
-//        StrictMode.setThreadPolicy(policy)
-
         val data = intent.data
         data?.let {
             val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
@@ -60,6 +51,9 @@ class PlayerActivity : AppCompatActivity() {
             val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
             setContent {
                 PlayerView(card, mediaSource)
+            }
+            Handler(Looper.getMainLooper()).post {
+                Status.cardList = PythonManager.getSection(card.uriParent).toMutableList()
             }
         }
     }

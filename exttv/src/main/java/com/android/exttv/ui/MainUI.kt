@@ -49,6 +49,7 @@ import androidx.tv.foundation.lazy.list.itemsIndexed
 import androidx.tv.foundation.lazy.list.rememberTvLazyListState
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ModalNavigationDrawer
 import androidx.tv.material3.NavigationDrawerItem
 import androidx.tv.material3.NavigationDrawerItemDefaults
@@ -71,6 +72,8 @@ import com.android.exttv.ui.SectionView
 import com.android.exttv.ui.UpdateDialog
 import com.android.exttv.ui.addonKE
 import com.android.exttv.ui.nonAddonKE
+import com.android.exttv.util.cleanText
+import com.android.exttv.util.parseText
 import com.android.exttv.util.updateSection
 import com.android.exttv.model.manager.AddonManager as Addons
 import com.android.exttv.model.manager.FavouriteManager as Favourites
@@ -305,12 +308,19 @@ fun Content() {
         TvLazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom
+            verticalArrangement = Arrangement.Bottom,
+//            contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
         )
         {
             itemsIndexed(Sections.getSectionsInOrder()) { index, section ->
+                Text(
+                    text = parseText(cleanText(section.title)),
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(start = 40.dp, top = 10.dp, bottom = 10.dp) // Add padding below the title
+                )
                 SectionView(
-                    section = section,
+                    section.cardList,
                     sectionIndex = index
                 )
             }

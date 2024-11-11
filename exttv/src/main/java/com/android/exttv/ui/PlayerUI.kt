@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -59,6 +61,7 @@ import coil.compose.AsyncImage
 import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.data.ExtTvMediaSource
 import com.android.exttv.model.manager.MediaSourceManager
+import com.android.exttv.ui.SectionView
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -70,12 +73,13 @@ fun Modifier.dbgMode(color: Color = Color.Red): Modifier =
 
 object Status {
     var isProgressBarVisible by mutableStateOf(false)
+    var isVisibleCardList by mutableStateOf(false)
+    var cardList by mutableStateOf(listOf<CardItem>())
 }
 
 @OptIn(UnstableApi::class)
 @Composable
 fun PlayerView(card: CardItem, extTvMediaSource: ExtTvMediaSource) {
-
     var progress by remember { mutableFloatStateOf(0f) }
 
     val context = LocalContext.current
@@ -152,11 +156,21 @@ fun TopHeader(card : CardItem){
                 )
             )
     ){
-        Row(modifier = Modifier.dbgMode().align(Alignment.Center)) {
-            Box(Modifier.dbgMode(Color.Green).width(200.dp)) {
+        Row(modifier = Modifier
+            .dbgMode()
+            .align(Alignment.Center)) {
+            Box(
+                Modifier
+                    .dbgMode(Color.Green)
+                    .padding(end=20.dp)
+                    .width(200.dp)) {
                 AsyncImage(model = card.primaryArt, contentDescription = card.label)
             }
-            Box(Modifier.dbgMode(Color.Green).width(400.dp)) {
+            Box(
+                Modifier
+                    .dbgMode(Color.Green)
+                    .padding(top=20.dp)
+                    .width(600.dp)) {
                 Text(
                     "Title: ${card.label}\nPlot:  ${card.plot}",
                     style = TextStyle.Default.copy(
@@ -183,8 +197,10 @@ fun CustomProgressBar(
     LaunchedEffect(lastKeyPressedTime) {
         // Keep the ProgressBar visible for 3 seconds after the last key press
         delay(3000)
-        if (System.currentTimeMillis() - lastKeyPressedTime >= 3000) {
-            Status.isProgressBarVisible = !player.isPlaying
+        if(!Status.isVisibleCardList) {
+            if (System.currentTimeMillis() - lastKeyPressedTime >= 3000) {
+                Status.isProgressBarVisible = !player.isPlaying
+            }
         }
     }
 
@@ -204,12 +220,12 @@ fun CustomProgressBar(
     }
 
     Column(
+        verticalArrangement = Arrangement.Bottom,
         modifier = Modifier
             .dbgMode(Color.Yellow)
             .alpha(if (Status.isProgressBarVisible) 1f else 0f)
             .fillMaxWidth()
-            .height(200.dp)
-            .focusable()
+            .height(300.dp)
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(Color.Black, Color.Transparent),
@@ -217,66 +233,93 @@ fun CustomProgressBar(
                     endY = 0f
                 )
             )
-            .onKeyEvent { keyEvent ->
-                println("Key event: $keyEvent, progress")
-                if (keyEvent.key != Key.Back) {
+    ) {
+        Column(
+            modifier = Modifier.dbgMode(color=Color.Green)
+                .focusable()
+                .onKeyEvent { keyEvent ->
                     Status.isProgressBarVisible = true
                     lastKeyPressedTime = System.currentTimeMillis()
-                    handleKeyEvent(keyEvent, player)
+                    if (keyEvent.key == Key.DirectionDown) {
+                        Status.isVisibleCardList = true
+                    }else {
+                        handleKeyEvent(keyEvent, player)
+                    }
+                    false
                 }
-                false
-            }
-    ) {
-        Row {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .background(Color.Gray, shape = RoundedCornerShape(50))
-                    .shadow(
-                        elevation = 3.dp,
-                        shape = RoundedCornerShape(50),
-                    )
+        ) {
+            Row(
+                modifier = Modifier.dbgMode()
+                    .padding(horizontal =  40.dp, vertical = 10.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(progress)
-                        .background(Color.Red, shape = RoundedCornerShape(50))
-                )
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .background(Color.Gray, shape = RoundedCornerShape(50))
+                        .shadow(
+                            elevation = 3.dp,
+                            shape = RoundedCornerShape(50),
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(progress)
+                            .background(Color.Red, shape = RoundedCornerShape(50))
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.dbgMode()
+                    .padding(end = 40.dp, bottom = 20.dp)
+                    .align(Alignment.End)
+            ) {
+                if (player.isCurrentMediaItemLive) {
+                    val currentTimeOfDay = System.currentTimeMillis()
+                    val playbackStartTime = currentTimeOfDay - (duration - currentPosition)
+
+                    Text(
+                        SimpleDateFormat("hh:mm a", Locale.getDefault()).format(
+                            Date(
+                                playbackStartTime
+                            )
+                        ),
+                        style = TextStyle.Default.copy(
+                            fontSize = 16.sp,
+                            color = Color.White, // Set base text color to white
+                            shadow = shadow
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    LiveIndicator()
+                } else {
+                    Text(
+                        formatTime(currentPosition) + " / " + formatTime(duration),
+                        style = TextStyle.Default.copy(
+                            fontSize = 16.sp,
+                            color = Color.White, // Set base text color to white
+                            shadow = shadow
+                        )
+                    )
+                }
             }
         }
-        Row(
-            modifier = Modifier.dbgMode()
-                .align(Alignment.End)
-        ) {
-            if (player.isCurrentMediaItemLive) {
-                val currentTimeOfDay = System.currentTimeMillis()
-                val playbackStartTime = currentTimeOfDay - (duration - currentPosition)
 
-                Text(
-                    SimpleDateFormat("hh:mm a", Locale.getDefault()).format(
-                        Date(
-                            playbackStartTime
-                        )
-                    ),
-                    style = TextStyle.Default.copy(
-                        fontSize = 16.sp,
-                        color = Color.White, // Set base text color to white
-                        shadow = shadow
-                    )
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                LiveIndicator()
-            } else {
-                Text(
-                    formatTime(currentPosition) + " / " + formatTime(duration),
-                    style = TextStyle.Default.copy(
-                        fontSize = 16.sp,
-                        color = Color.White, // Set base text color to white
-                        shadow = shadow
-                    )
-                )
+        if (Status.isVisibleCardList) {
+            Row(modifier = Modifier.dbgMode()
+                .onKeyEvent { keyEvent ->
+                    Status.isProgressBarVisible = true
+                    lastKeyPressedTime = System.currentTimeMillis()
+                    if (keyEvent.key == Key.DirectionUp) {
+                        Status.isVisibleCardList = false
+                        true
+                    }else {
+                        false
+                    }
+                }
+            ) {
+                SectionView(cardList = Status.cardList, sectionIndex = 0)
             }
         }
     }
@@ -338,7 +381,7 @@ fun handleKeyEvent(keyEvent: KeyEvent, exoPlayer: ExoPlayer, seekIncrementMs: Lo
     // Reset the multiplier if no key is pressed for a while
     resetSeekMultiplierIfNeeded()
 
-    return if (keyEvent.type == KeyEventType.KeyDown) {
+    return if (keyEvent.type == KeyEventType.KeyUp) {
         when (keyEvent.key) {
             Key.DirectionLeft -> {
                 // Calculate the seek increment with the multiplier

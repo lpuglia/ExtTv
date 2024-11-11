@@ -50,11 +50,11 @@ import com.android.exttv.util.parseText
 
 @Composable
 fun SectionView(
-    section: SectionManager.Section,
+    cardList: List<CardItem>,
     sectionIndex: Int
 ) {
     val listState = rememberTvLazyListState()
-    LaunchedEffect(section.cardList) {
+    LaunchedEffect(cardList) {
         listState.scrollToItem(0)
     }
 
@@ -63,12 +63,6 @@ fun SectionView(
             listState.scrollToItem(SectionManager.focusedCardIndex)
     }
 
-    Text(
-        text = parseText(cleanText(section.title)),
-        color = Color.White,
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.padding(start = 40.dp, top = 10.dp, bottom = 10.dp) // Add padding below the title
-    )
     TvLazyRow(
         state = listState,
         modifier = Modifier
@@ -76,7 +70,7 @@ fun SectionView(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
     ) {
-        itemsIndexed(section.cardList) { cardIndex, card ->
+        itemsIndexed(cardList) { cardIndex, card ->
             CardView(
                 card = card,
                 sectionIndex,
