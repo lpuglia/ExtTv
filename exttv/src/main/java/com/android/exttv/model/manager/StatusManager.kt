@@ -1,5 +1,7 @@
 package com.android.exttv.model.manager
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -14,6 +16,8 @@ enum class LoadingStatus {
     SELECTING_SECTION,
 }
 
+
+@SuppressLint("StaticFieldLeak") // i know what i'm doing (hopefully)
 object StatusManager {
     var reboundEnter = false
     var loadingState by mutableStateOf(LoadingStatus.DONE)
@@ -35,7 +39,14 @@ object StatusManager {
     lateinit var appContext: Context
     lateinit var lastSelectedCard : CardItem
 
-    fun init(context: Context){
+    private lateinit var instance: Activity
+    @JvmStatic // Optional annotation for Java interop
+    fun getActivity(): Activity {
+        return instance
+    }
+
+    fun init(activity: Activity?, context: Context){
+        activity?.let { instance = it }
         if (!::appContext.isInitialized) appContext = context
     }
 }

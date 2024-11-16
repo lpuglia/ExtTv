@@ -21,14 +21,6 @@ import kotlinx.serialization.json.Json
 
 class MainActivity : ComponentActivity() {
 
-    companion object {
-        private lateinit var instance: MainActivity
-        @JvmStatic // Optional annotation for Java interop
-        fun getInstance(): MainActivity {
-            return instance
-        }
-    }
-
     private var doubleBackToExitPressedOnce = false
     private val backPressInterval: Long = 2000 // 2 seconds
 
@@ -54,12 +46,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        instance = this
         StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitAll().build())
         AddonManager.init(applicationContext)
         PythonManager.init(applicationContext)
         FavouriteManager.init(applicationContext)
-        StatusManager.init(applicationContext)
+        StatusManager.init(this, applicationContext)
         scheduleSyncJob(applicationContext)
 
         setContent {
@@ -78,6 +69,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        StatusManager.init(this, applicationContext)
     }
 
     @SuppressLint("RestrictedApi")

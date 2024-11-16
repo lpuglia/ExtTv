@@ -53,7 +53,7 @@ class SyncProgramsJobService : JobService() {
         AddonManager.init(applicationContext)
         PythonManager.init(applicationContext)
         FavouriteManager.init(applicationContext)
-        StatusManager.init(applicationContext)
+        StatusManager.init(null, applicationContext)
     }
 
     override fun onStartJob(params: JobParameters?): Boolean {

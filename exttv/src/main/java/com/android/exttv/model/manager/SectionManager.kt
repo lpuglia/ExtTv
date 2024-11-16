@@ -17,6 +17,7 @@ object SectionManager {
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)
     private var sections by mutableStateOf(LinkedHashMap<String, Section>())
+    var focusedCardPlayerIndex by mutableIntStateOf(0)
 
     private val selectedIndices: MutableList<Int?> = mutableListOf()
 

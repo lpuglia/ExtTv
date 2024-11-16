@@ -1,6 +1,7 @@
 package com.android.exttv.view
 
 import PlayerView
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,9 +10,13 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.util.UnstableApi
+import androidx.tv.material3.MaterialTheme
 import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.data.ExtTvMediaSource
+import com.android.exttv.model.manager.MediaSourceManager
+import com.android.exttv.model.manager.PlayerManager
 import com.android.exttv.model.manager.PythonManager
+import com.android.exttv.model.manager.StatusManager
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -43,18 +48,54 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PlayerManager.init(applicationContext)
+        StatusManager.init(this, applicationContext)
+    }
 
+    override fun onRestart() {
+        super.onRestart()
+        PlayerManager.init(applicationContext)
+        StatusManager.init(this, applicationContext)
+    }
+
+    override fun onResume() {
+        PlayerManager.isLoading = true
+        super.onResume()
         val data = intent.data
         data?.let {
             val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
             card = Json.decodeFromString(CardItem.serializer(), serializedCard)
+            println(card)
             val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
             setContent {
-                PlayerView(card, mediaSource)
+                MaterialTheme {
+                    PlayerView()
+                }
             }
             Handler(Looper.getMainLooper()).post {
-                Status.cardList = PythonManager.getSection(card.uriParent).toMutableList()
+                PlayerManager.setMediaSource(MediaSourceManager.preparePlayer(mediaSource))
+                PlayerManager.currentCard = card
+                PlayerManager.cardList = PythonManager.getSection(card.uriParent).toMutableList()
+                PlayerManager.isLoading = false
             }
         }
     }
+
+    override fun onPause() {
+        super.onPause()
+//        PlayerManager.player.release()
+        PlayerManager.isLoading = false
+        PlayerManager.isProgressBarVisible = false
+        PlayerManager.isVisibleCardList = false
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent) // Update the intent for the activity
+    }
+
+    override fun onStop() {
+        super.onStop()
+    }
+
 }

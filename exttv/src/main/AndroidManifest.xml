@@ -50,6 +50,7 @@
         <activity
             android:name="com.android.exttv.view.PlayerActivity"
             android:theme="@style/PlayerTheme"
+            android:launchMode="singleTop"
             android:exported="true">
 
             <intent-filter>

@@ -24,19 +24,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -47,20 +49,18 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.model.data.CardItem
-import com.android.exttv.model.data.ExtTvMediaSource
-import com.android.exttv.model.manager.MediaSourceManager
+import com.android.exttv.model.manager.PlayerManager
+import com.android.exttv.model.manager.PlayerManager as Player
 import com.android.exttv.ui.SectionView
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -71,30 +71,15 @@ import java.util.concurrent.TimeUnit
 fun Modifier.dbgMode(color: Color = Color.Red): Modifier =
     if (false) this.border(2.dp, color) else this
 
-object Status {
-    var isProgressBarVisible by mutableStateOf(false)
-    var isVisibleCardList by mutableStateOf(false)
-    var cardList by mutableStateOf(listOf<CardItem>())
-}
-
 @OptIn(UnstableApi::class)
 @Composable
-fun PlayerView(card: CardItem, extTvMediaSource: ExtTvMediaSource) {
+fun PlayerView() {
     var progress by remember { mutableFloatStateOf(0f) }
 
-    val context = LocalContext.current
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            playWhenReady = true
-            setMediaSource(MediaSourceManager.preparePlayer(extTvMediaSource))
-            prepare()
-        }
-    }
-
     // Launch a coroutine to update progress periodically
-    LaunchedEffect(exoPlayer) {
+    LaunchedEffect(Player.player) {
         while (true) {
-            progress = (exoPlayer.currentPosition.toFloat() / exoPlayer.duration).coerceIn(0f, 1f)
+            progress = (Player.player.currentPosition.toFloat() / Player.player.duration).coerceIn(0f, 1f)
             delay(500) // Update every 500ms
         }
     }
@@ -109,28 +94,41 @@ fun PlayerView(card: CardItem, extTvMediaSource: ExtTvMediaSource) {
                 .fillMaxSize(),
             factory = { context ->
                 PlayerView(context).apply {
-                    player = exoPlayer
+                    player = Player.player
                     useController = false // Hide default controls
                 }
             }
         )
 
         Column( modifier = Modifier.align(Alignment.TopCenter)){
-            TopHeader(card = card)
+            Player.currentCard?.let { TopHeader(card = it) }
         }
 
         Column( modifier = Modifier.align(Alignment.BottomCenter)) {
-            CustomProgressBar(
-                card = card,
-                progress = progress,
-                player = exoPlayer
+            Player.currentCard?.let {
+                CustomProgressBar(
+                    card = it,
+                    progress = progress,
+                )
+            }
+        }
+    }
+
+    if (PlayerManager.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(58.dp)
             )
         }
     }
 
-    DisposableEffect(exoPlayer) {
+    DisposableEffect(Player.player) {
         onDispose {
-            exoPlayer.release()
+            Player.player.release()
         }
     }
 }
@@ -145,7 +143,7 @@ fun TopHeader(card : CardItem){
     Box(
         modifier = Modifier
             .dbgMode(Color.Blue)
-            .alpha(if (Status.isProgressBarVisible) 1f else 0f)
+            .alpha(if (Player.isProgressBarVisible && !Player.isLoading) 1f else 0f)
             .height(200.dp)
             .fillMaxWidth()
             .background(
@@ -162,14 +160,14 @@ fun TopHeader(card : CardItem){
             Box(
                 Modifier
                     .dbgMode(Color.Green)
-                    .padding(end=20.dp)
+                    .padding(end = 20.dp)
                     .width(200.dp)) {
                 AsyncImage(model = card.primaryArt, contentDescription = card.label)
             }
             Box(
                 Modifier
                     .dbgMode(Color.Green)
-                    .padding(top=20.dp)
+                    .padding(top = 20.dp)
                     .width(600.dp)) {
                 Text(
                     "Title: ${card.label}\nPlot:  ${card.plot}",
@@ -189,23 +187,23 @@ fun TopHeader(card : CardItem){
 fun CustomProgressBar(
     card: CardItem,
     progress: Float,
-    player: ExoPlayer,
 ) {
     var lastKeyPressedTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var focusRequesters = FocusRequester()
 
     // Launch a coroutine that checks if enough time has passed to hide the box
     LaunchedEffect(lastKeyPressedTime) {
         // Keep the ProgressBar visible for 3 seconds after the last key press
         delay(3000)
-        if(!Status.isVisibleCardList) {
+        if(!Player.isVisibleCardList) {
             if (System.currentTimeMillis() - lastKeyPressedTime >= 3000) {
-                Status.isProgressBarVisible = !player.isPlaying
+                Player.isProgressBarVisible = !Player.player.isPlaying
             }
         }
     }
 
-    val currentPosition = player.currentPosition
-    val duration = player.duration
+    val currentPosition = Player.player.currentPosition
+    val duration = Player.player.duration
     val shadow = Shadow(
         color = Color.Black, // Outline color
         offset = Offset(0f, 0f),
@@ -223,7 +221,8 @@ fun CustomProgressBar(
         verticalArrangement = Arrangement.Bottom,
         modifier = Modifier
             .dbgMode(Color.Yellow)
-            .alpha(if (Status.isProgressBarVisible) 1f else 0f)
+            .focusRequester(focusRequesters)
+            .alpha(if (Player.isProgressBarVisible && !Player.isLoading) 1f else 0f)
             .fillMaxWidth()
             .height(300.dp)
             .background(
@@ -235,22 +234,20 @@ fun CustomProgressBar(
             )
     ) {
         Column(
-            modifier = Modifier.dbgMode(color=Color.Green)
+            modifier = Modifier
+                .dbgMode(color = Color.Green)
                 .focusable()
                 .onKeyEvent { keyEvent ->
-                    Status.isProgressBarVisible = true
+                    Player.isProgressBarVisible = true
                     lastKeyPressedTime = System.currentTimeMillis()
-                    if (keyEvent.key == Key.DirectionDown) {
-                        Status.isVisibleCardList = true
-                    }else {
-                        handleKeyEvent(keyEvent, player)
-                    }
+                    handleKeyEvent(keyEvent)
                     false
                 }
         ) {
             Row(
-                modifier = Modifier.dbgMode()
-                    .padding(horizontal =  40.dp, vertical = 10.dp)
+                modifier = Modifier
+                    .dbgMode()
+                    .padding(horizontal = 40.dp, vertical = 10.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -271,11 +268,12 @@ fun CustomProgressBar(
                 }
             }
             Row(
-                modifier = Modifier.dbgMode()
+                modifier = Modifier
+                    .dbgMode()
                     .padding(end = 40.dp, bottom = 20.dp)
                     .align(Alignment.End)
             ) {
-                if (player.isCurrentMediaItemLive) {
+                if (Player.player.isCurrentMediaItemLive) {
                     val currentTimeOfDay = System.currentTimeMillis()
                     val playbackStartTime = currentTimeOfDay - (duration - currentPosition)
 
@@ -306,21 +304,22 @@ fun CustomProgressBar(
             }
         }
 
-        if (Status.isVisibleCardList) {
-            Row(modifier = Modifier.dbgMode()
-                .onKeyEvent { keyEvent ->
-                    Status.isProgressBarVisible = true
-                    lastKeyPressedTime = System.currentTimeMillis()
-                    if (keyEvent.key == Key.DirectionUp) {
-                        Status.isVisibleCardList = false
-                        true
-                    }else {
-                        false
-                    }
+        Row(modifier = Modifier
+            .dbgMode()
+            .height(if (Player.isVisibleCardList) 200.dp else 0.dp)
+            .onKeyEvent { keyEvent ->
+                Player.isProgressBarVisible = true
+                lastKeyPressedTime = System.currentTimeMillis()
+                if (keyEvent.key == Key.DirectionUp) {
+                    focusRequesters.requestFocus()
+                    Player.isVisibleCardList = false
+                    true
+                } else {
+                    false
                 }
-            ) {
-                SectionView(cardList = Status.cardList, sectionIndex = 0)
             }
+        ) {
+            SectionView(cardList = Player.cardList, sectionIndex = 0, isNotPlayer = false)
         }
     }
 }
@@ -377,54 +376,71 @@ val resetSeekTimeoutMs = 1000L // Time in milliseconds to reset seek increment a
 var handler: Handler? = null
 var resetRunnable: Runnable? = null
 
-fun handleKeyEvent(keyEvent: KeyEvent, exoPlayer: ExoPlayer, seekIncrementMs: Long = 5000L): Boolean {
+fun handleKeyEvent(keyEvent: KeyEvent, seekIncrementMs: Long = 5000L): Boolean {
     // Reset the multiplier if no key is pressed for a while
     resetSeekMultiplierIfNeeded()
-
-    return if (keyEvent.type == KeyEventType.KeyUp) {
+    if (keyEvent.type == KeyEventType.KeyUp) {
         when (keyEvent.key) {
             Key.DirectionLeft -> {
                 // Calculate the seek increment with the multiplier
                 var seekAmount = seekIncrementMs * seekMultiplier
                 // Limit the seek amount to a maximum of 10% of the video duration
-                val maxSeekAmount = exoPlayer.duration / 10
+                val maxSeekAmount = Player.player.duration / 10
                 seekAmount = seekAmount.coerceAtMost(maxSeekAmount.toDouble())
 
                 // Rewind by the calculated seekAmount
-                exoPlayer.seekTo((exoPlayer.currentPosition - seekAmount).coerceAtLeast(0.0).toLong())
+                Player.player.seekTo(
+                    (Player.player.currentPosition - seekAmount).coerceAtLeast(0.0).toLong()
+                )
 
                 // Increase seek increment by 50% after each press
                 seekMultiplier *= 1.5
                 // Restart the reset timeout
                 resetSeekMultiplierIfNeeded()
-                true
+                return true
             }
+
             Key.DirectionRight -> {
                 // Calculate the seek increment with the multiplier
                 var seekAmount = seekIncrementMs * seekMultiplier
                 // Limit the seek amount to a maximum of 10% of the video duration
-                val maxSeekAmount = exoPlayer.duration / 10
+                val maxSeekAmount = Player.player.duration / 10
                 seekAmount = seekAmount.coerceAtMost(maxSeekAmount.toDouble())
 
                 // Fast-forward by the calculated seekAmount
-                exoPlayer.seekTo((exoPlayer.currentPosition + seekAmount).coerceAtMost(exoPlayer.duration.toDouble()).toLong())
+                Player.player.seekTo(
+                    (Player.player.currentPosition + seekAmount).coerceAtMost(
+                        Player.player.duration.toDouble()
+                    ).toLong()
+                )
 
                 // Increase seek increment by 50% after each press
                 seekMultiplier *= 1.5
                 // Restart the reset timeout
                 resetSeekMultiplierIfNeeded()
-                true
+                return true
             }
-            Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                // Play/pause
-                exoPlayer.playWhenReady = !exoPlayer.playWhenReady
-                true
-            }
-            else -> false
         }
-    } else {
-        false
     }
+    when (keyEvent.key) {
+        Key.DirectionDown -> {
+            Player.isVisibleCardList = true
+            return true
+        }
+
+        Key.DirectionUp -> {
+            // Show card list
+            Player.isProgressBarVisible = false
+            return true
+        }
+
+        Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+            // Play/pause
+            Player.player.playWhenReady = !Player.player.playWhenReady
+            return true
+        }
+    }
+    return false
 }
 
 fun resetSeekMultiplierIfNeeded() {

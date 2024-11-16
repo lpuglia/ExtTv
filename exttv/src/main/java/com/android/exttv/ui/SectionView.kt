@@ -41,6 +41,7 @@ import coil.request.ImageRequest
 import com.android.exttv.R
 import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.LoadingStatus
+import com.android.exttv.model.manager.PlayerManager
 import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.SectionManager
 import com.android.exttv.model.manager.StatusManager
@@ -51,16 +52,23 @@ import com.android.exttv.util.parseText
 @Composable
 fun SectionView(
     cardList: List<CardItem>,
-    sectionIndex: Int
+    sectionIndex: Int,
+    isNotPlayer: Boolean = true
 ) {
     val listState = rememberTvLazyListState()
     LaunchedEffect(cardList) {
         listState.scrollToItem(0)
     }
 
-    LaunchedEffect(SectionManager.focusedCardIndex) {
-        if(SectionManager.focusedCardIndex>=0 && sectionIndex== SectionManager.focusedIndex)
-            listState.scrollToItem(SectionManager.focusedCardIndex)
+    if (isNotPlayer) {
+        LaunchedEffect(SectionManager.focusedCardIndex) {
+            if(SectionManager.focusedCardIndex>=0 && sectionIndex== SectionManager.focusedIndex)
+                listState.scrollToItem(SectionManager.focusedCardIndex)
+        }
+    }else{
+        LaunchedEffect(PlayerManager.isVisibleCardList, SectionManager.focusedCardPlayerIndex) {
+            listState.scrollToItem(SectionManager.focusedCardPlayerIndex)
+        }
     }
 
     TvLazyRow(
@@ -74,7 +82,8 @@ fun SectionView(
             CardView(
                 card = card,
                 sectionIndex,
-                cardIndex
+                cardIndex,
+                isNotPlayer
             )
         }
     }
@@ -85,11 +94,12 @@ fun SectionView(
 fun CardView(
     card: CardItem,
     sectionIndex: Int,
-    cardIndex: Int
+    cardIndex: Int,
+    isNotPlayer: Boolean = true
 ) {
     val focusRequester = FocusRequester()
     // modify the background color based on the selected card
-    val bgModifier = if (SectionManager.getSelectedSection(sectionIndex) == cardIndex) {
+    val bgModifier = if (SectionManager.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer) {
         Modifier.background(Color(0x44BB0000))
     } else {
         Modifier.background(Color(0x00000000))
@@ -112,16 +122,27 @@ fun CardView(
                 .height(120.dp)
                 .onFocusChanged {
                     if (it.isFocused) {
-                        SectionManager.focusedIndex = sectionIndex
-                        SectionManager.focusedCardIndex = cardIndex
-                        StatusManager.bgImage = card.secondaryArt
+                        if (isNotPlayer) {
+                            SectionManager.focusedIndex = sectionIndex
+                            SectionManager.focusedCardIndex = cardIndex
+                            StatusManager.bgImage = card.secondaryArt
+                        }else{
+                            SectionManager.focusedCardPlayerIndex = cardIndex
+                        }
                     }
                     isFocused = it.isFocused
                 }
                 .focusRequester(focusRequester),
             onClick = {
-                if(StatusManager.loadingState == LoadingStatus.DONE){
-                    PythonManager.selectSection(card, sectionIndex, cardIndex)
+                if (isNotPlayer) {
+                    if (StatusManager.loadingState == LoadingStatus.DONE) {
+                        PythonManager.selectSection(card, sectionIndex, cardIndex)
+                    }
+                }else{
+                    if (!PlayerManager.isLoading) {
+                        PlayerManager.isLoading = true
+                        PythonManager.selectSection(card, sectionIndex, cardIndex)
+                    }
                 }
             },
             onLongClick = {
@@ -176,9 +197,20 @@ fun CardView(
         }
         Spacer(modifier = Modifier.height(10.dp))
     }
-    LaunchedEffect(StatusManager.loadingState) {
-        if (SectionManager.focusedIndex == sectionIndex && SectionManager.focusedCardIndex == cardIndex){
-            focusRequester.requestFocus()
+    if(isNotPlayer) {
+        LaunchedEffect(StatusManager.loadingState) {
+            if (SectionManager.focusedIndex == sectionIndex && SectionManager.focusedCardIndex == cardIndex) {
+                focusRequester.requestFocus()
+            }
         }
+    }else{
+        LaunchedEffect(PlayerManager.isVisibleCardList) {
+            if (PlayerManager.isVisibleCardList && SectionManager.focusedCardPlayerIndex == cardIndex) {
+                focusRequester.requestFocus()
+            }else{
+                focusRequester.freeFocus()
+            }
+        }
+
     }
 }

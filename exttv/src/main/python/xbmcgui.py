@@ -9,7 +9,7 @@ try:
     from android.content import DialogInterface
     import threading
 
-    main_activity = jclass("com.android.exttv.view.MainActivity")
+    status_manager = jclass("com.android.exttv.model.manager.StatusManager")
 
     def run_on_ui_thread(func):
         def wrapper():
@@ -17,12 +17,12 @@ try:
                 def run(self):
                     func()
 
-            main_activity.getInstance().runOnUiThread(R())
+            status_manager.getActivity().runOnUiThread(R())
         return wrapper
 
 except ImportError as e:
      print("Could not import MainActivity", e)
-     main_activity = None
+     status_manager = None
 
 DLG_YESNO_NO_BTN = "No"
 DLG_YESNO_YES_BTN = "Yes"
@@ -56,18 +56,18 @@ class MockGUI:
 
 class DialogProgressBG:
     def __init__(self):
-        if main_activity is None: return
+        if status_manager is None or status_manager.getActivity() is None: return
         self.progress_percent = 0
         state_done = threading.Event()
         @run_on_ui_thread
         def instantiate_dialog():
-            self.dialog = ProgressDialog(main_activity.getInstance())
+            self.dialog = ProgressDialog(status_manager.getActivity())
             state_done.set()
         instantiate_dialog()
         state_done.wait()
 
     def create(self, heading, message=''):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             MockGUI().log(f"DialogProgressBG - create - Heading: {heading}, Message: {message}")
             return
 
@@ -91,7 +91,7 @@ class DialogProgressBG:
         show_dialog()
 
     def update(self, percent=None, heading=None, message=None):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             MockGUI().log(f"DialogProgressBG - update - Percent: {percent}, Heading: {heading}, Message: {message}")
             return
 
@@ -114,7 +114,7 @@ class DialogProgressBG:
         update_progress()
 
     def close(self):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             MockGUI().log("DialogProgressBG - close")
             return
 
@@ -124,7 +124,7 @@ class DialogProgressBG:
             self.is_canceled = False
 
     def isFinished(self):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             MockGUI().log("DialogProgressBG - isFinished")
             return False
 
@@ -134,17 +134,17 @@ class DialogProgress:
     def __init__(self):
         self.progress_percent = 0
         self.is_canceled = False
-        if main_activity is None: return
+        if status_manager is None or status_manager.getActivity() is None: return
         state_done = threading.Event()
         @run_on_ui_thread
         def instantiate_dialog():
-            self.dialog = ProgressDialog(main_activity.getInstance())
+            self.dialog = ProgressDialog(status_manager.getActivity())
             state_done.set()
         instantiate_dialog()
         state_done.wait()
 
     def create(self, heading, message=''):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             MockGUI().log(f"DialogProgress - create - Heading: {heading}, Message: {message}")
             return
 
@@ -167,7 +167,7 @@ class DialogProgress:
         show_dialog()
 
     def update(self, percent, message=None):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             MockGUI().log(f"DialogProgress - update - Percent: {percent}, Message: {message}")
             return
 
@@ -189,7 +189,7 @@ class DialogProgress:
         state_done.wait()
 
     def close(self):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             MockGUI().log("DialogProgress - close")
             return
 
@@ -498,7 +498,7 @@ class WindowXMLDialog:
         return self.xmlField.get(controlId, None)
 
     def doModal(self):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             self.mock_gui = MockGUI()
             self.mock_gui.log(f"WindowXMLDialog: doModal")
         else:
@@ -510,7 +510,7 @@ class WindowXMLDialog:
 
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity.getInstance())
+                builder = AlertDialog.Builder(status_manager.getActivity())
                 builder.setTitle(self.xmlField[1].getLabel())
                 
                 prova = self
@@ -555,7 +555,7 @@ class Dialog:
         self.lines = []
 
     def ok(self, heading, message):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             self.mock_gui.log(f"Dialog - OK - Heading: {heading}, Message: {message}")
             return True
         else:
@@ -564,7 +564,7 @@ class Dialog:
             
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity.getInstance())
+                builder = AlertDialog.Builder(status_manager.getActivity())
                 builder.setTitle(heading)
                 builder.setMessage(message)
 
@@ -590,7 +590,7 @@ class Dialog:
 
     def yesno(self, heading, message='', nolabel='No', yeslabel='Yes', autoclose=False, line1=''): # autoclose not implemented
         if line1 != '': message = line1
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             self.mock_gui.log(f"Dialog - YesNo - Heading: {heading}, Message: {message}")
             return False
         else:
@@ -599,7 +599,7 @@ class Dialog:
             
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity.getInstance())
+                builder = AlertDialog.Builder(status_manager.getActivity())
                 builder.setTitle(heading)
                 builder.setMessage(message)
 
@@ -634,7 +634,7 @@ class Dialog:
             return to_return[0]
 
     def yesnocustom(self, heading, message, customlabel=None, nolabel='No', yeslabel='Yes', autoclose=False): # autoclose not implemented
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             self.mock_gui.log(f"Dialog - YesNoCustom - Heading: {heading}, Message: {message}, Custom Label: {customlabel}, No Label: {nolabel}, Yes Label: {yeslabel}")
             return -1
         else:
@@ -643,7 +643,7 @@ class Dialog:
 
             @run_on_ui_thread
             def show_dialog():
-                builder = AlertDialog.Builder(main_activity.getInstance())
+                builder = AlertDialog.Builder(status_manager.getActivity())
                 builder.setTitle(heading)
                 builder.setMessage(message)
 
@@ -678,7 +678,7 @@ class Dialog:
             return to_return[0]
     
     def select(self, heading, items, autoclose=None, preselect=None, useDetails=False):
-        if main_activity is None:
+        if status_manager is None or status_manager.getActivity() is None:
             self.mock_gui.log(f"Dialog - Select - Heading: {heading}, Items: {items}, Autoclose: {autoclose}, "
                               f"Preselect: {preselect}, UseDetails: {useDetails}")
             return 0  # Mock return value when using MockGUI
@@ -688,7 +688,7 @@ class Dialog:
 
         @run_on_ui_thread
         def show_dialog():
-            builder = AlertDialog.Builder(main_activity.getInstance())
+            builder = AlertDialog.Builder(status_manager.getActivity())
             builder.setTitle(heading)
             
             class OnClickListener(dynamic_proxy(DialogInterface.OnClickListener)):

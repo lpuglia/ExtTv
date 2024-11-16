@@ -107,7 +107,9 @@ object IntentUtils {
         val intent = Intent(action).apply {
             data = Uri.parse("exttv_player://app?" + URLEncoder.encode(Json.encodeToString(cardToPlay), StandardCharsets.UTF_8.toString()))
             addCategory(Intent.CATEGORY_BROWSABLE)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
         Status.appContext.startActivity(intent)

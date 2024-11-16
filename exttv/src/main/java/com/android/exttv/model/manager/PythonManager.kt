@@ -77,6 +77,7 @@ object PythonManager {
                     }
                     // this must be outside to guarantee that spinner is hidden
                     Status.loadingState = LoadingStatus.DONE;
+                    PlayerManager.isLoading = false
                 }
             } catch (e: InterruptedException) {
                 e.printStackTrace()
