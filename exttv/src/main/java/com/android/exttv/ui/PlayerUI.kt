@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.Text
@@ -189,10 +190,10 @@ fun CustomProgressBar(
     progress: Float,
 ) {
     var lastKeyPressedTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var focusRequesters = FocusRequester()
+    val focusRequesters = FocusRequester()
 
     // Launch a coroutine that checks if enough time has passed to hide the box
-    LaunchedEffect(lastKeyPressedTime) {
+    LaunchedEffect(lastKeyPressedTime, Player.player.isPlaying) {
         // Keep the ProgressBar visible for 3 seconds after the last key press
         delay(3000)
         if(!Player.isVisibleCardList) {
@@ -275,25 +276,26 @@ fun CustomProgressBar(
             ) {
                 if (Player.player.isCurrentMediaItemLive) {
                     val currentTimeOfDay = System.currentTimeMillis()
-                    val playbackStartTime = currentTimeOfDay - (duration - currentPosition)
-
-                    Text(
-                        SimpleDateFormat("hh:mm a", Locale.getDefault()).format(
-                            Date(
-                                playbackStartTime
+                    if (duration != C.TIME_UNSET) {
+                        val playbackStartTime = currentTimeOfDay - (duration - currentPosition)
+                        Text(
+                            SimpleDateFormat("hh:mm a", Locale.getDefault()).format(
+                                Date(
+                                    playbackStartTime
+                                )
+                            ),
+                            style = TextStyle.Default.copy(
+                                fontSize = 16.sp,
+                                color = Color.White, // Set base text color to white
+                                shadow = shadow
                             )
-                        ),
-                        style = TextStyle.Default.copy(
-                            fontSize = 16.sp,
-                            color = Color.White, // Set base text color to white
-                            shadow = shadow
                         )
-                    )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     LiveIndicator()
                 } else {
                     Text(
-                        formatTime(currentPosition) + " / " + formatTime(duration),
+                        formatTime(currentPosition) + " / " + if (duration != C.TIME_UNSET) formatTime(duration) else "Loading...",
                         style = TextStyle.Default.copy(
                             fontSize = 16.sp,
                             color = Color.White, // Set base text color to white
@@ -311,7 +313,6 @@ fun CustomProgressBar(
                 Player.isProgressBarVisible = true
                 lastKeyPressedTime = System.currentTimeMillis()
                 if (keyEvent.key == Key.DirectionUp) {
-                    focusRequesters.requestFocus()
                     Player.isVisibleCardList = false
                     true
                 } else {
@@ -320,6 +321,12 @@ fun CustomProgressBar(
             }
         ) {
             SectionView(cardList = Player.cardList, sectionIndex = 0, isNotPlayer = false)
+        }
+    }
+
+    LaunchedEffect(Player.isVisibleCardList) {
+        if (!Player.isVisibleCardList) {
+            focusRequesters.requestFocus()
         }
     }
 }
@@ -420,24 +427,23 @@ fun handleKeyEvent(keyEvent: KeyEvent, seekIncrementMs: Long = 5000L): Boolean {
                 resetSeekMultiplierIfNeeded()
                 return true
             }
-        }
-    }
-    when (keyEvent.key) {
-        Key.DirectionDown -> {
-            Player.isVisibleCardList = true
-            return true
-        }
 
-        Key.DirectionUp -> {
-            // Show card list
-            Player.isProgressBarVisible = false
-            return true
-        }
+            Key.DirectionDown -> {
+                Player.isVisibleCardList = true
+                return true
+            }
 
-        Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-            // Play/pause
-            Player.player.playWhenReady = !Player.player.playWhenReady
-            return true
+            Key.DirectionUp -> {
+                // Show card list
+                Player.isVisibleCardList = false
+                return true
+            }
+
+            Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                // Play/pause
+                Player.player.playWhenReady = !Player.player.playWhenReady
+                return true
+            }
         }
     }
     return false

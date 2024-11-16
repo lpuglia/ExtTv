@@ -73,9 +73,10 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
             Handler(Looper.getMainLooper()).post {
-                PlayerManager.setMediaSource(MediaSourceManager.preparePlayer(mediaSource))
                 PlayerManager.currentCard = card
                 PlayerManager.cardList = PythonManager.getSection(card.uriParent).toMutableList()
+                PlayerManager.isProgressBarVisible = true
+                PlayerManager.setMediaSource(MediaSourceManager.preparePlayer(mediaSource))
                 PlayerManager.isLoading = false
             }
         }
