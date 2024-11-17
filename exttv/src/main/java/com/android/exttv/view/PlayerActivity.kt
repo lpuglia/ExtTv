@@ -72,14 +72,14 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        val data = intent.data
-        data?.let {
-            val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
-            println(serializedCard)
-            card = Json.decodeFromString(CardItem.serializer(), serializedCard)
-            println(card)
+        Thread {
+            val data = intent.data
+            data?.let {
+                val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
+                println(serializedCard)
+                card = Json.decodeFromString(CardItem.serializer(), serializedCard)
+                println(card)
 
-            Thread {
                 PlayerManager.currentCard = card
                 PlayerManager.cardList = PythonManager.getSection(card.uriParent).toMutableList()
                 PlayerManager.isProgressBarVisible = true
@@ -94,8 +94,8 @@ class PlayerActivity : AppCompatActivity() {
                         PlayerManager.isLoading = false
                     }
                 }
-            }.start()
-        }
+            }
+        }.start()
     }
 
     override fun onPause() {
