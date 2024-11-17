@@ -29,6 +29,7 @@ def run(argv=""):
                 item[1].art.get('fanart', ''),
                 item[2], # isFolder
                 utils.parent_uri_map[item[0]],
+                utils.parent_uri_map[item[0]],
                 ""
             ))
     except Exception as e:

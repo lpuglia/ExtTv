@@ -46,6 +46,15 @@ try:
 except:
     print('Couldn\' get strings.po')
 
+# import traceback
+# def format_stack_trace():
+#     # Extract the stack trace
+#     stack = traceback.extract_stack()[:-1]  # Exclude the current function call
+#     # Format as "file_name:line"
+#     formatted_trace = " -> ".join(f"{frame.filename}:{frame.lineno}" for frame in stack)
+#     return formatted_trace
+# print(format_stack_trace())
+
 def sleep(milliseconds):
     time.sleep(milliseconds / 1000)
 
@@ -62,15 +71,6 @@ def executebuiltin(command, wait=False):
     else:
         print(f"executebuiltin: pretending to execute builtin: {command}")
     return True
-
-def translatePath(path):
-    if 'special://' in path:
-        if path.startswith('special://profile/'):
-            return path.replace('special://profile/', utils.full_userdata_path())
-        else:
-            return path.replace('special://', utils.full_home_path())
-    else:
-        return path
 
 def getSkinDir():
     # Dummy implementation to return a fixed skin directory

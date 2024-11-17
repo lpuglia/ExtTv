@@ -11,13 +11,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.tv.material3.MaterialTheme
-import com.android.exttv.model.manager.AddonManager
-import com.android.exttv.model.manager.FavouriteManager
-import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.StatusManager
-import com.android.exttv.model.data.FavCardData
 import com.android.exttv.service.scheduleSyncJob
-import kotlinx.serialization.json.Json
 
 class MainActivity : ComponentActivity() {
 
@@ -47,26 +42,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitAll().build())
-        AddonManager.init(applicationContext)
-        PythonManager.init(applicationContext)
-        FavouriteManager.init(applicationContext)
         StatusManager.init(this, applicationContext)
         scheduleSyncJob(applicationContext)
 
         setContent {
             MaterialTheme {
                 CatalogBrowser()
-            }
-        }
-
-        if(intent.data != null) {
-            intent.data?.let {
-                val uriString = intent.data.toString()
-                if (uriString.startsWith("exttv://")) {
-                    val favCardItem = Json.decodeFromString(FavCardData.serializer(), uriString.replace("exttv://",""))
-                    PythonManager.selectSection(favCardItem.card)
-                    PythonManager.selectFavourite(favCardItem.favName)
-                }
             }
         }
     }

@@ -36,19 +36,25 @@ object PythonManager {
         selectSection(CardItem("favourite://${favouriteName}", favouriteName))
     }
 
+    fun getSection(uri: String): List<CardItem> {
+        return when {
+            uri.startsWith("plugin://") -> {
+                runPluginUri(uri)
+            }
+            uri.startsWith("favourite://") -> {
+                Favourites.getFavourite(uri.replace("favourite://", ""))
+            }
+            else -> emptyList()
+        }
+    }
+
     // add Mutex to prevent multiple threads from accessing Python engine at the same time
     private val lock = Any()
-    fun getSection(uri: String): List<CardItem> {
+    fun runPluginUri(uri: String): List<CardItem> {
+        println("Wait UnLock")
         return synchronized(lock) {
-            when {
-                uri.startsWith("plugin://") -> {
-                    exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<CardItem>
-                }
-                uri.startsWith("favourite://") -> {
-                    Favourites.getFavourite(uri.replace("favourite://", ""))
-                }
-                else -> emptyList()
-            }
+            println("Lock")
+            exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<CardItem>
         }
     }
 

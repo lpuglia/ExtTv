@@ -58,7 +58,9 @@ object FavouriteManager {
     fun addCardOrCreateFavourite(listName: String, card: CardItem) {
         val allLists = getAllFavourites().toMutableMap()
         val favList = allLists.getOrPut(listName) { mutableListOf() } as MutableList<CardItem>
-        favList.add(card)
+        val favCard = card.copy(uriParent = "favourite://${listName}")
+        favList.add(favCard)
+
         allLists[listName] = favList
         saveAllData(allLists)
     }
@@ -100,15 +102,15 @@ object FavouriteManager {
         val favourites = getAllFavourites()[listName]
 
         for (fav in favourites ?: emptyList()) {
-            if(fav.uriParent !in cache) {
-                cache[fav.uriParent] = PythonManager.getSection(fav.uriParent)
+            if(fav.uriContainer !in cache) {
+                cache[fav.uriContainer] = PythonManager.runPluginUri(fav.uriContainer)
             }
-            var favCard = cache[fav.uriParent]?.find { it.uri == fav.uri }
+            var favCard = cache[fav.uriContainer]?.find { it.uri == fav.uri }
             // if uri was not found in the list, maybe the uri has been changed slightly
             // attempt a second match, this is not perfect and may not work
             // can't do much if addon developer doesn't provide a stable uri
             if (favCard == null) {
-                favCard = cache[fav.uriParent]?.find { it.label == fav.label && it.isFolder == fav.isFolder }
+                favCard = cache[fav.uriContainer]?.find { it.label == fav.label && it.isFolder == fav.isFolder }
             }
             if (favCard != null) {
                 toReturn.add(favCard)
@@ -118,7 +120,7 @@ object FavouriteManager {
                 toReturn.add(fav)
             }
         }
-        return toReturn
+        return toReturn.map { it.copy(uriParent = "favourite://${listName}") }
     }
 
     // Delete a list entirely

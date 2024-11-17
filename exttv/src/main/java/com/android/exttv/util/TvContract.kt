@@ -13,7 +13,6 @@ import androidx.tvprovider.media.tv.ChannelLogoUtils.storeChannelLogo
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.android.exttv.R
 import com.android.exttv.model.data.CardItem
-import com.android.exttv.model.data.FavCardData
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -82,8 +81,8 @@ object TvContract {
                     val programId = it.getLong(it.getColumnIndex(PreviewPrograms._ID))
                     val intentUri = it.getString(it.getColumnIndex(PreviewPrograms.COLUMN_INTENT_URI))
                     // get the actual label of the card without stripping the tags
-                    val favCardItem = Json.decodeFromString(FavCardData.serializer(), intentUri.replace("exttv://",""))
-                    programs[favCardItem.card.label] = ContentUris.withAppendedId(programUri, programId)
+                    val card = Json.decodeFromString(CardItem.serializer(), intentUri.replace("exttv_player://app?",""))
+                    programs[card.label] = ContentUris.withAppendedId(programUri, programId)
                 }
             }
         }
@@ -199,8 +198,7 @@ object TvContract {
         val icon = Addons.getIconByFolderName(card.pluginName)?.let { getUri(it, card.pluginName) }
         val posterUri = getUri(card.primaryArt, card.pluginName)
         val thumbnailUri = getUri(card.secondaryArt, card.pluginName)
-        val cardData = FavCardData(favName = channelName, card = card)
-        val json = Json.encodeToString(cardData)
+        val json = Json.encodeToString(card)
 
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)
@@ -210,7 +208,7 @@ object TvContract {
             put(PreviewPrograms.COLUMN_LONG_DESCRIPTION, stripTags(card.plot))
             put(PreviewPrograms.COLUMN_POSTER_ART_URI, posterUri.toString())
             put(PreviewPrograms.COLUMN_THUMBNAIL_URI, thumbnailUri.toString())
-            put(PreviewPrograms.COLUMN_INTENT_URI, "exttv://$json")
+            put(PreviewPrograms.COLUMN_INTENT_URI, "exttv_player://app?$json")
             put(PreviewPrograms.COLUMN_LOGO_URI, icon.toString())
         }
         return contentValues

@@ -48,14 +48,16 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        PlayerManager.init(applicationContext)
         StatusManager.init(this, applicationContext)
+//        scheduleSyncJob(applicationContext)
+        PlayerManager.init(applicationContext)
     }
 
     override fun onRestart() {
         super.onRestart()
-        PlayerManager.init(applicationContext)
         StatusManager.init(this, applicationContext)
+//        scheduleSyncJob(applicationContext)
+        PlayerManager.init(applicationContext)
     }
 
     override fun onResume() {
@@ -64,28 +66,38 @@ class PlayerActivity : AppCompatActivity() {
         val data = intent.data
         data?.let {
             val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
+            println(serializedCard)
             card = Json.decodeFromString(CardItem.serializer(), serializedCard)
             println(card)
-            val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
+
+            Thread {
+                PlayerManager.currentCard = card
+                PlayerManager.cardList = PythonManager.getSection(card.uriParent).toMutableList()
+                PlayerManager.isProgressBarVisible = true
+                if(card.mediaSource.isEmpty()) { // if mediaSource hasn't been filled, ask Python to fill it
+                    StatusManager.lastSelectedCard = card
+                    PythonManager.runPluginUri(card.uri)
+                }else{
+                    val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
+                    Handler(Looper.getMainLooper()).post {
+                        PlayerManager.setMediaSource(MediaSourceManager.preparePlayer(mediaSource))
+                    }
+                }
+                PlayerManager.isLoading = false
+            }.start()
+
             setContent {
                 MaterialTheme {
                     PlayerView()
                 }
             }
-            Handler(Looper.getMainLooper()).post {
-                PlayerManager.currentCard = card
-                PlayerManager.cardList = PythonManager.getSection(card.uriParent).toMutableList()
-                PlayerManager.isProgressBarVisible = true
-                PlayerManager.setMediaSource(MediaSourceManager.preparePlayer(mediaSource))
-                PlayerManager.isLoading = false
-            }
+
         }
     }
 
     override fun onPause() {
         super.onPause()
-//        PlayerManager.player.release()
-        PlayerManager.isLoading = false
+        PlayerManager.isLoading = true
         PlayerManager.isProgressBarVisible = false
         PlayerManager.isVisibleCardList = false
     }

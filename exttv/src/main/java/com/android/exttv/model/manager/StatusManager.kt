@@ -47,6 +47,11 @@ object StatusManager {
 
     fun init(activity: Activity?, context: Context){
         activity?.let { instance = it }
-        if (!::appContext.isInitialized) appContext = context
+        if (!::appContext.isInitialized){
+            appContext = context
+            AddonManager.init(appContext)
+            PythonManager.init(appContext)
+            FavouriteManager.init(appContext)
+        }
     }
 }

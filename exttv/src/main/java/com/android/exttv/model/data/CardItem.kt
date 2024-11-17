@@ -14,7 +14,8 @@ data class CardItem(
     val posterUrl: String = "",
     val fanartUrl: String = "",
     val isFolder: Boolean = true,
-    val uriParent: String = "",
+    val uriContainer: String = "", // used to update favourites thumb and info
+    val uriParent: String = uriContainer, // uri to distinguish between plugin card and favourite card, may be equal to uriContainer
     val mediaSource: String = "",
 ) {
     val pluginName: String
