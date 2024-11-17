@@ -12,7 +12,7 @@ import androidx.media3.exoplayer.source.MediaSource
 import com.android.exttv.model.data.CardItem
 
 object PlayerManager {
-    var isLoading by mutableStateOf(false)
+    var isLoading by mutableStateOf(true)
     var isProgressBarVisible by mutableStateOf(false)
     var isVisibleCardList by mutableStateOf(false)
     var currentCard: CardItem? by mutableStateOf(null)
@@ -28,8 +28,6 @@ object PlayerManager {
 
     @OptIn(UnstableApi::class)
     fun setMediaSource(newMediaSource: MediaSource) {
-        // Stop the player to prepare it with the new MediaSource
-//        player.stop()
 
         // Prepare the player with the new MediaSource
         player.setMediaSource(newMediaSource)

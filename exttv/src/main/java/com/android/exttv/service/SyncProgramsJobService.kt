@@ -50,9 +50,6 @@ class SyncProgramsJobService : JobService() {
     override fun onCreate() {
         super.onCreate()
         Log.d("SyncProgramsJobService", "Service Created")
-        AddonManager.init(applicationContext)
-        PythonManager.init(applicationContext)
-        FavouriteManager.init(applicationContext)
         StatusManager.init(null, applicationContext)
     }
 

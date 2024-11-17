@@ -61,8 +61,17 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
-        PlayerManager.isLoading = true
         super.onResume()
+        // Stop the player to prepare it with the new MediaSource
+        PlayerManager.player.stop()
+        PlayerManager.player.clearMediaItems()
+        PlayerManager.isLoading = true
+        setContent {
+            MaterialTheme {
+                PlayerView()
+            }
+        }
+
         val data = intent.data
         data?.let {
             val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
@@ -77,21 +86,15 @@ class PlayerActivity : AppCompatActivity() {
                 if(card.mediaSource.isEmpty()) { // if mediaSource hasn't been filled, ask Python to fill it
                     StatusManager.lastSelectedCard = card
                     PythonManager.runPluginUri(card.uri)
+                    PlayerManager.isLoading = false
                 }else{
                     val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
                     Handler(Looper.getMainLooper()).post {
                         PlayerManager.setMediaSource(MediaSourceManager.preparePlayer(mediaSource))
+                        PlayerManager.isLoading = false
                     }
                 }
-                PlayerManager.isLoading = false
             }.start()
-
-            setContent {
-                MaterialTheme {
-                    PlayerView()
-                }
-            }
-
         }
     }
 
