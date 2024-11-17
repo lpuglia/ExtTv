@@ -26,7 +26,6 @@ class PlayerActivity : AppCompatActivity() {
 
     private var doubleBackToExitPressedOnce = false
     private val backPressInterval: Long = 2000 // 2 seconds
-    private lateinit var card: CardItem
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -72,30 +71,55 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        val data = intent.data
-        data?.let {
-            val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
-            println(serializedCard)
-            card = Json.decodeFromString(CardItem.serializer(), serializedCard)
-            println(card)
+        Thread {
+            var card: CardItem
+            val data = intent.data
+            data?.let {
+                val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
+                println(serializedCard)
+                card = Json.decodeFromString(CardItem.serializer(), serializedCard)
+                println(card)
 
-            Thread {
-                PlayerManager.currentCard = card
-                PlayerManager.cardList = PythonManager.getSection(card.uriParent).toMutableList()
-                PlayerManager.isProgressBarVisible = true
-                if(card.mediaSource.isEmpty()) { // if mediaSource hasn't been filled, ask Python to fill it
+                if(card.isFolder){
+                    PlayerManager.cardList = PythonManager.getSection(card.uri)
+                    if(PlayerManager.cardList.isNotEmpty() && !PlayerManager.cardList[0].isFolder){
+                        card = PlayerManager.cardList[0]
+                        PlayerManager.currentCard = card
+                        StatusManager.lastSelectedCard = card
+                    } else {
+                        throw Exception("Folder is empty")
+                    }
+                } else {
+                    PlayerManager.cardList = PythonManager.getSection(card.uriParent)
+                        .filter { !it.isFolder } // Filters out cards with isFolder == true
+                        .toMutableList()
+
+                    PlayerManager.currentCard = card
+                    PlayerManager.isProgressBarVisible = true
+                }
+
+                if (card.mediaSource.isEmpty()) { // if mediaSource hasn't been filled, ask Python to fill it
                     StatusManager.lastSelectedCard = card
                     PythonManager.runPluginUri(card.uri)
                     PlayerManager.isLoading = false
-                }else{
-                    val mediaSource = Json.decodeFromString<ExtTvMediaSource>(URLDecoder.decode(card.mediaSource, StandardCharsets.UTF_8.toString()))
+                } else {
+                    val mediaSource = Json.decodeFromString<ExtTvMediaSource>(
+                        URLDecoder.decode(
+                            card.mediaSource,
+                            StandardCharsets.UTF_8.toString()
+                        )
+                    )
                     Handler(Looper.getMainLooper()).post {
-                        PlayerManager.setMediaSource(MediaSourceManager.preparePlayer(mediaSource))
+                        PlayerManager.setMediaSource(
+                            MediaSourceManager.preparePlayer(
+                                mediaSource
+                            )
+                        )
                         PlayerManager.isLoading = false
                     }
                 }
-            }.start()
-        }
+            }
+        }.start()
     }
 
     override fun onPause() {

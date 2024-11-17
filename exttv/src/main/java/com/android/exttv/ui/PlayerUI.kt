@@ -115,7 +115,7 @@ fun PlayerView() {
         }
     }
 
-    if (PlayerManager.isLoading) {
+    if (PlayerManager.isLoading || PlayerManager.playerState < 3) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
