@@ -82,7 +82,7 @@ object TvContract {
                     val intentUri = it.getString(it.getColumnIndex(PreviewPrograms.COLUMN_INTENT_URI))
                     // get the actual label of the card without stripping the tags
                     val card = Json.decodeFromString(CardItem.serializer(), intentUri.replace("exttv_player://app?",""))
-                    programs[card.label] = ContentUris.withAppendedId(programUri, programId)
+                    programs[card.favouriteLabel] = ContentUris.withAppendedId(programUri, programId)
                 }
             }
         }
@@ -112,7 +112,7 @@ object TvContract {
 
             // Step 4: Delete programs that are no longer in the card list
             for (programName in existingPrograms.keys) {
-                if(programName !in cards.map { it.label }) {
+                if(programName !in cards.map { it.favouriteLabel }) {
                     existingPrograms[programName]?.let { Status.appContext.contentResolver.delete(it, null, null) }
                     Log.d("Programs", "Deleted program $programName from channel $channelName")
                 }
@@ -155,7 +155,7 @@ object TvContract {
         existingPrograms: Map<String, Uri>,
         channelName: String
     ) {
-        if (card.label !in existingPrograms) {
+        if (card.favouriteLabel !in existingPrograms) {
             Log.d("Programs", "Adding new program ${card.label}.")
             Status.appContext.contentResolver.insert(
                 PreviewPrograms.CONTENT_URI,
@@ -164,7 +164,7 @@ object TvContract {
         } else {
             Log.d("Programs", "Program for ${card.label} exists, updating.")
             Status.appContext.contentResolver.update(
-                existingPrograms[card.label]!!,
+                existingPrograms[card.favouriteLabel]!!,
                 programFromCard(channelId, card, channelName),
                 null,null
             )
@@ -203,7 +203,7 @@ object TvContract {
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)
             put(PreviewPrograms.COLUMN_TYPE, TvContractCompat.PreviewProgramColumns.TYPE_MOVIE)
-            put(PreviewPrograms.COLUMN_TITLE, stripTags(card.label) + if(card.label2!="") " - " + stripTags(card.label2) else "")
+            put(PreviewPrograms.COLUMN_TITLE, stripTags(card.favouriteLabel) + if(card.label2!="") " - " + stripTags(card.label2) else "")
             put(PreviewPrograms.COLUMN_SHORT_DESCRIPTION, stripTags(card.plot))
             put(PreviewPrograms.COLUMN_LONG_DESCRIPTION, stripTags(card.plot))
             put(PreviewPrograms.COLUMN_POSTER_ART_URI, posterUri.toString())

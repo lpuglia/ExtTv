@@ -1,14 +1,10 @@
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +20,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -87,10 +82,6 @@ fun CatalogBrowser() {
     updateSection()
     val drawerState = rememberDrawerState(initialValue = if(Sections.isEmpty) DrawerValue.Open else DrawerValue.Closed)
     val drawerItemRequesters = mutableListOf<FocusRequester>()
-    val drawerWidth by animateDpAsState(
-        targetValue = if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp,
-        label = ""
-    )
     val listState = rememberTvLazyListState()
 
     ModalNavigationDrawer(
@@ -105,7 +96,7 @@ fun CatalogBrowser() {
                             end = Offset(700f, 0f)
                         )
                     )
-                    .width(drawerWidth)
+                    .width(if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp)
                     .fillMaxHeight()
                     .padding(12.dp)
                     .selectableGroup(),

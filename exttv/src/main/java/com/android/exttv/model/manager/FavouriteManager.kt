@@ -95,7 +95,7 @@ object FavouriteManager {
         saveAllData(allLists)
     }
 
-    // Retrieve a list of favourites
+    // Retrieve a list of favourites, also update the content of cards
     fun getFavourite(listName: String): List<CardItem> {
         val cache = mutableMapOf<String, List<CardItem>>()
         val toReturn = mutableListOf<CardItem>()
@@ -113,7 +113,7 @@ object FavouriteManager {
                 favCard = cache[fav.uriContainer]?.find { it.label == fav.label && it.isFolder == fav.isFolder }
             }
             if (favCard != null) {
-                toReturn.add(favCard)
+                toReturn.add(favCard.copy(favouriteLabel = fav.favouriteLabel))
             }
             // keep the card if it wasn't possible to find it, maybe it still works
             if (favCard == null) {

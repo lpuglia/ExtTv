@@ -30,7 +30,7 @@ def run(argv=""):
                 item[2], # isFolder
                 utils.parent_uri_map[item[0]],
                 utils.parent_uri_map[item[0]],
-                ""
+                "", ""
             ))
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)

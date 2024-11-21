@@ -173,7 +173,8 @@ fun CardView(
             }
         }
         Text(
-            text = parseText(cleanText(card.label)),
+            // favouriteLabel is only set for favourite cards
+            text = parseText(cleanText(if(card.favouriteLabel!="") card.favouriteLabel else card.label,)),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White,
             modifier = Modifier

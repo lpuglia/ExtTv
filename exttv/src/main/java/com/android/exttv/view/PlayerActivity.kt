@@ -1,6 +1,7 @@
 package com.android.exttv.view
 
 import PlayerView
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -124,6 +125,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        PlayerManager.player.stop()
         PlayerManager.isLoading = true
         PlayerManager.isProgressBarVisible = false
         PlayerManager.isVisibleCardList = false
@@ -137,5 +139,18 @@ class PlayerActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
     }
+
+    @SuppressLint("RestrictedApi")
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_DEL || event.keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            dispatchKeyEvent(KeyEvent(event.action, KeyEvent.KEYCODE_BACK))
+            return true
+        } else if (event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            dispatchKeyEvent(KeyEvent(event.action, KeyEvent.KEYCODE_DPAD_CENTER))
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
 
 }

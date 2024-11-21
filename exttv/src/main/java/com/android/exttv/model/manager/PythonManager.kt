@@ -18,7 +18,10 @@ object PythonManager {
     fun init(context: Context) {
         if (!::exttv.isInitialized) {
             if (!Python.isStarted()) Python.start(AndroidPlatform(context))
-            exttv = Python.getInstance().getModule("exttv") // this initialize the workspace
+            val python = Python.getInstance()
+            // Fix for: KeyError: '_strptime'
+            python.getModule("datetime").get("datetime")?.callAttr("strptime", "00:00", "%H:%M")
+            exttv = python.getModule("exttv") // this initialize the workspace
         }
     }
 
