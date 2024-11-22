@@ -58,14 +58,16 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("RestrictedApi")
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_DEL || event.keyCode == KeyEvent.KEYCODE_ESCAPE ) {
             dispatchKeyEvent(KeyEvent(event.action, KeyEvent.KEYCODE_BACK))
             return true
-        } else if (event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
-            dispatchKeyEvent(KeyEvent(event.action, KeyEvent.KEYCODE_ENTER))
-            return true
         }
+//        else if (event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+//            dispatchKeyEvent(KeyEvent(event.action, KeyEvent.KEYCODE_ENTER))
+//            return true
+//        }
         return super.dispatchKeyEvent(event)
     }
 }
