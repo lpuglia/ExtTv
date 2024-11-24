@@ -97,7 +97,7 @@ fun CardView(
     cardIndex: Int,
     isNotPlayer: Boolean = true
 ) {
-    val focusRequester = FocusRequester()
+    val focusRequester by remember { mutableStateOf(FocusRequester()) }
     // modify the background color based on the selected card
     val bgModifier = if (SectionManager.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer) {
         Modifier.background(Color(0x44BB0000))

@@ -18,6 +18,7 @@ data class CardItem(
     val uriParent: String = uriContainer, // uri to distinguish between plugin card and favourite card, may be equal to uriContainer
     val mediaSource: String = "",
     val favouriteLabel: String = "",
+    val isLive: Boolean = false,
 ) {
     val pluginName: String
         get() = uri.split("://")[1].split("/")[0]

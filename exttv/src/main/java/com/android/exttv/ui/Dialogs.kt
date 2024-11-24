@@ -58,9 +58,11 @@ import coil.compose.AsyncImage
 import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.util.PluginData
 import com.android.exttv.util.ToastUtils
+import com.android.exttv.util.cleanText
 import com.android.exttv.util.getFromGit
 import com.android.exttv.util.getFromRepository
 import com.android.exttv.util.getLatestZipName
+import com.android.exttv.util.stripTags
 import com.android.exttv.util.updateSection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,7 +82,7 @@ import com.android.exttv.model.manager.SectionManager as Sections
 fun NewPlaylistMenu() {
     if (!Status.showNewPlaylistMenu) return
     val cardItem = Sections.getFocusedCard()
-    var favouriteLabel by remember { mutableStateOf(cardItem.label) }
+    var favouriteLabel by remember { mutableStateOf(cleanText(stripTags(cardItem.label))) }
     val focusRequester = remember { FocusRequester() }
     val focusRequesterLabel = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current

@@ -1,8 +1,6 @@
 package com.android.exttv.model.manager
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import com.android.exttv.model.data.CardItem
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
@@ -29,14 +27,14 @@ object PythonManager {
         Status.selectedAddonIndex = Addons.getAllAddonNames().indexOf(pluginName)
         Sections.focusedIndex = -1
         Sections.focusedCardIndex = -1
-        selectSection(CardItem("plugin://${Addons.getIdByName(pluginName)}/", "Menu"))
+        selectSection(CardItem("plugin://${Addons.getIdByName(pluginName)}/", "Menu", isFolder = true))
     }
 
     fun selectFavourite(favouriteName: String) {
         Status.selectedAddonIndex = Addons.size + Favourites.indexOf(favouriteName)
         Sections.focusedIndex = -1
         Sections.focusedCardIndex = -1
-        selectSection(CardItem("favourite://${favouriteName}", favouriteName))
+        selectSection(CardItem("favourite://${favouriteName}", favouriteName, isFolder = true))
     }
 
     fun getSection(uri: String): List<CardItem> {
@@ -64,35 +62,15 @@ object PythonManager {
     fun selectSection(card: CardItem, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         Status.lastSelectedCard = card
-        val runnable = Runnable {
-            val newSection = Sections.Section(card.label, getSection(card.uri))
-
+        Thread {
             if(card.isFolder){
-                // if newSection is empty, this will be taken care of in removeAndAdd
-                Sections.removeAndAdd(sectionIndex+1, card.uri, newSection)
-                Sections.updateSelectedSection(sectionIndex, cardIndex)
+                Sections.removeAndAdd(sectionIndex+1, card, getSection(card.uri))
             }else{
-//                Sections.updateSelectedSection(sectionIndex, cardIndex)
+                runPluginUri(card.uri)
             }
-
-            try {
-                Handler(Looper.getMainLooper()).post {
-                    if(sectionIndex==-1 && newSection.cardList.isEmpty()){
-                        Sections.clearSections()
-                    }else if(newSection.cardList.isNotEmpty()){
-                        // if selected card is adding a new section, then focus on the new section
-                        Sections.focusedIndex += 1
-                        Sections.focusedCardIndex = 0
-                    }
-                    // this must be outside to guarantee that spinner is hidden
-                    Status.loadingState = LoadingStatus.DONE;
-                    PlayerManager.isLoading = false
-                }
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }
-        Thread(runnable).start()
+            Status.loadingState = LoadingStatus.DONE;
+            PlayerManager.isLoading = false
+        }.start()
     }
 
     fun unfoldCard(card: CardItem, visitedUris: MutableSet<String> = mutableSetOf()): List<CardItem> {
