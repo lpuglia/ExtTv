@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -39,9 +42,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
-import androidx.tv.foundation.lazy.list.TvLazyColumn
-import androidx.tv.foundation.lazy.list.itemsIndexed
-import androidx.tv.foundation.lazy.list.rememberTvLazyListState
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
@@ -81,13 +81,13 @@ import com.android.exttv.model.manager.PythonManager as Python
 fun CatalogBrowser() {
     updateSection()
     val drawerState = rememberDrawerState(initialValue = if(Sections.isEmpty) DrawerValue.Open else DrawerValue.Closed)
-    val drawerItemRequesters = mutableListOf<FocusRequester>()
-    val listState = rememberTvLazyListState()
+    val drawerItemRequesters = Array(Addons.size + Favourites.size + 2) { FocusRequester() }
+    val listState = rememberLazyListState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            TvLazyColumn(
+            LazyColumn(
                 Modifier
                     .background(
                         brush = Brush.linearGradient(
@@ -135,11 +135,10 @@ fun CatalogBrowser() {
                         }
                     }
                     Row {
-                        if(drawerIndex==0) drawerItemRequesters.clear()
-                        drawerItemRequesters.add(FocusRequester())
+                        drawerItemRequesters[drawerIndex] = FocusRequester()
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
-                        modifier = modifier.focusRequester(drawerItemRequesters.last())
+                        modifier = modifier.focusRequester(drawerItemRequesters[drawerIndex])
                         if (drawerIndex < Addons.size) {
                             ContextButtons(drawerIndex)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, drawerIndex) }
@@ -235,11 +234,7 @@ fun Content() {
         Status.appContext.theme
     )
 
-    val listState = rememberTvLazyListState()
-    LaunchedEffect(Sections.getSectionsInOrder()) {
-        if(Sections.isNotEmpty && Sections.focusedIndex>=0)
-            listState.scrollToItem(Sections.focusedIndex)
-    }
+    val listState = rememberLazyListState()
 
     fun Modifier.fadingEdge(brush: Brush) = this
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
@@ -296,7 +291,7 @@ fun Content() {
             )
             .padding(start = 80.dp)
     ) {
-        TvLazyColumn(
+        LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Bottom,
@@ -312,7 +307,8 @@ fun Content() {
                 )
                 SectionView(
                     section.cardList,
-                    sectionIndex = index
+                    sectionIndex = index,
+                    sectionsListState = listState,
                 )
             }
         }

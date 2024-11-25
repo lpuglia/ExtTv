@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,9 +33,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
-import androidx.tv.foundation.lazy.list.TvLazyRow
-import androidx.tv.foundation.lazy.list.itemsIndexed
-import androidx.tv.foundation.lazy.list.rememberTvLazyListState
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
@@ -44,6 +45,7 @@ import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.model.manager.PlayerManager
 import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.SectionManager
+import com.android.exttv.model.manager.SectionManager.refocus
 import com.android.exttv.model.manager.StatusManager
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.parseText
@@ -53,25 +55,12 @@ import com.android.exttv.util.parseText
 fun SectionView(
     cardList: List<CardItem>,
     sectionIndex: Int,
+    sectionsListState: LazyListState,
     isNotPlayer: Boolean = true
 ) {
-    val listState = rememberTvLazyListState()
-    LaunchedEffect(cardList) {
-        listState.scrollToItem(0)
-    }
+    val listState = rememberLazyListState()
 
-    if (isNotPlayer) {
-        LaunchedEffect(SectionManager.focusedCardIndex) {
-            if(SectionManager.focusedCardIndex>=0 && sectionIndex== SectionManager.focusedIndex)
-                listState.scrollToItem(SectionManager.focusedCardIndex)
-        }
-    }else{
-        LaunchedEffect(PlayerManager.isVisibleCardList, SectionManager.focusedCardPlayerIndex) {
-            listState.scrollToItem(SectionManager.focusedCardPlayerIndex)
-        }
-    }
-
-    TvLazyRow(
+    LazyRow(
         state = listState,
         modifier = Modifier
             .fillMaxWidth(),
@@ -83,8 +72,20 @@ fun SectionView(
                 card = card,
                 sectionIndex,
                 cardIndex,
+                sectionsListState,
+                listState,
                 isNotPlayer
             )
+        }
+    }
+
+    if(isNotPlayer) {
+        // this scroll to the next new line which may be lay below the current view
+        LaunchedEffect(SectionManager.focusedIndex) {
+            sectionsListState.scrollToItem(SectionManager.focusedIndex)
+            if(SectionManager.focusedCardIndex == 0 && sectionIndex == SectionManager.focusedIndex) {
+                listState.scrollToItem(0)
+            }
         }
     }
 }
@@ -95,7 +96,9 @@ fun CardView(
     card: CardItem,
     sectionIndex: Int,
     cardIndex: Int,
-    isNotPlayer: Boolean = true
+    sectionsListState: LazyListState,
+    cardListState: LazyListState,
+    isNotPlayer: Boolean = true,
 ) {
     val focusRequester by remember { mutableStateOf(FocusRequester()) }
     // modify the background color based on the selected card
@@ -123,8 +126,7 @@ fun CardView(
                 .onFocusChanged {
                     if (it.isFocused) {
                         if (isNotPlayer) {
-                            SectionManager.focusedIndex = sectionIndex
-                            SectionManager.focusedCardIndex = cardIndex
+                            SectionManager.focusCard(sectionIndex, cardIndex)
                             StatusManager.bgImage = card.secondaryArt
                         }else{
                             SectionManager.focusedCardPlayerIndex = cardIndex
@@ -198,16 +200,22 @@ fun CardView(
         }
         Spacer(modifier = Modifier.height(10.dp))
     }
+
     if(isNotPlayer) {
-        LaunchedEffect(StatusManager.loadingState) {
+        LaunchedEffect(SectionManager.focusedCardIndex, refocus) {
             if (SectionManager.focusedIndex == sectionIndex && SectionManager.focusedCardIndex == cardIndex) {
+                sectionsListState.scrollToItem(sectionIndex)
+                cardListState.scrollToItem(cardIndex)
                 focusRequester.requestFocus()
+                refocus = false
             }
         }
     }else{
-        LaunchedEffect(PlayerManager.isVisibleCardList) {
+        LaunchedEffect(SectionManager.focusedCardPlayerIndex, refocus) {
             if (PlayerManager.isVisibleCardList && SectionManager.focusedCardPlayerIndex == cardIndex) {
                 focusRequester.requestFocus()
+                cardListState.scrollToItem(cardIndex)
+                refocus = false
             }else{
                 focusRequester.freeFocus()
             }

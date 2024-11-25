@@ -16,10 +16,22 @@ object SectionManager {
 
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)
+    var refocus by mutableStateOf(false)
     private var sections by mutableStateOf(LinkedHashMap<String, Section>())
     var focusedCardPlayerIndex by mutableIntStateOf(0)
 
     private val selectedIndices: MutableList<Int?> = mutableListOf()
+
+    fun focusCard(sectionIndex: Int, cardIndex: Int) {
+        println("FocusCard: $sectionIndex, $cardIndex")
+        focusedIndex = sectionIndex
+        focusedCardIndex = cardIndex
+        refocus = true
+    }
+
+    fun refocusCard() {
+        refocus = true
+    }
 
     fun removeAndAdd(sectionIndex: Int, card: CardItem, cardList: List<CardItem>) {
         val newSection = Section(card.label, cardList)
@@ -68,8 +80,6 @@ object SectionManager {
             }
             selectedIndices.add(null)
         }
-        focusedIndex += 1
-        focusedCardIndex = 0
     }
 
     fun replaceCard(sectionIndex: Int, cardToReplace: CardItem, newSection: Section): Boolean {

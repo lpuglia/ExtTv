@@ -2,6 +2,7 @@ package com.android.exttv.model.manager
 
 import android.content.Context
 import com.android.exttv.model.data.CardItem
+import com.android.exttv.model.manager.SectionManager.focusCard
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
@@ -25,15 +26,11 @@ object PythonManager {
 
     fun selectAddon(pluginName: String) {
         Status.selectedAddonIndex = Addons.getAllAddonNames().indexOf(pluginName)
-        Sections.focusedIndex = -1
-        Sections.focusedCardIndex = -1
         selectSection(CardItem("plugin://${Addons.getIdByName(pluginName)}/", "Menu", isFolder = true))
     }
 
     fun selectFavourite(favouriteName: String) {
         Status.selectedAddonIndex = Addons.size + Favourites.indexOf(favouriteName)
-        Sections.focusedIndex = -1
-        Sections.focusedCardIndex = -1
         selectSection(CardItem("favourite://${favouriteName}", favouriteName, isFolder = true))
     }
 
@@ -52,9 +49,7 @@ object PythonManager {
     // add Mutex to prevent multiple threads from accessing Python engine at the same time
     private val lock = Any()
     fun runPluginUri(uri: String): List<CardItem> {
-        println("Wait UnLock")
         return synchronized(lock) {
-            println("Lock")
             exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<CardItem>
         }
     }
@@ -68,6 +63,7 @@ object PythonManager {
             }else{
                 runPluginUri(card.uri)
             }
+            focusCard(sectionIndex+1, 0)
             Status.loadingState = LoadingStatus.DONE;
             PlayerManager.isLoading = false
         }.start()

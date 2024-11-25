@@ -18,6 +18,7 @@ import com.android.exttv.model.manager.MediaSourceManager
 import com.android.exttv.model.manager.PlayerManager
 import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.StatusManager
+import com.android.exttv.util.ToastUtils
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -73,6 +74,7 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         Thread {
+            PlayerManager.cardList = emptyList()
             var card: CardItem
             val data = intent.data
             data?.let {
@@ -83,26 +85,27 @@ class PlayerActivity : AppCompatActivity() {
 
                 if(card.isFolder){
                     PlayerManager.cardList = PythonManager.getSection(card.uri)
-                    if(PlayerManager.cardList.isNotEmpty() && !PlayerManager.cardList[0].isFolder){
-                        card = PlayerManager.cardList[0]
-                        PlayerManager.currentCard = card
-                        StatusManager.lastSelectedCard = card
-                    } else {
-                        throw Exception("Folder is empty")
+                    if(PlayerManager.cardList.isNotEmpty()) {
+                        for (newCard in PlayerManager.cardList) {
+                            if (!newCard.isFolder) {
+                                card = newCard
+                                PlayerManager.currentCard = card
+                                StatusManager.lastSelectedCard = card
+                                break
+                            }
+                        }
                     }
-                } else {
-                    PlayerManager.cardList = PythonManager.getSection(card.uriParent)
-                        .filter { !it.isFolder } // Filters out cards with isFolder == true
-                        .toMutableList()
-
-                    PlayerManager.currentCard = card
-                    PlayerManager.isProgressBarVisible = true
+                    if(card.isFolder){
+                        ToastUtils.showToast("The Folder is not playable, no stream found", Toast.LENGTH_SHORT)
+                        return@Thread
+                    }
                 }
 
                 if (card.mediaSource.isEmpty()) { // if mediaSource hasn't been filled, ask Python to fill it
                     StatusManager.lastSelectedCard = card
                     PythonManager.runPluginUri(card.uri)
                     PlayerManager.isLoading = false
+                    return@Thread
                 } else {
                     val mediaSource = Json.decodeFromString<ExtTvMediaSource>(
                         URLDecoder.decode(
@@ -119,6 +122,14 @@ class PlayerActivity : AppCompatActivity() {
                         PlayerManager.isLoading = false
                     }
                 }
+
+                PlayerManager.cardList = PythonManager.getSection(card.uriParent)
+                    .filter { !it.isFolder } // Filters out cards with isFolder == true
+                    .toMutableList()
+
+                PlayerManager.currentCard = card
+                PlayerManager.isProgressBarVisible = true
+
             }
         }.start()
     }

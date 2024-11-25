@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
+import com.android.exttv.model.manager.SectionManager
 import com.android.exttv.model.manager.AddonManager as Addons
 import com.android.exttv.model.manager.StatusManager as Status
 
@@ -239,11 +240,19 @@ fun addonKE(
         }
         return true
     }
+    if (event.key == Key.DirectionRight) {
+        SectionManager.refocusCard()
+        return true
+    }
     return false
 }
 
 fun nonAddonKE(
     event: KeyEvent
 ): Boolean {
+    if (event.key == Key.DirectionRight) {
+        SectionManager.refocusCard()
+        return true
+    }
     return event.key == Key.DirectionLeft
 }

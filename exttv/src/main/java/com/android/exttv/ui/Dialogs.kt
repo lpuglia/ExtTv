@@ -131,6 +131,7 @@ fun NewPlaylistMenu() {
                                         Status.showFavouriteMenu = false
                                         Status.defaultPlaylistName = ""
                                         focusManager.clearFocus() // Clear focus
+                                        Sections.refocusCard()
                                         true
                                     }
                                     else -> false
@@ -149,6 +150,7 @@ fun NewPlaylistMenu() {
                             Status.showFavouriteMenu = false
                             Status.defaultPlaylistName = ""
                             focusManager.clearFocus() // Clear focus
+                            Sections.refocusCard()
                         }
                     )
                 )
@@ -286,6 +288,7 @@ fun UninstallDialog() {
                             }
                             Addons.uninstallAddon(indexAddon)
                             updateSection()
+                            Sections.refocusCard()
                         }
                     }
                 }

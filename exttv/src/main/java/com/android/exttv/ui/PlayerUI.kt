@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -61,6 +62,7 @@ import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.PlayerManager
+import com.android.exttv.model.manager.SectionManager
 import com.android.exttv.model.manager.PlayerManager as Player
 import com.android.exttv.ui.SectionView
 import kotlinx.coroutines.delay
@@ -308,7 +310,7 @@ fun CustomProgressBar(
 
         Row(modifier = Modifier
             .dbgMode()
-            .height(if (Player.isVisibleCardList) 200.dp else 0.dp)
+            .height(if (Player.isVisibleCardList && Player.cardList.isNotEmpty()) 200.dp else 0.dp)
             .onKeyEvent { keyEvent ->
                 Player.isProgressBarVisible = true
                 lastKeyPressedTime = System.currentTimeMillis()
@@ -320,13 +322,20 @@ fun CustomProgressBar(
                 }
             }
         ) {
-            SectionView(cardList = Player.cardList, sectionIndex = 0, isNotPlayer = false)
+            SectionView(
+                cardList = Player.cardList,
+                sectionIndex = 0,
+                isNotPlayer = false,
+                sectionsListState = rememberLazyListState()
+            )
         }
     }
 
     LaunchedEffect(Player.isVisibleCardList) {
         if (!Player.isVisibleCardList) {
             focusRequesters.requestFocus()
+        }else{
+            SectionManager.refocusCard()
         }
     }
 }
@@ -430,6 +439,7 @@ fun handleKeyEvent(keyEvent: KeyEvent, seekIncrementMs: Long = 5000L): Boolean {
 
             Key.DirectionDown -> {
                 Player.isVisibleCardList = true
+                SectionManager.refocusCard()
                 return true
             }
 
