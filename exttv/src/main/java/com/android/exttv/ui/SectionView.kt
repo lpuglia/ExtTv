@@ -28,6 +28,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,8 +47,7 @@ import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.model.manager.PlayerManager
 import com.android.exttv.model.manager.PythonManager
-import com.android.exttv.model.manager.SectionManager
-import com.android.exttv.model.manager.SectionManager.refocus
+import com.android.exttv.model.manager.SectionManager as Sections
 import com.android.exttv.model.manager.StatusManager
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.parseText
@@ -81,9 +83,10 @@ fun SectionView(
 
     if(isNotPlayer) {
         // this scroll to the next new line which may be lay below the current view
-        LaunchedEffect(SectionManager.focusedIndex) {
-            sectionsListState.scrollToItem(SectionManager.focusedIndex)
-            if(SectionManager.focusedCardIndex == 0 && sectionIndex == SectionManager.focusedIndex) {
+        // it also rescroll to 0 a section that is selected after the previous section was not scrolled back
+        LaunchedEffect(Sections.focusedIndex, Sections.focusedCardIndex, Sections.refocus) {
+            sectionsListState.scrollToItem(Sections.focusedIndex)
+            if(Sections.focusedCardIndex == 0 && sectionIndex == Sections.focusedIndex) {
                 listState.scrollToItem(0)
             }
         }
@@ -102,7 +105,7 @@ fun CardView(
 ) {
     val focusRequester by remember { mutableStateOf(FocusRequester()) }
     // modify the background color based on the selected card
-    val bgModifier = if (SectionManager.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer) {
+    val bgModifier = if (Sections.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer) {
         Modifier.background(Color(0x44BB0000))
     } else {
         Modifier.background(Color(0x00000000))
@@ -123,13 +126,17 @@ fun CardView(
             modifier = Modifier
                 .padding(start = 10.dp)
                 .height(120.dp)
+                .onKeyEvent { event ->
+                    cardIndex==0 && event.key == Key.DirectionLeft
+                }
                 .onFocusChanged {
                     if (it.isFocused) {
                         if (isNotPlayer) {
-                            SectionManager.focusCard(sectionIndex, cardIndex)
+                            Sections.focusedIndex = sectionIndex
+                            Sections.focusedCardIndex = cardIndex
                             StatusManager.bgImage = card.secondaryArt
                         }else{
-                            SectionManager.focusedCardPlayerIndex = cardIndex
+                            Sections.focusedCardPlayerIndex = cardIndex
                         }
                     }
                     isFocused = it.isFocused
@@ -202,20 +209,20 @@ fun CardView(
     }
 
     if(isNotPlayer) {
-        LaunchedEffect(SectionManager.focusedCardIndex, refocus) {
-            if (SectionManager.focusedIndex == sectionIndex && SectionManager.focusedCardIndex == cardIndex) {
+        LaunchedEffect(Sections.focusedCardIndex, Sections.focusedIndex, Sections.refocus) {
+            if (Sections.focusedIndex == sectionIndex && Sections.focusedCardIndex == cardIndex) {
                 sectionsListState.scrollToItem(sectionIndex)
                 cardListState.scrollToItem(cardIndex)
                 focusRequester.requestFocus()
-                refocus = false
+                Sections.refocus = false
             }
         }
     }else{
-        LaunchedEffect(SectionManager.focusedCardPlayerIndex, refocus) {
-            if (PlayerManager.isVisibleCardList && SectionManager.focusedCardPlayerIndex == cardIndex) {
+        LaunchedEffect(Sections.focusedCardPlayerIndex, Sections.refocus) {
+            if (PlayerManager.isVisibleCardList && Sections.focusedCardPlayerIndex == cardIndex) {
                 focusRequester.requestFocus()
                 cardListState.scrollToItem(cardIndex)
-                refocus = false
+                Sections.refocus = false
             }else{
                 focusRequester.freeFocus()
             }

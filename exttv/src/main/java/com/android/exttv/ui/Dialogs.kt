@@ -130,7 +130,6 @@ fun NewPlaylistMenu() {
                                         Status.showNewPlaylistMenu = false // Close dialog after creation
                                         Status.showFavouriteMenu = false
                                         Status.defaultPlaylistName = ""
-                                        focusManager.clearFocus() // Clear focus
                                         Sections.refocusCard()
                                         true
                                     }
@@ -149,7 +148,6 @@ fun NewPlaylistMenu() {
                             Status.showNewPlaylistMenu = false // Close dialog after creation
                             Status.showFavouriteMenu = false
                             Status.defaultPlaylistName = ""
-                            focusManager.clearFocus() // Clear focus
                             Sections.refocusCard()
                         }
                     )
@@ -247,6 +245,7 @@ fun RemoveDialog() {
                             }
                             Favourites.deleteFavourite(favouriteIndex)
                             updateSection()
+                            Sections.refocusCard()
                         }
                     }
                 }

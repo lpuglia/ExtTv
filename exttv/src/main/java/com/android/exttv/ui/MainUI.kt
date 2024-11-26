@@ -28,13 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -81,21 +82,32 @@ import com.android.exttv.model.manager.PythonManager as Python
 fun CatalogBrowser() {
     updateSection()
     val drawerState = rememberDrawerState(initialValue = if(Sections.isEmpty) DrawerValue.Open else DrawerValue.Closed)
-    val drawerItemRequesters = Array(Addons.size + Favourites.size + 2) { FocusRequester() }
+//    val drawerItemRequesters = Array(Addons.size + Favourites.size + 2) { FocusRequester() }
     val listState = rememberLazyListState()
 
     ModalNavigationDrawer(
+        modifier = Modifier.onKeyEvent { event ->
+            if(event.key == Key.Back) {
+                if(drawerState.currentValue == DrawerValue.Open){
+                    false
+                }else {
+                    drawerState.setValue(DrawerValue.Open)
+                    true
+                }
+            }else
+               false
+        },
         drawerState = drawerState,
         drawerContent = {
             LazyColumn(
                 Modifier
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFF0F2B31), Color(0x000F2B31)),
-                            start = Offset(0f, 0f),
-                            end = Offset(700f, 0f)
-                        )
-                    )
+//                    .background(
+//                        brush = Brush.linearGradient(
+//                            colors = listOf(Color(0xFF0F2B31), Color(0x000F2B31)),
+//                            start = Offset(0f, 0f),
+//                            end = Offset(700f, 0f)
+//                        )
+//                    )
                     .width(if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp)
                     .fillMaxHeight()
                     .padding(12.dp)
@@ -134,11 +146,11 @@ fun CatalogBrowser() {
                             )
                         }
                     }
+                    val focusRequester = FocusRequester()
                     Row {
-                        drawerItemRequesters[drawerIndex] = FocusRequester()
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
-                        modifier = modifier.focusRequester(drawerItemRequesters[drawerIndex])
+                        modifier = modifier.focusRequester(focusRequester)
                         if (drawerIndex < Addons.size) {
                             ContextButtons(drawerIndex)
                             modifier = modifier.onKeyEvent { event -> addonKE(event, drawerIndex) }
@@ -191,6 +203,19 @@ fun CatalogBrowser() {
                             )
                         }
                     }
+
+                    LaunchedEffect(drawerState.currentValue, Status.selectedAddonIndex) {
+                        if (Status.selectedAddonIndex == drawerIndex) {
+                            if (drawerState.currentValue == DrawerValue.Open){
+                                listState.scrollToItem(Status.selectedAddonIndex)
+                                focusRequester.requestFocus()
+                            }
+                            if (Sections.isEmpty && Status.loadingState == LoadingStatus.DONE && drawerIndex == 0) { // keep the drawer open when sections is empty and Done
+                                drawerState.setValue(DrawerValue.Open)
+                                focusRequester.requestFocus()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -212,18 +237,6 @@ fun CatalogBrowser() {
     RemoveDialog(); UpdateDialog(); FavouriteMenu();
     NewPlaylistMenu();
 
-    LaunchedEffect(drawerState.currentValue, Status.selectedAddonIndex) {
-        if (drawerState.currentValue == DrawerValue.Open)
-            if (Status.selectedAddonIndex >= 0) {
-                listState.scrollToItem(Status.selectedAddonIndex)
-                drawerItemRequesters[Status.selectedAddonIndex].requestFocus()
-            }
-        if (Sections.isEmpty && Status.loadingState == LoadingStatus.DONE) { // keep the drawer open when sections is empty and Done
-            drawerState.setValue(DrawerValue.Open)
-            if (drawerItemRequesters.isNotEmpty())
-                drawerItemRequesters[0].requestFocus()
-        }
-    }
 }
 
 @Composable
@@ -259,7 +272,7 @@ fun Content() {
                 .fadingEdge(leftRightFade)
                 .width(800.dp)
                 .height(400.dp)
-                .graphicsLayer(alpha = 0.3f)
+//                .graphicsLayer(alpha = 0.3f)
                 .align(Alignment.TopEnd),
             contentScale = ContentScale.Crop,
         )
@@ -268,27 +281,27 @@ fun Content() {
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
-                    center = Offset.Infinite,
-                    radius = 1200f
-                )
-            )
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
-                    center = Offset.Zero,
-                    radius = 1200f
-                )
-            )
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(Color(0x6601080a), Color(0x660b465f), Color(0xFF01080a)),
-                    start = Offset.Zero,
-                    end = Offset(0f, Float.POSITIVE_INFINITY)
-                )
-            )
+//            .background(
+//                brush = Brush.radialGradient(
+//                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
+//                    center = Offset.Infinite,
+//                    radius = 1200f
+//                )
+//            )
+//            .background(
+//                brush = Brush.radialGradient(
+//                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
+//                    center = Offset.Zero,
+//                    radius = 1200f
+//                )
+//            )
+//            .background(
+//                brush = Brush.linearGradient(
+//                    colors = listOf(Color(0x6601080a), Color(0x660b465f), Color(0xFF01080a)),
+//                    start = Offset.Zero,
+//                    end = Offset(0f, Float.POSITIVE_INFINITY)
+//                )
+//            )
             .padding(start = 80.dp)
     ) {
         LazyColumn(
