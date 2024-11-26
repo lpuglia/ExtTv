@@ -43,7 +43,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitAll().build())
         StatusManager.init(this, applicationContext)
-        scheduleSyncJob(applicationContext)
+        Handler(Looper.getMainLooper()).postDelayed({
+            scheduleSyncJob(applicationContext) // Only schedule the periodic job after the delay
+        }, 3 * 60 * 1000)
 
         setContent {
             MaterialTheme {

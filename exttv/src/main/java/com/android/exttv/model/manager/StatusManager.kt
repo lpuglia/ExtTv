@@ -19,6 +19,7 @@ enum class LoadingStatus {
 
 @SuppressLint("StaticFieldLeak") // i know what i'm doing (hopefully)
 object StatusManager {
+    var refocus by mutableStateOf(false)
     var reboundEnter = false
     var loadingState by mutableStateOf(LoadingStatus.DONE)
 
@@ -32,6 +33,7 @@ object StatusManager {
     var defaultPlaylistName by mutableStateOf("")
 
     var selectedAddonIndex by mutableIntStateOf(-1)
+    var focusedAddonIndex by mutableIntStateOf(-1)
     var focusedContextIndex by mutableIntStateOf(-1)
 
     var drawerItems by mutableStateOf(listOf<String>())

@@ -426,7 +426,7 @@ fun RepositoryDialog() {
                 .width(450.dp)
                 .height(500.dp),
             tonalElevation = 8.dp,
-            colors = SurfaceDefaults.colors(containerColor = Color(0xA30F2B31))
+            colors = SurfaceDefaults.colors(containerColor = Color(0xA3111111))
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth(), // Make sure the Box takes the full width
@@ -446,7 +446,7 @@ fun RepositoryDialog() {
                 state = listState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xA30F2B31))
+                    .background(Color(0xA3111111))
                     .padding(top = 38.dp)
                     .padding(horizontal = 23.dp)
             ) {
@@ -479,7 +479,7 @@ fun RepositoryDialog() {
 //                            .clickable {
 //                                selectedItem = addon
 //                            },
-                        colors = CardDefaults.colors(containerColor = Color(0xCB2B474D)),
+                        colors = CardDefaults.colors(containerColor = Color(0xCB333333)),
                     ){
                         AddonBox(addon)
                     }

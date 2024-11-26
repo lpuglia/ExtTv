@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.content.res.ResourcesCompat
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
@@ -82,7 +83,6 @@ import com.android.exttv.model.manager.PythonManager as Python
 fun CatalogBrowser() {
     updateSection()
     val drawerState = rememberDrawerState(initialValue = if(Sections.isEmpty) DrawerValue.Open else DrawerValue.Closed)
-//    val drawerItemRequesters = Array(Addons.size + Favourites.size + 2) { FocusRequester() }
     val listState = rememberLazyListState()
 
     ModalNavigationDrawer(
@@ -101,14 +101,8 @@ fun CatalogBrowser() {
         drawerContent = {
             LazyColumn(
                 Modifier
-//                    .background(
-//                        brush = Brush.linearGradient(
-//                            colors = listOf(Color(0xFF0F2B31), Color(0x000F2B31)),
-//                            start = Offset(0f, 0f),
-//                            end = Offset(700f, 0f)
-//                        )
-//                    )
-                    .width(if (drawerState.currentValue == DrawerValue.Open) 480.dp else 80.dp)
+                    .background(Color(0xFF222222))
+                    .width(if (drawerState.currentValue == DrawerValue.Open) 280.dp else 0.dp)
                     .fillMaxHeight()
                     .padding(12.dp)
                     .selectableGroup(),
@@ -147,7 +141,7 @@ fun CatalogBrowser() {
                         }
                     }
                     val focusRequester = FocusRequester()
-                    Row {
+                    Box {
                         var modifier = Modifier.padding(0.dp)
                         var isSelected = false
                         modifier = modifier.focusRequester(focusRequester)
@@ -164,7 +158,9 @@ fun CatalogBrowser() {
                         }
                         NavigationDrawerItem(
                             selected = isSelected,
-                            modifier = modifier,
+                            modifier = modifier.onFocusChanged {
+                                if(it.hasFocus) Status.focusedAddonIndex = drawerIndex
+                            },
                             onClick = {
                                 if (drawerItem == "Add from Repository") Status.showRepositoryDialog =
                                     true
@@ -174,10 +170,7 @@ fun CatalogBrowser() {
                                 else Python.selectFavourite(drawerItem)
                             },
                             colors = NavigationDrawerItemDefaults.colors(
-                                containerColor = Color(0xFF1D2E31),
-                                focusedContainerColor = Color(0xFF2B474D),
-                                pressedContentColor = Color(0xFF426C75),
-                                selectedContainerColor = Color(0xFF426C75)
+                                selectedContainerColor = Color(0xFF111111)
                             ),
                             leadingContent = {
                                 if (drawerIndex < Addons.size) {
@@ -204,6 +197,13 @@ fun CatalogBrowser() {
                         }
                     }
 
+                    LaunchedEffect(Status.refocus) {
+                        if(Status.focusedAddonIndex==drawerIndex){
+                            focusRequester.requestFocus()
+                            Status.refocus = false
+                        }
+                    }
+
                     LaunchedEffect(drawerState.currentValue, Status.selectedAddonIndex) {
                         if (Status.selectedAddonIndex == drawerIndex) {
                             if (drawerState.currentValue == DrawerValue.Open){
@@ -220,7 +220,17 @@ fun CatalogBrowser() {
             }
         }
     ) {
-        Content()
+        Row(modifier = Modifier.fillMaxHeight()){
+//            Box(
+//                modifier = Modifier
+//                    .width(if (drawerState.currentValue == DrawerValue.Open) 280.dp else 0.dp)
+//                    .fillMaxHeight()
+//                    .background(Color.Black)
+//            ){
+//                Text(text = "Drawer Content", color = Color.White)
+//            }
+            Content()
+        }
     }
     if (Status.loadingState != LoadingStatus.DONE) {
         Box(
@@ -255,59 +265,39 @@ fun Content() {
             drawContent()
             drawRect(brush = brush, blendMode = BlendMode.DstIn)
         }
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val topBottomFade = Brush.verticalGradient(0.7f to Color.Red, 1f to Color.Transparent)
-        val leftRightFade = Brush.horizontalGradient(0f to Color.Transparent, 0.1f to Color.Red)
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(Status.bgImage)
-//                .placeholder(placeholderDrawable) // Set the placeholder here
-                .error(placeholderDrawable)
-                .build(),
-            contentDescription = null,
+    Box{
+        Box(
             modifier = Modifier
-                .fadingEdge(topBottomFade)
-                .fadingEdge(leftRightFade)
-                .width(800.dp)
-                .height(400.dp)
-//                .graphicsLayer(alpha = 0.3f)
-                .align(Alignment.TopEnd),
-            contentScale = ContentScale.Crop,
-        )
-    }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-//            .background(
-//                brush = Brush.radialGradient(
-//                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
-//                    center = Offset.Infinite,
-//                    radius = 1200f
-//                )
-//            )
-//            .background(
-//                brush = Brush.radialGradient(
-//                    colors = listOf(Color(0x66167c6c), Color(0x0004282d)),
-//                    center = Offset.Zero,
-//                    radius = 1200f
-//                )
-//            )
-//            .background(
-//                brush = Brush.linearGradient(
-//                    colors = listOf(Color(0x6601080a), Color(0x660b465f), Color(0xFF01080a)),
-//                    start = Offset.Zero,
-//                    end = Offset(0f, Float.POSITIVE_INFINITY)
-//                )
-//            )
-            .padding(start = 80.dp)
-    ) {
+                .background(Color.Black)
+                .zIndex(0f)
+        ) {
+            val topBottomFade =
+                Brush.verticalGradient(0.0f to Color.Red, 0.9f to Color.Transparent)
+            val leftRightFade =
+                Brush.horizontalGradient(0f to Color.Transparent, 0.1f to Color.Red)
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(Status.bgImage)
+//                .placeholder(placeholderDrawable) // Set the placeholder here
+                    .error(placeholderDrawable)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier
+                    .fadingEdge(topBottomFade)
+//                            .fadingEdge(leftRightFade)
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+//                            .height(100.dp)
+                    .graphicsLayer(alpha = 0.3f)
+                    .align(Alignment.TopEnd),
+                contentScale = ContentScale.Crop,
+            )
+        }
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().zIndex(1f),
             verticalArrangement = Arrangement.Bottom,
+//            horizontalAlignment = Alignment.End,
 //            contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
         )
         {
@@ -316,7 +306,11 @@ fun Content() {
                     text = parseText(cleanText(section.title)),
                     color = Color.White,
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(start = 40.dp, top = 10.dp, bottom = 10.dp) // Add padding below the title
+                    modifier = Modifier.padding(
+                        start = 40.dp,
+                        top = 10.dp,
+                        bottom = 10.dp
+                    ) // Add padding below the title
                 )
                 SectionView(
                     section.cardList,
