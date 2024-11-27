@@ -106,7 +106,6 @@ def reload_module(module_name, module_path):
         print(f"Caught an exit attempt from {module_path.split('/')[-1]}")
 
 def run(argv):
-    print(argv)
     global last_uri
     last_uri =  argv[0]+argv[2]
     plugin_name = argv[0].split("/")[2]

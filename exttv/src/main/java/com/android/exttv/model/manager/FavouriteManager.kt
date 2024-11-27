@@ -101,6 +101,21 @@ object FavouriteManager {
         val toReturn = mutableListOf<CardItem>()
         val favourites = getAllFavourites()[listName]
 
+//        val uniqueUriContainers = favourites?.map { it.uriContainer }?.distinct() ?: emptyList()
+//        val allCards = PythonManager.runPluginMultiUri(uniqueUriContainers)
+//        for (fav in favourites ?: emptyList()) {
+//            var favCard = allCards.find { it.uri == fav.uri }
+//
+//            if (favCard == null) {
+//                favCard = allCards.find { it.label == fav.label && it.isFolder == fav.isFolder }
+//            }
+//            if (favCard != null) {
+//                toReturn.add(favCard.copy(favouriteLabel = fav.favouriteLabel))
+//            }
+//            if (favCard == null) {
+//                toReturn.add(fav)
+//            }
+//        }
         for (fav in favourites ?: emptyList()) {
             if(fav.uriContainer !in cache) {
                 cache[fav.uriContainer] = PythonManager.runPluginUri(fav.uriContainer)

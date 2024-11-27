@@ -54,6 +54,12 @@ object PythonManager {
         }
     }
 
+//    fun runPluginMultiUri(uriList: List<String>): List<CardItem> {
+//        return synchronized(lock) {
+//            exttv?.callAttr("multi_run", uriList)?.toJava(List::class.java) as List<CardItem>
+//        }
+//    }
+
     fun selectSection(card: CardItem, sectionIndex: Int = -1, cardIndex: Int = 0) {
         Status.loadingState = LoadingStatus.SELECTING_SECTION
         Status.lastSelectedCard = card
