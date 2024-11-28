@@ -360,7 +360,7 @@ fun CustomProgressBar(
 
         Row(modifier = Modifier
             .dbgMode()
-            .height(if (Player.isVisibleCardList && Player.cardList.isNotEmpty()) 200.dp else 0.dp)
+            .height(if (Player.isVisibleCardList) 200.dp else 0.dp)
         ) {
             SectionView(
                 cardList = Player.cardList,
