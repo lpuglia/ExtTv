@@ -68,8 +68,7 @@ def run(argv=""):
             ))
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
-        exc_type, exc_value, exc_tb = traceback.exc_info()
-        file_name = exc_tb.tb_frame.f_code.co_filename
-        line_number = exc_tb.tb_lineno
-        toast_utils.showToast(f"Exception occurred in file {file_name} at line {line_number}: {e}", 1)
+        tb = traceback.extract_tb(e.__traceback__)  # Get the traceback
+        filename, line_number, func_name, _ = tb[-1]
+        toast_utils.showToast(f"{filename}:{line_number} ({func_name})\n{e}", 1)
     return Arrays.asList(item_list)

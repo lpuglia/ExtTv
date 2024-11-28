@@ -117,6 +117,7 @@ object FavouriteManager {
 //            }
 //        }
         for (fav in favourites ?: emptyList()) {
+            val isLive = fav.isLive
             if(fav.uriContainer !in cache) {
                 cache[fav.uriContainer] = PythonManager.runPluginUri(fav.uriContainer)
             }
@@ -128,7 +129,7 @@ object FavouriteManager {
                 favCard = cache[fav.uriContainer]?.find { it.label == fav.label && it.isFolder == fav.isFolder }
             }
             if (favCard != null) {
-                toReturn.add(favCard.copy(favouriteLabel = fav.favouriteLabel))
+                toReturn.add(favCard.copy(favouriteLabel = fav.favouriteLabel, isLive = isLive))
             }
             // keep the card if it wasn't possible to find it, maybe it still works
             if (favCard == null) {
@@ -136,6 +137,19 @@ object FavouriteManager {
             }
         }
         return toReturn.map { it.copy(uriParent = "favourite://${listName}") }
+    }
+
+    // Update the isLive field of a specific card in a specific list
+    fun updateCardIsLive(listName: String, cardFavouriteLabel: String) {
+        val allLists = getAllFavourites().toMutableMap()
+        val favList = allLists[listName]?.toMutableList() ?: return
+        val cardIndex = favList.indexOfFirst { it.favouriteLabel == cardFavouriteLabel }
+        if (cardIndex != -1) {
+            val updatedCard = favList[cardIndex].copy(isLive = true)
+            favList[cardIndex] = updatedCard
+            allLists[listName] = favList
+            saveAllData(allLists)
+        }
     }
 
     // Delete a list entirely

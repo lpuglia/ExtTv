@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,14 +42,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.content.res.ResourcesCompat
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.exttv.R
+import coil.request.ImageResult
 import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.model.manager.PlayerManager
@@ -110,19 +110,7 @@ fun CardView(
     isNotPlayer: Boolean = true,
 ) {
     val focusRequester by remember { mutableStateOf(FocusRequester()) }
-    // modify the background color based on the selected card
-    val bgModifier = if (Sections.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer) {
-        Modifier.background(Color(0x44BB0000))
-    } else {
-        Modifier.background(Color(0x00000000))
-    }
-    val context = LocalContext.current
 
-    val placeholderDrawable = ResourcesCompat.getDrawable(
-        context.resources,
-        R.drawable.placeholder,
-        context.theme
-    )
     var isFocused by remember { mutableStateOf(false) }
     Column(modifier = Modifier.height(200.dp)) {
         Card(
@@ -166,60 +154,16 @@ fun CardView(
             ),
         ) {
             Column(modifier = Modifier.height(170.dp)) {
-                val img = ImageRequest.Builder(LocalContext.current)
-                    .data(
-                        if (isNotPlayer) {
-                            card.primaryArt
-//                                if (!card.isFolder && Sections.focusedIndex == sectionIndex && Sections.focusedCardIndex == cardIndex)
-//                                    card.secondaryArt else card.primaryArt
-                        } else
-                            if (!card.isFolder && Sections.focusedCardPlayerIndex == cardIndex)
-                                card.secondaryArt else card.primaryArt
-                    ).error(placeholderDrawable) // Optional: set an error placeholder
-                    .build()
 
-//                AsyncImage(
-//                    model = img,
-//                    contentDescription = null,
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .height(120.dp)
-//                        .background(Color(0x88000000)),
-//                    contentScale = ContentScale.Crop
-//                )
-                Box( modifier = Modifier
-                    .height(120.dp)
-                    .clip(RectangleShape)
-                ){
-                    // Blurred cropped background
-                    AsyncImage(
-                        model = img,
-                        contentDescription = null,
-                        modifier = Modifier.zIndex(0f)
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .scale(4f)
-                            .alpha(0.3f), // Apply transparency
-                        contentScale = ContentScale.Crop // Crop to fill the box
-                    )
+                val imageUrl = if (isNotPlayer)
+                                card.primaryArt
+                           else if (!card.isFolder && Sections.focusedCardPlayerIndex == cardIndex)
+                               card.secondaryArt
+                           else card.primaryArt
 
-                    // Foreground image with proper aspect ratio
-                    AsyncImage(
-                        model = img,
-                        contentDescription = null,
-                        modifier = Modifier.zIndex(1f)
-                            .fillMaxWidth().height(120.dp),
-                        contentScale = ContentScale.Fit // Maintain aspect ratio
-                    )
+                SmartCardPreview(imageUrl = imageUrl,
+                    isSelected = Sections.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer)
 
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .zIndex(2f)
-                        .alpha(if (Sections.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer) 1f else 0f)
-                        .background(Color(0xAAAA0000)
-                        )
-                    )
-                }
                 Box (
                     modifier = Modifier
                         .fillMaxHeight()
@@ -280,4 +224,73 @@ fun CardView(
         }
 
     }
+}
+
+// This is a custom card preview that will scale the image to fit the card
+@Composable
+fun SmartCardPreview(
+    imageUrl: String,
+    contentDescription: String? = null,
+    isSelected : Boolean = false
+) {
+    var contentScale by remember { mutableStateOf(ContentScale.Crop) }
+    var alpha by remember { mutableFloatStateOf(.5f) }
+
+    val onSuccess: (request: ImageRequest, result: ImageResult) -> Unit = { _, result ->
+        val drawable = result.drawable
+        if(drawable!=null) {
+            val intrinsicWidth = drawable.intrinsicWidth
+            val intrinsicHeight = drawable.intrinsicHeight
+            if (intrinsicWidth > 0 && intrinsicHeight > 0) {
+                val aspectRatio = intrinsicWidth.toFloat() / intrinsicHeight.toFloat()
+                if (aspectRatio > 0.9) {
+                    contentScale = ContentScale.Crop
+                    alpha = 0f
+                } else {
+                    contentScale = ContentScale.Fit
+                }
+            }
+        }
+    }
+
+    Box( modifier = Modifier
+        .height(120.dp)
+        .clip(RectangleShape)
+    ){
+
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(imageUrl)
+                .listener(onSuccess = onSuccess)
+                .build(),
+            contentDescription = contentDescription,
+            contentScale = contentScale,
+            modifier = Modifier.zIndex(0f)
+                .fillMaxWidth()
+                .height(120.dp)
+                .scale(2f)
+                .alpha(alpha)
+        )
+
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(imageUrl)
+                .listener(onSuccess = onSuccess)
+                .build(),
+            contentDescription = contentDescription,
+            contentScale = contentScale,
+            modifier = Modifier.zIndex(1f)
+                .fillMaxWidth()
+                .height(120.dp)
+        )
+
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .zIndex(2f)
+            .alpha(if (isSelected) 1f else 0f)
+            .background(Color(0xAAAA0000)
+            )
+        )
+    }
+
 }

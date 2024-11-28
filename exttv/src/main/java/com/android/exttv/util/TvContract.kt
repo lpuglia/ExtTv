@@ -202,6 +202,7 @@ object TvContract {
 
         val contentValues = ContentValues().apply {
             put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId)
+            put(PreviewPrograms.COLUMN_LIVE, card.isLive)
             put(PreviewPrograms.COLUMN_TYPE, TvContractCompat.PreviewProgramColumns.TYPE_MOVIE)
             put(PreviewPrograms.COLUMN_TITLE, stripTags(card.favouriteLabel) + if(card.label2!="") " - " + stripTags(card.label2) else "")
             put(PreviewPrograms.COLUMN_SHORT_DESCRIPTION, stripTags(card.plot))

@@ -50,14 +50,12 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         StatusManager.init(this, applicationContext)
-//        scheduleSyncJob(applicationContext)
         PlayerManager.init(applicationContext)
     }
 
     override fun onRestart() {
         super.onRestart()
         StatusManager.init(this, applicationContext)
-//        scheduleSyncJob(applicationContext)
         PlayerManager.init(applicationContext)
     }
 
@@ -81,9 +79,10 @@ class PlayerActivity : AppCompatActivity() {
                 val serializedCard = URLDecoder.decode(data.toString(), StandardCharsets.UTF_8.toString()).replace("exttv_player://app?","")
                 println(serializedCard)
                 card = Json.decodeFromString(CardItem.serializer(), serializedCard)
-                println(card)
+                PlayerManager.currentCard = card
+                PlayerManager.isProgressBarVisible = true
 
-                if(card.isFolder){
+                if(card.isFolder && PlayerManager.cardList.isEmpty()){
                     PlayerManager.cardList = PythonManager.getSection(card.uri)
                     if(PlayerManager.cardList.isNotEmpty()) {
                         for (newCard in PlayerManager.cardList) {
@@ -127,8 +126,6 @@ class PlayerActivity : AppCompatActivity() {
                     .filter { !it.isFolder } // Filters out cards with isFolder == true
                     .toMutableList()
 
-                PlayerManager.currentCard = card
-                PlayerManager.isProgressBarVisible = true
 
             }
         }.start()

@@ -19,6 +19,7 @@ object PlayerManager {
     var isVisibleCardList by mutableStateOf(false)
     var currentCard: CardItem? by mutableStateOf(null)
     var cardList by mutableStateOf(listOf<CardItem>())
+    var isLive by mutableStateOf(false)
 
     lateinit var player : ExoPlayer;
 
@@ -26,6 +27,9 @@ object PlayerManager {
         player = ExoPlayer.Builder(context).build().apply {
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(state: Int) {
+                        if (playbackState == Player.STATE_READY) {
+                            isLive = player.isCurrentMediaItemLive()
+                        }
                         super.onPlaybackStateChanged(state)
                         playerState = state
                     }
@@ -44,6 +48,8 @@ object PlayerManager {
         player.seekToDefaultPosition() // Starts from beginning
         // or player.seekTo(specificPositionMs) // Start at specific time
 
+        // reset isLive before playing
+        isLive = false
         // Prepare and play
         player.prepare()
     }

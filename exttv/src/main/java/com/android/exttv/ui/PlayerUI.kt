@@ -61,10 +61,12 @@ import androidx.media3.ui.PlayerView
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.model.data.CardItem
+import com.android.exttv.model.manager.FavouriteManager
 import com.android.exttv.model.manager.PlayerManager
 import com.android.exttv.model.manager.SectionManager
 import com.android.exttv.model.manager.PlayerManager as Player
 import com.android.exttv.ui.SectionView
+import com.android.exttv.util.stripTags
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -84,6 +86,12 @@ fun PlayerView() {
         while (true) {
             progress = (Player.player.currentPosition.toFloat() / Player.player.duration).coerceIn(0f, 1f)
             delay(500) // Update every 500ms
+        }
+    }
+
+    LaunchedEffect(Player.isLive) {
+        if (Player.isLive) {
+            FavouriteManager.updateCardIsLive(Player.currentCard!!.uriParent.replace("favourite://", ""), Player.currentCard!!.favouriteLabel)
         }
     }
 
@@ -147,7 +155,7 @@ fun TopHeader(card : CardItem){
         modifier = Modifier
             .dbgMode(Color.Blue)
             .alpha(if (Player.isProgressBarVisible && !Player.isLoading) 1f else 0f)
-            .height(200.dp)
+            .height(150.dp)
             .fillMaxWidth()
             .background(
                 brush = Brush.verticalGradient(
@@ -159,7 +167,9 @@ fun TopHeader(card : CardItem){
     ){
         Row(modifier = Modifier
             .dbgMode()
-            .align(Alignment.Center)) {
+            .align(Alignment.Center),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 Modifier
                     .dbgMode(Color.Green)
@@ -170,10 +180,10 @@ fun TopHeader(card : CardItem){
             Box(
                 Modifier
                     .dbgMode(Color.Green)
-                    .padding(top = 20.dp)
+//                    .padding(top = 20.dp)
                     .width(600.dp)) {
                 Text(
-                    "Title: ${card.label}\nPlot:  ${card.plot}",
+                    "Title: ${stripTags(card.label)}\nPlot: ${stripTags(card.plot)}",
                     style = TextStyle.Default.copy(
                         fontSize = 16.sp,
                         color = Color.White, // Set base text color to white
