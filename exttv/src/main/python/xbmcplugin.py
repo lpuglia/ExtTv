@@ -2,7 +2,17 @@ from typing import List, Tuple
 import xbmcgui
 from xbmc import Player
 import utils
+import time
 
+try:
+    from java import jclass
+    card_utils = jclass("com.android.exttv.util.CardUtils")
+    CardItem = jclass("com.android.exttv.model.data.CardItem")
+except ImportError as e:
+    print("Could not import PythonManager", e)
+    card_utils = None
+
+status_manager = None
 # Dummy constants for sorting methods
 SORT_METHOD_NONE = 0
 SORT_METHOD_LABEL = 1
@@ -75,34 +85,51 @@ class PluginRecorder:
 # Create a singleton instance of PluginRecorder
 plugin_recorder = PluginRecorder()
 
+def makeCard(url: str, listitem: xbmcgui.ListItem, isFolder: bool = False):
+    video = listitem.info.get('video', {})
+    plot = video.get('plot', '') if video else ''
+    return CardItem(
+        url,
+        listitem.label if listitem.label else '',
+        listitem.label2 if listitem.label2 else '',
+        plot,
+        listitem.art.get('thumb', ''),
+        listitem.art.get('poster', ''),
+        listitem.art.get('fanart', ''),
+        isFolder,
+        utils.last_uri,
+        utils.last_uri,
+        "", "", int(time.time()), False, None
+    )
+
 def addDirectoryItem(handle: int, url: str, listitem: xbmcgui.ListItem, isFolder: bool = False, totalItems: int = 0):
-    utils.parent_uri_map[url] = utils.last_uri
-    plugin_recorder.record_call('directory_item', (url, listitem, isFolder))
-    # print(f"Called addDirectoryItems with handle: {handle} and dirItems: {dirItems}")
+    if card_utils == None:
+        utils.parent_uri_map[url] = utils.last_uri
+        plugin_recorder.record_call('directory_item', (url, listitem, isFolder))
+    else:
+        card_utils.addCardFromPython(makeCard(url, listitem, isFolder))
 
 def addDirectoryItems(handle, items: List[Tuple[str, xbmcgui.ListItem, bool]], totalItems: int = 0):
-    for item in items:
-        utils.parent_uri_map[item[0]] = utils.last_uri
-    plugin_recorder.record_call('directory_items', items)
-    # print(f"Called addDirectoryItems with handle: {handle} and dirItems: {dirItems}")
+    if card_utils == None:
+        for item in items:
+            utils.parent_uri_map[item[0]] = utils.last_uri
+        plugin_recorder.record_call('directory_items', items)
+    else:
+        for url, listitem, isFolder, __ in items:
+            card_utils.addCardFromPython(makeCard(url, listitem, isFolder))
 
 def setContent(handle, content):
     plugin_recorder.record_call('content', content)
-    # print(f"Called setContent with handle: {handle} and content: {content}")
 
 def addSortMethod(handle, sortMethod):
     plugin_recorder.record_call('sort_method', sortMethod)
-    # print(f"Called addSortMethod with handle: {handle} and sortMethod: {sortMethod}")
 
 def setPluginCategory(handle, category):
     plugin_recorder.record_call('plugin_category', category)
-    # print(f"Called setPluginCategory with handle: {handle} and category: {category}")
 
 def endOfDirectory(handle, succeeded=True, updateListing=False, cacheToDisc=True):
     plugin_recorder.record_call('end_of_directory', [succeeded, updateListing, cacheToDisc])
-    # print(f"Called endOfDirectory with handle: {handle}, succeeded: {succeeded}, updateListing: {updateListing}, cacheToDisc: {cacheToDisc}")
 
 def setResolvedUrl(handle, succeeded : bool, listitem: xbmcgui.ListItem):
     Player().play(listitem)
     plugin_recorder.record_call('resolved_url', [succeeded, listitem])
-    # print(f"Called setResolvedUrl with handle: {handle}, succeeded: {succeeded}, url: {url}")

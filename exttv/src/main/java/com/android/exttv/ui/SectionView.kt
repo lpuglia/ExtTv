@@ -109,6 +109,14 @@ fun SectionView(
                 listState.scrollToItem(0)
             }
         }
+    }else{
+        // this scroll to the next new line which may be lay below the current view
+        // it also rescroll to 0 a section that is selected after the previous section was not scrolled back
+        LaunchedEffect(Sections.focusedCardPlayerIndex, Sections.refocus) {
+            if (PlayerManager.isVisibleCardList) {
+                listState.scrollToItem(Sections.focusedCardPlayerIndex)
+            }
+        }
     }
 }
 
@@ -227,12 +235,10 @@ fun CardView(
         }
     }else{
         LaunchedEffect(Sections.focusedCardPlayerIndex, Sections.refocus) {
-            if (PlayerManager.isVisibleCardList && Sections.focusedCardPlayerIndex == cardIndex) {
+            if (Sections.focusedCardPlayerIndex == cardIndex) {
                 focusRequester.requestFocus()
                 cardListState.scrollToItem(cardIndex)
                 Sections.refocus = false
-            }else{
-                focusRequester.freeFocus()
             }
         }
 

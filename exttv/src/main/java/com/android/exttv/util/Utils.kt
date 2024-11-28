@@ -16,8 +16,10 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.AddonManager
 import com.android.exttv.model.manager.FavouriteManager
+import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.StatusManager.drawerItems
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -58,6 +60,13 @@ object ToastUtils {
         handler.post {
             Toast.makeText(Status.appContext, message, duration).show()
         }
+    }
+}
+
+object CardUtils {
+    @JvmStatic
+    fun addCardFromPython(card: CardItem) {
+        PythonManager.itemList.add(card)
     }
 }
 

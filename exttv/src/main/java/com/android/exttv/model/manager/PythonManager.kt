@@ -13,6 +13,7 @@ import com.android.exttv.model.manager.StatusManager as Status
 
 object PythonManager {
     private lateinit var exttv: PyObject
+    var itemList = mutableListOf<CardItem>()
 
     fun init(context: Context) {
         if (!::exttv.isInitialized) {
@@ -50,7 +51,9 @@ object PythonManager {
     private val lock = Any()
     fun runPluginUri(uri: String): List<CardItem> {
         return synchronized(lock) {
-            exttv?.callAttr("run", uri)?.toJava(List::class.java) as List<CardItem>
+            itemList.clear()
+            exttv.callAttr("run", uri)?.toJava(List::class.java)
+            itemList.toList()
         }
     }
 
@@ -75,17 +78,17 @@ object PythonManager {
         }.start()
     }
 
-    fun unfoldCard(card: CardItem, visitedUris: MutableSet<String> = mutableSetOf()): List<CardItem> {
-        if (card.uri in visitedUris) return emptyList()
-        visitedUris.add(card.uri)
-
-        val childCards = exttv?.callAttr("run", card.uri)?.toJava(List::class.java) as List<CardItem>
-        val allCards = mutableListOf<CardItem>()
-
-        for (child in childCards) {
-            if (child.isFolder) allCards.addAll(unfoldCard(child, visitedUris))
-            else allCards.add(child)
-        }
-        return allCards
-    }
+//    fun unfoldCard(card: CardItem, visitedUris: MutableSet<String> = mutableSetOf()): List<CardItem> {
+//        if (card.uri in visitedUris) return emptyList()
+//        visitedUris.add(card.uri)
+//
+//        val childCards = exttv?.callAttr("run", card.uri)?.toJava(List::class.java) as List<CardItem>
+//        val allCards = mutableListOf<CardItem>()
+//
+//        for (child in childCards) {
+//            if (child.isFolder) allCards.addAll(unfoldCard(child, visitedUris))
+//            else allCards.add(child)
+//        }
+//        return allCards
+//    }
 }
