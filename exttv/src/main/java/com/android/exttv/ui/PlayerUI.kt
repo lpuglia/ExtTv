@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,7 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -50,6 +50,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,6 +59,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.android.exttv.model.data.CardItem
@@ -118,7 +120,6 @@ fun PlayerView() {
         Column( modifier = Modifier.align(Alignment.BottomCenter)) {
             Player.currentCard?.let {
                 CustomProgressBar(
-                    card = it,
                     progress = progress,
                 )
             }
@@ -136,6 +137,30 @@ fun PlayerView() {
             )
         }
     }
+
+    if (!Player.player.playWhenReady) {
+        // Show pause icon when player is playing
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(65.dp) // Size of the box
+                    .border(4.dp, Color.White, shape = CircleShape) // Circular border
+                    .padding(10.dp), // Padding to ensure icon fits inside
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = android.R.drawable.ic_media_pause),
+                    contentDescription = "Pause",
+                    tint = Color.White,
+                    modifier = Modifier.fillMaxSize() // Size of the icon
+                )
+            }
+        }
+    }
+
 
     DisposableEffect(Player.player) {
         onDispose {
@@ -198,8 +223,7 @@ fun TopHeader(card : CardItem){
 
 @Composable
 fun CustomProgressBar(
-    card: CardItem,
-    progress: Float,
+    progress: Float
 ) {
     var lastKeyPressedTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val focusRequesters = FocusRequester()
@@ -234,7 +258,6 @@ fun CustomProgressBar(
         verticalArrangement = Arrangement.Bottom,
         modifier = Modifier
             .dbgMode(Color.Yellow)
-            .focusRequester(focusRequesters)
             .alpha(if (Player.isProgressBarVisible && !Player.isLoading) 1f else 0f)
             .fillMaxWidth()
             .height(300.dp)
@@ -249,12 +272,12 @@ fun CustomProgressBar(
         Column(
             modifier = Modifier
                 .dbgMode(color = Color.Green)
+                .focusRequester(focusRequesters)
                 .focusable()
                 .onKeyEvent { keyEvent ->
                     Player.isProgressBarVisible = true
                     lastKeyPressedTime = System.currentTimeMillis()
                     handleKeyEvent(keyEvent)
-                    false
                 }
         ) {
             Row(
@@ -262,21 +285,38 @@ fun CustomProgressBar(
                     .dbgMode()
                     .padding(horizontal = 40.dp, vertical = 10.dp)
             ) {
-                Box(
+                Row(
                     modifier = Modifier
+                        .dbgMode(Color.Yellow)
                         .fillMaxWidth()
-                        .height(4.dp)
-                        .background(Color.Gray, shape = RoundedCornerShape(50))
-                        .shadow(
-                            elevation = 3.dp,
-                            shape = RoundedCornerShape(50),
-                        )
+                        .padding(horizontal = 5.dp)
+                        .height(15.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(progress)
-                            .background(Color.Red, shape = RoundedCornerShape(50))
+                            .height(4.dp)
+                            .fillMaxWidth(progress-0.01f)
+                            .background(Color.Red, shape = RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp))
+                    )
+
+                    if (!Player.isVisibleCardList) {
+                        // Progress Cursor
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .offset(x = (-5).dp)
+                                .clip(CircleShape)
+                                .background(Color.Red)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .height(4.dp)
+                            .fillMaxWidth()
+                            .offset(x = (-5).dp)
+                            .background(Color.Gray, shape = RoundedCornerShape(topEnd = 50.dp, bottomEnd = 50.dp))
                     )
                 }
             }
@@ -321,16 +361,6 @@ fun CustomProgressBar(
         Row(modifier = Modifier
             .dbgMode()
             .height(if (Player.isVisibleCardList && Player.cardList.isNotEmpty()) 200.dp else 0.dp)
-            .onKeyEvent { keyEvent ->
-                Player.isProgressBarVisible = true
-                lastKeyPressedTime = System.currentTimeMillis()
-                if (keyEvent.key == Key.DirectionUp) {
-                    Player.isVisibleCardList = false
-                    true
-                } else {
-                    false
-                }
-            }
         ) {
             SectionView(
                 cardList = Player.cardList,
@@ -341,7 +371,7 @@ fun CustomProgressBar(
         }
     }
 
-    LaunchedEffect(Player.isVisibleCardList) {
+    LaunchedEffect(Player.isVisibleCardList, Player.isProgressBarVisible) {
         if (!Player.isVisibleCardList) {
             focusRequesters.requestFocus()
         }else{
@@ -447,18 +477,6 @@ fun handleKeyEvent(keyEvent: KeyEvent, seekIncrementMs: Long = 5000L): Boolean {
                 return true
             }
 
-            Key.DirectionDown -> {
-                Player.isVisibleCardList = true
-                SectionManager.refocusCard()
-                return true
-            }
-
-            Key.DirectionUp -> {
-                // Show card list
-                Player.isVisibleCardList = false
-                return true
-            }
-
             Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
                 // Play/pause
                 Player.player.playWhenReady = !Player.player.playWhenReady
@@ -466,6 +484,20 @@ fun handleKeyEvent(keyEvent: KeyEvent, seekIncrementMs: Long = 5000L): Boolean {
             }
         }
     }
+    when (keyEvent.key) {
+        Key.DirectionDown -> {
+            Player.isVisibleCardList = true
+            SectionManager.refocusCard()
+            return true
+        }
+
+        Key.DirectionUp -> {
+            // Show card list
+            Player.isVisibleCardList = false
+            return true
+        }
+    }
+
     return false
 }
 

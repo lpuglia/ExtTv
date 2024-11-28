@@ -234,7 +234,7 @@ fun SmartCardPreview(
     isSelected : Boolean = false
 ) {
     var contentScale by remember { mutableStateOf(ContentScale.Crop) }
-    var alpha by remember { mutableFloatStateOf(.5f) }
+    var alpha by remember { mutableFloatStateOf(.0f) }
 
     val onSuccess: (request: ImageRequest, result: ImageResult) -> Unit = { _, result ->
         val drawable = result.drawable
@@ -245,9 +245,9 @@ fun SmartCardPreview(
                 val aspectRatio = intrinsicWidth.toFloat() / intrinsicHeight.toFloat()
                 if (aspectRatio > 0.9) {
                     contentScale = ContentScale.Crop
-                    alpha = 0f
                 } else {
                     contentScale = ContentScale.Fit
+                    alpha = .5f
                 }
             }
         }
