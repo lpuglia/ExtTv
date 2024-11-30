@@ -52,16 +52,16 @@ def parse_settings_from_xml(xml_file):
         for setting in root.iter('setting'):
             setting_id = setting.get('id')
             setting_default = setting.get('default')
+            setting_text = setting.text
 
-            # If 'default' is an attribute, use it
-            if setting_default is None:
-                default_element = setting.find('default')
-                if default_element is not None:
-                    setting_default = default_element.text
-
-            # Add to dictionary if id and default value are available
-            if setting_id is not None and setting_default is not None:
+            if setting_text is None:
                 settings_dict[setting_id] = setting_default
+            else:
+                settings_dict[setting_id] = setting_text
+
+            # hack
+            if setting_id == 'default_action':
+                settings_dict['default_action'] = "2"
 
         return settings_dict
 
@@ -115,7 +115,7 @@ class Addon():
             id = plugin.plugin_name
         
         po_file_path = os.path.join(utils.full_addons_path(), f'{id}/resources/language/resource.language.en_gb/strings.po')
-        settings_xml_path = os.path.join(utils.full_addons_path(), f'{id}/resources/settings.xml')
+        settings_xml_path = os.path.join(utils.full_addons_path(), f'../userdata/addon_data/{id}/settings.xml')
         addon_xml_path = os.path.join(utils.full_addons_path(), f'{id}/addon.xml')
 
         if os.path.exists(po_file_path):

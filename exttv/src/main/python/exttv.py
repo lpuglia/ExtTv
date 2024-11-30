@@ -9,7 +9,6 @@ toast_utils = jclass("com.android.exttv.util.ToastUtils")
 utils.init(os.path.normpath(os.path.join(os.path.dirname(__file__),'../../../'))) # very important to normalize
 
 def run(argv=""):
-    print([argv.split("?")[0], '3', argv[argv.find("?"):] if "?" in argv else "?"])
     try:
         utils.run([argv.split("?")[0], '3', argv[argv.find("?"):] if "?" in argv else ""])
     except Exception as e:
