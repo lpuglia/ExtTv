@@ -164,7 +164,9 @@ fun ContextButtons(
             )
         }
         Button(
-            onClick = {},
+            onClick = {
+                Status.showSettingsDialog = true
+            },
             modifier = Modifier
                 .padding(end = 10.dp)
                 .width(50.dp)

@@ -66,6 +66,7 @@ import com.android.exttv.ui.FavouriteMenu
 import com.android.exttv.ui.NewPlaylistMenu
 import com.android.exttv.ui.RemoveDialog
 import com.android.exttv.ui.SectionView
+import com.android.exttv.ui.SettingsWindow
 import com.android.exttv.ui.UpdateDialog
 import com.android.exttv.ui.addonKE
 import com.android.exttv.ui.nonAddonKE
@@ -245,7 +246,7 @@ fun CatalogBrowser() {
     }
     GithubDialog(); RepositoryDialog(); UninstallDialog();
     RemoveDialog(); UpdateDialog(); FavouriteMenu();
-    NewPlaylistMenu();
+    NewPlaylistMenu(); SettingsWindow();
 
 }
 

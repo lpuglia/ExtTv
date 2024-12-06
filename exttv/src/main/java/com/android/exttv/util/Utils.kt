@@ -1,5 +1,6 @@
 package com.android.exttv.util
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Bitmap
@@ -21,6 +22,8 @@ import com.android.exttv.model.manager.AddonManager
 import com.android.exttv.model.manager.FavouriteManager
 import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.StatusManager.drawerItems
+import com.android.exttv.model.manager.dumpSettingValues
+import com.android.exttv.model.manager.readSettingMeta
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -32,8 +35,6 @@ import com.android.exttv.model.manager.AddonManager as Addons
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.w3c.dom.Element
-import org.w3c.dom.Node
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -47,9 +48,6 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 import com.android.exttv.model.manager.StatusManager as Status
 
 fun updateSection() {
@@ -390,6 +388,7 @@ fun getRootDirectoryName(zipFile: File): String? {
 class DownloadError(message: String) : Exception(message)
 class ExtractionError(message: String) : Exception(message)
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class PluginData(
     val zipURL: String,
@@ -433,48 +432,12 @@ fun createSettings(pluginPath: File) {
     val settingFile = pluginPath.resolve("resources/settings.xml")
 
     if(settingFile.exists()){
-        val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-        val inputDoc = documentBuilder.parse(settingFile)
-        val outputDoc = documentBuilder.newDocument()
-
-        val settingsRoot = outputDoc.createElement("settings")
-        settingsRoot.setAttribute("version", "2")
-        outputDoc.appendChild(settingsRoot)
-
-        val settings = inputDoc.getElementsByTagName("setting")
-        for (i in 0 until settings.length) {
-            val settingNode = settings.item(i)
-            if (settingNode.nodeType == Node.ELEMENT_NODE) {
-                val inputSetting = settingNode as Element
-                if (inputSetting.tagName == "setting") {
-                    val id = inputSetting.getAttribute("id")
-                    val defaultValue = inputSetting.getAttribute("default")
-                    val type = inputSetting.getAttribute("type")
-                    val textContent = if (inputSetting.hasAttribute("default")) inputSetting.getAttribute("default") else "false"
-
-                    if (id.isNotEmpty()) {
-                        // Create a new setting element
-                        val outputSetting = outputDoc.createElement("setting")
-                        outputSetting.setAttribute("id", id)
-                        if (defaultValue != "true" && type != "slider") {
-                            outputSetting.setAttribute("default", "true")
-                        }
-                        if (type != "action" || (type == "action" && defaultValue != "")) outputSetting.textContent = textContent
-                        settingsRoot.appendChild(outputSetting)
-                    }
-                }
-            }
+        val settings = readSettingMeta(pluginPath.name)
+        val addonDataDir = Addons.addonsPath.resolve("../userdata/addon_data/${pluginPath.name}")
+        if (!addonDataDir.exists()) {
+            addonDataDir.mkdirs() // Create the directory and any missing parent directories
         }
-
-        val transformer = TransformerFactory.newInstance().newTransformer()
-        transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes")
-        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4")
-
-
-        val source = DOMSource(outputDoc)
-        val outputFile = Addons.addonsPath.resolve("../userdata/addon_data/${pluginPath.name}/settings.xml")
-        val result = StreamResult(outputFile)
-        transformer.transform(source, result)
+        dumpSettingValues(settings, pluginPath.name)
     }
 
 }
@@ -525,7 +488,7 @@ fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: B
 
                         installDependencies(pluginPath)
 
-                        createSettings(pluginPath)
+//                        createSettings(pluginPath)
 
                     } catch (e: Exception) {
                         throw ExtractionError("Failed to extract ${zipFile.toPath()}: ${e.message}")

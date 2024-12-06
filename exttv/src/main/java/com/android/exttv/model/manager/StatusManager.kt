@@ -30,6 +30,7 @@ object StatusManager {
     var showRemoveDialog by mutableStateOf(false)
     var showFavouriteMenu by mutableStateOf(false)
     var showNewPlaylistMenu by mutableStateOf(false)
+    var showSettingsDialog by mutableStateOf(false)
     var defaultPlaylistName by mutableStateOf("")
 
     var selectedAddonIndex by mutableIntStateOf(-1)
