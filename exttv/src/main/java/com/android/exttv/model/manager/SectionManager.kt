@@ -16,12 +16,25 @@ object SectionManager {
 
     var focusedIndex by mutableIntStateOf(-1)
     var focusedCardIndex by mutableIntStateOf(-1)
+    var refocus by mutableStateOf(false)
     private var sections by mutableStateOf(LinkedHashMap<String, Section>())
     var focusedCardPlayerIndex by mutableIntStateOf(0)
 
     private val selectedIndices: MutableList<Int?> = mutableListOf()
 
-    fun removeAndAdd(index: Int, key: String, newSection: Section) {
+    fun focusCard(sectionIndex: Int, cardIndex: Int) {
+        println("FocusCard: $sectionIndex, $cardIndex")
+        focusedIndex = sectionIndex
+        focusedCardIndex = cardIndex
+        refocus = true
+    }
+
+    fun refocusCard() {
+        refocus = true
+    }
+
+    fun removeAndAdd(sectionIndex: Int, card: CardItem, cardList: List<CardItem>) {
+        val newSection = Section(card.label, cardList)
         // Convert the map keys to a list to easily access by index
         val keys = sections.keys.toList()
 
@@ -31,9 +44,9 @@ object SectionManager {
         // }
 
         // Check if the newSection is empty
-        if (newSection.cardList.isEmpty()) {
+        if (cardList.isEmpty()) {
             // If empty, remove all entries after the given index and return
-            for (i in keys.size - 1 downTo index) {
+            for (i in keys.size - 1 downTo sectionIndex) {
                 remove(keys[i])
                 selectedIndices.removeAt(i)
             }
@@ -41,27 +54,30 @@ object SectionManager {
         }
 
         // Ensure the index is within the bounds
-        if (index in keys.indices) {
+        if (sectionIndex in keys.indices) {
 
             // Remove all entries after the given index
-            for (i in keys.size - 1 downTo index + 1) {
+            for (i in keys.size - 1 downTo sectionIndex + 1) {
                 remove(keys[i])
                 selectedIndices.removeAt(i)
             }
 
-            // Replace the entry at the given index or add new if index is out of current bounds
-            if (index < keys.size) {
-                val keyAtIndex = keys[index]
+            // Replace the entry at the given index or add new if index is out of bounds
+            if (sectionIndex < keys.size) {
+                val keyAtIndex = keys[sectionIndex]
                 this[keyAtIndex] = newSection
-                selectedIndices[index] = null // Reset selected index for the new section
-            } else {
-                // If the index is out of bounds (greater than current size), add the new section
-                this[key] = newSection
-                selectedIndices.add(null)
+                if (sectionIndex > 0) {
+                    selectedIndices[sectionIndex - 1] = sections.values.toList()[sectionIndex - 1].cardList.indexOf(card)
+                }
+                selectedIndices[sectionIndex] = null // Reset selected index for the new section
             }
-        } else {
-            // If index is out of bounds, just add the new section
-            this[key] = newSection
+        }
+        // Add new section if index is out of bounds or size constraints apply
+        if (sectionIndex >= keys.size) {
+            this[card.uri] = newSection
+            if (sectionIndex > 0) {
+                selectedIndices[sectionIndex - 1] = sections.values.toList()[sectionIndex - 1].cardList.indexOf(card)
+            }
             selectedIndices.add(null)
         }
     }
@@ -97,12 +113,6 @@ object SectionManager {
 
     fun getFocusedCard(): CardItem {
         return sections.entries.toList()[focusedIndex].value.cardList[focusedCardIndex]
-    }
-
-    fun updateSelectedSection(sectionIndex: Int, selectedIndex: Int?) {
-        if (sectionIndex in selectedIndices.indices) {
-            selectedIndices[sectionIndex] = selectedIndex
-        }
     }
 
     fun getSelectedSection(sectionIndex: Int): Int? {

@@ -8,42 +8,55 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.res.ResourcesCompat
-import androidx.tv.foundation.lazy.list.TvLazyRow
-import androidx.tv.foundation.lazy.list.itemsIndexed
-import androidx.tv.foundation.lazy.list.rememberTvLazyListState
+import androidx.compose.ui.zIndex
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.exttv.R
+import coil.request.ImageResult
 import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.model.manager.PlayerManager
 import com.android.exttv.model.manager.PythonManager
-import com.android.exttv.model.manager.SectionManager
+import com.android.exttv.model.manager.SectionManager as Sections
 import com.android.exttv.model.manager.StatusManager
 import com.android.exttv.util.cleanText
 import com.android.exttv.util.parseText
@@ -53,38 +66,56 @@ import com.android.exttv.util.parseText
 fun SectionView(
     cardList: List<CardItem>,
     sectionIndex: Int,
+    sectionsListState: LazyListState,
     isNotPlayer: Boolean = true
 ) {
-    val listState = rememberTvLazyListState()
-    LaunchedEffect(cardList) {
-        listState.scrollToItem(0)
-    }
+    val listState = rememberLazyListState()
 
-    if (isNotPlayer) {
-        LaunchedEffect(SectionManager.focusedCardIndex) {
-            if(SectionManager.focusedCardIndex>=0 && sectionIndex== SectionManager.focusedIndex)
-                listState.scrollToItem(SectionManager.focusedCardIndex)
+    val placeHolderList =
+        List(4) {
+                CardItem(
+                    uri = "://placeholder",
+                    label = "Loading...",
+                    fanartUrl = "spinner",
+                    isFolder = false
+                )
         }
-    }else{
-        LaunchedEffect(PlayerManager.isVisibleCardList, SectionManager.focusedCardPlayerIndex) {
-            listState.scrollToItem(SectionManager.focusedCardPlayerIndex)
-        }
-    }
 
-    TvLazyRow(
+    LazyRow(
         state = listState,
         modifier = Modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 40.dp, end = 40.dp),
     ) {
-        itemsIndexed(cardList) { cardIndex, card ->
+        itemsIndexed(cardList.ifEmpty { placeHolderList }) { cardIndex, card ->
             CardView(
                 card = card,
                 sectionIndex,
                 cardIndex,
+                sectionsListState,
+                listState,
                 isNotPlayer
             )
+        }
+    }
+
+    if(isNotPlayer) {
+        // this scroll to the next new line which may be lay below the current view
+        // it also rescroll to 0 a section that is selected after the previous section was not scrolled back
+        LaunchedEffect(Sections.focusedIndex, Sections.focusedCardIndex, Sections.refocus) {
+            sectionsListState.scrollToItem(Sections.focusedIndex)
+            if(Sections.focusedCardIndex == 0 && sectionIndex == Sections.focusedIndex) {
+                listState.scrollToItem(0)
+            }
+        }
+    }else{
+        // this scroll to the next new line which may be lay below the current view
+        // it also rescroll to 0 a section that is selected after the previous section was not scrolled back
+        LaunchedEffect(Sections.focusedCardPlayerIndex, Sections.refocus) {
+            if (PlayerManager.isVisibleCardList) {
+                listState.scrollToItem(Sections.focusedCardPlayerIndex)
+            }
         }
     }
 }
@@ -95,39 +126,29 @@ fun CardView(
     card: CardItem,
     sectionIndex: Int,
     cardIndex: Int,
-    isNotPlayer: Boolean = true
+    sectionsListState: LazyListState,
+    cardListState: LazyListState,
+    isNotPlayer: Boolean = true,
 ) {
-    val focusRequester = FocusRequester()
-    // modify the background color based on the selected card
-    val bgModifier = if (SectionManager.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer) {
-        Modifier.background(Color(0x44BB0000))
-    } else {
-        Modifier.background(Color(0x00000000))
-    }
-    val context = LocalContext.current
+    val focusRequester by remember { mutableStateOf(FocusRequester()) }
 
-    val placeholderDrawable = ResourcesCompat.getDrawable(
-        context.resources,
-        R.drawable.placeholder,
-        context.theme
-    )
-    Column(
-        modifier = Modifier
-            .width(200.dp)
-    ){
-        var isFocused by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
+    Column(modifier = Modifier.height(200.dp)) {
         Card(
             modifier = Modifier
                 .padding(start = 10.dp)
-                .height(120.dp)
+                .width(200.dp)
+                .onKeyEvent { event ->
+                    cardIndex == 0 && event.key == Key.DirectionLeft
+                }
                 .onFocusChanged {
                     if (it.isFocused) {
                         if (isNotPlayer) {
-                            SectionManager.focusedIndex = sectionIndex
-                            SectionManager.focusedCardIndex = cardIndex
+                            Sections.focusedIndex = sectionIndex
+                            Sections.focusedCardIndex = cardIndex
                             StatusManager.bgImage = card.secondaryArt
-                        }else{
-                            SectionManager.focusedCardPlayerIndex = cardIndex
+                        } else {
+                            Sections.focusedCardPlayerIndex = cardIndex
                         }
                     }
                     isFocused = it.isFocused
@@ -138,7 +159,7 @@ fun CardView(
                     if (StatusManager.loadingState == LoadingStatus.DONE) {
                         PythonManager.selectSection(card, sectionIndex, cardIndex)
                     }
-                }else{
+                } else {
                     if (!PlayerManager.isLoading) {
                         PlayerManager.isLoading = true
                         PythonManager.selectSection(card, sectionIndex, cardIndex)
@@ -149,68 +170,158 @@ fun CardView(
                 StatusManager.showFavouriteMenu = true
                 StatusManager.reboundEnter = true
             },
-            colors = CardDefaults.colors(containerColor = Color(0x00000000)),
+            colors = CardDefaults.colors(
+                containerColor = Color(0xFF222222)
+            ),
         ) {
-            Box() {
-                AsyncImage(
-                    model =  ImageRequest.Builder(LocalContext.current)
-                        .data(card.primaryArt)
-//                        .placeholder(placeholderDrawable) // Set the placeholder here
-                        .error(placeholderDrawable) // Optional: set an error placeholder
-                        .build(),
-                    contentDescription = card.label,
+            Column(modifier = Modifier.height(170.dp)) {
+
+                val imageUrl = if (isNotPlayer)
+                                    card.primaryArt
+                               else if (!card.isFolder && Sections.focusedCardPlayerIndex == cardIndex)
+                                   card.secondaryArt
+                               else card.primaryArt
+
+                SmartCardPreview(imageUrl = imageUrl,
+                    isSelected = Sections.getSelectedSection(sectionIndex) == cardIndex && isNotPlayer)
+
+                Box (
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0x88000000)),
-                    contentScale = ContentScale.Crop
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-//                        .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent overlay
-                        .then(bgModifier)
-                )
+                        .fillMaxHeight()
+                        .background(
+                        if(isFocused)
+                            Color(0xCCFFFFFF)
+                        else
+                            Color(0xFF222222)
+                    )
+                ){
+                    Text(
+                        // favouriteLabel is only set for favourite cards
+                        text = parseText(cleanText(if (card.favouriteLabel != "") card.favouriteLabel else card.label,)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if(isFocused) Color.Black else Color.White,
+                        modifier = Modifier
+                            .padding(start = 10.dp, top = 5.dp, end = 10.dp)
+                            .width(200.dp)
+                            .basicMarquee(iterations = if (isFocused) 100 else 0),
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (card.plot.isNotEmpty()) {
+                        Text(
+                            text = parseText(cleanText(card.plot)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if(isFocused) Color.Black else Color.White,
+                            modifier = Modifier
+                                //                    .alpha(if (isFocused) 1f else 0f)
+                                .padding(start = 10.dp, top = 25.dp, end = 10.dp)
+                                .width(200.dp)
+                                .basicMarquee(iterations = if (isFocused) 100 else 0),
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(100.dp))
             }
         }
-        Text(
-            text = parseText(cleanText(card.label)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
-            modifier = Modifier
-                .padding(start = 10.dp, top = 20.dp, end = 10.dp)
-                .width(200.dp)
-                .basicMarquee(iterations = if (isFocused) 100 else 0),
-            overflow = TextOverflow.Ellipsis,
-        )
-        if(card.plot.isNotEmpty()){
-            Text(
-                text = parseText(cleanText(card.plot)),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White,
-                modifier = Modifier
-//                    .alpha(if (isFocused) 1f else 0f)
-                    .padding(start = 10.dp, top = 5.dp, end = 10.dp)
-                    .width(200.dp)
-                    .basicMarquee(iterations = if (isFocused) 100 else 0),
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
     }
     if(isNotPlayer) {
-        LaunchedEffect(StatusManager.loadingState) {
-            if (SectionManager.focusedIndex == sectionIndex && SectionManager.focusedCardIndex == cardIndex) {
+        LaunchedEffect(Sections.focusedCardIndex, Sections.focusedIndex, Sections.refocus) {
+            if (Sections.focusedIndex == sectionIndex && Sections.focusedCardIndex == cardIndex) {
+                sectionsListState.scrollToItem(sectionIndex)
+                cardListState.scrollToItem(maxOf(0, cardIndex-2))
                 focusRequester.requestFocus()
+                Sections.refocus = false
             }
         }
     }else{
-        LaunchedEffect(PlayerManager.isVisibleCardList) {
-            if (PlayerManager.isVisibleCardList && SectionManager.focusedCardPlayerIndex == cardIndex) {
+        LaunchedEffect(Sections.focusedCardPlayerIndex, Sections.refocus) {
+            if (Sections.focusedCardPlayerIndex == cardIndex) {
                 focusRequester.requestFocus()
-            }else{
-                focusRequester.freeFocus()
+                cardListState.scrollToItem(cardIndex)
+                Sections.refocus = false
             }
         }
 
     }
+}
+
+// This is a custom card preview that will scale the image to fit the card
+@Composable
+fun SmartCardPreview(
+    imageUrl: String,
+    contentDescription: String? = null,
+    isSelected : Boolean = false
+) {
+    var contentScale by remember { mutableStateOf(ContentScale.Crop) }
+    var alpha by remember { mutableFloatStateOf(.0f) }
+
+    val onSuccess: (request: ImageRequest, result: ImageResult) -> Unit = { _, result ->
+        val drawable = result.drawable
+        if(drawable!=null) {
+            val intrinsicWidth = drawable.intrinsicWidth
+            val intrinsicHeight = drawable.intrinsicHeight
+            if (intrinsicWidth > 0 && intrinsicHeight > 0) {
+                val aspectRatio = intrinsicWidth.toFloat() / intrinsicHeight.toFloat()
+                if (aspectRatio > 0.9) {
+                    contentScale = ContentScale.Crop
+                } else {
+                    contentScale = ContentScale.Fit
+                    alpha = .5f
+                }
+            }
+        }
+    }
+
+    Box( modifier = Modifier
+        .height(120.dp)
+        .clip(RectangleShape)
+    ){
+
+        if(imageUrl.endsWith("/spinner")) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(58.dp)
+                )
+            }
+        }else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .listener(onSuccess = onSuccess)
+                    .build(),
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = Modifier.zIndex(0f)
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .scale(2f)
+                    .alpha(alpha)
+            )
+
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .listener(onSuccess = onSuccess)
+                    .build(),
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = Modifier.zIndex(1f)
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
+        }
+
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .zIndex(2f)
+            .alpha(if (isSelected) 1f else 0f)
+            .background(Color(0xAAAA0000)
+            )
+        )
+    }
+
 }

@@ -59,7 +59,6 @@ def add_dependencies(module_path):
         require_path = os.path.join(full_addons_path(), require)
         if 'xbmc.python' in require: continue
 
-
         if os.path.exists(require_path):
             # Extract unique subfolders containing at least one Python file
             subfolders = set()
@@ -106,9 +105,8 @@ def reload_module(module_name, module_path):
         print(f"Caught an exit attempt from {module_path.split('/')[-1]}")
 
 def run(argv):
-    print(argv)
     global last_uri
-    last_uri =  argv[0]+argv[2]
+    last_uri = argv[0]+argv[2]
     plugin_name = argv[0].split("/")[2]
     plugin.plugin_name = plugin_name
     sys.argv = argv
@@ -123,6 +121,4 @@ def run(argv):
     else:
         raise Exception("Failed to find the library attribute in addon.xml")
 
-    plugin._to_return_items = []
     reload_module(module_name, module_path)
-    return plugin._to_return_items

@@ -28,9 +28,10 @@ android {
         python {
             buildPython "python.exe"
             pip {
-                install "-r", "src/main/python/requirements.txt"
+                install "pyinstaller"
             }
         }
+
         kotlinOptions {
             jvmTarget = '18'
         }
