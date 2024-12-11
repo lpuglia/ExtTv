@@ -59,7 +59,7 @@ object PythonManager {
 
 //    fun runPluginMultiUri(uriList: List<String>): List<CardItem> {
 //        return synchronized(lock) {
-//            exttv?.callAttr("multi_run", uriList)?.toJava(List::class.java) as List<CardItem>
+//            exttv?.callAttr("multi_run", uriList)?.toJava(List::class.kotlin) as List<CardItem>
 //        }
 //    }
 
@@ -82,7 +82,7 @@ object PythonManager {
 //        if (card.uri in visitedUris) return emptyList()
 //        visitedUris.add(card.uri)
 //
-//        val childCards = exttv?.callAttr("run", card.uri)?.toJava(List::class.java) as List<CardItem>
+//        val childCards = exttv?.callAttr("run", card.uri)?.toJava(List::class.kotlin) as List<CardItem>
 //        val allCards = mutableListOf<CardItem>()
 //
 //        for (child in childCards) {
