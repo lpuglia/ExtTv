@@ -1,20 +1,16 @@
 package com.android.exttv.model.manager
 
 import android.content.Context
-import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.media3.common.PlaybackException
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.drm.MediaDrmCallbackException
-import androidx.media3.exoplayer.source.MediaSource
 import com.android.exttv.model.data.CardItem
-import com.android.exttv.util.ToastUtils
 
 object PlayerManager {
     var isLoading by mutableStateOf(true)
@@ -40,26 +36,13 @@ object PlayerManager {
                 })
                 playWhenReady = true
         }
-
-        player.addListener(object : Player.Listener {
-            @OptIn(UnstableApi::class)
-            override fun onPlayerError(error: PlaybackException) {
-                player.pause()
-                if (error.cause is MediaDrmCallbackException) {
-                    val drmError = error.cause as MediaDrmCallbackException
-                    ToastUtils.showToast("DRM session error: ${drmError.message}", Toast.LENGTH_LONG)
-                } else {
-                    ToastUtils.showToast("Unexpected error: ${error.message}", Toast.LENGTH_LONG)
-                }
-            }
-        })
     }
 
     @OptIn(UnstableApi::class)
-    fun setMediaSource(newMediaSource: MediaSource) {
+    fun setMediaSource(newMediaItem: MediaItem) {
 
         // Prepare the player with the new MediaSource
-        player.setMediaSource(newMediaSource)
+        player.setMediaItem(newMediaItem)
 
         // Optionally, seek to a specific position or the start
         player.seekToDefaultPosition() // Starts from beginning
