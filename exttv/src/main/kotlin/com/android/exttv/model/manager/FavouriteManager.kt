@@ -95,13 +95,29 @@ object FavouriteManager {
         saveAllData(allLists)
     }
 
-    // Retrieve a list of favourites
+    // Retrieve a list of favourites, also update the content of cards
     fun getFavourite(listName: String): List<CardItem> {
         val cache = mutableMapOf<String, List<CardItem>>()
         val toReturn = mutableListOf<CardItem>()
         val favourites = getAllFavourites()[listName]
 
+//        val uniqueUriContainers = favourites?.map { it.uriContainer }?.distinct() ?: emptyList()
+//        val allCards = PythonManager.runPluginMultiUri(uniqueUriContainers)
+//        for (fav in favourites ?: emptyList()) {
+//            var favCard = allCards.find { it.uri == fav.uri }
+//
+//            if (favCard == null) {
+//                favCard = allCards.find { it.label == fav.label && it.isFolder == fav.isFolder }
+//            }
+//            if (favCard != null) {
+//                toReturn.add(favCard.copy(favouriteLabel = fav.favouriteLabel))
+//            }
+//            if (favCard == null) {
+//                toReturn.add(fav)
+//            }
+//        }
         for (fav in favourites ?: emptyList()) {
+            val isLive = fav.isLive
             if(fav.uriContainer !in cache) {
                 cache[fav.uriContainer] = PythonManager.runPluginUri(fav.uriContainer)
             }
@@ -113,7 +129,7 @@ object FavouriteManager {
                 favCard = cache[fav.uriContainer]?.find { it.label == fav.label && it.isFolder == fav.isFolder }
             }
             if (favCard != null) {
-                toReturn.add(favCard)
+                toReturn.add(favCard.copy(favouriteLabel = fav.favouriteLabel, isLive = isLive))
             }
             // keep the card if it wasn't possible to find it, maybe it still works
             if (favCard == null) {
@@ -121,6 +137,19 @@ object FavouriteManager {
             }
         }
         return toReturn.map { it.copy(uriParent = "favourite://${listName}") }
+    }
+
+    // Update the isLive field of a specific card in a specific list
+    fun updateCardIsLive(listName: String, cardFavouriteLabel: String) {
+        val allLists = getAllFavourites().toMutableMap()
+        val favList = allLists[listName]?.toMutableList() ?: return
+        val cardIndex = favList.indexOfFirst { it.favouriteLabel == cardFavouriteLabel }
+        if (cardIndex != -1) {
+            val updatedCard = favList[cardIndex].copy(isLive = true)
+            favList[cardIndex] = updatedCard
+            allLists[listName] = favList
+            saveAllData(allLists)
+        }
     }
 
     // Delete a list entirely

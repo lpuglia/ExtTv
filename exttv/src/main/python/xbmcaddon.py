@@ -52,6 +52,36 @@ def parse_settings_from_xml(xml_file):
         for setting in root.iter('setting'):
             setting_id = setting.get('id')
             setting_default = setting.get('default')
+            setting_text = setting.text
+
+            if setting_text is None:
+                settings_dict[setting_id] = setting_default
+            else:
+                settings_dict[setting_id] = setting_text
+
+            # # hack
+            # if setting_id == 'default_action':
+            #     settings_dict['default_action'] = "2"
+
+        return settings_dict
+
+    except ET.ParseError as e:
+        print(f"Error parsing XML: {e}")
+        return None
+    except FileNotFoundError:
+        print(f"Error: File '{xml_file}' not found.")
+        return None
+
+def parse_settings_from_xml_backup(xml_file):
+    try:
+        tree = ET.parse(xml_file)  # Parse the XML file
+        root = tree.getroot()  # Get the root element
+        settings_dict = {}  # Dictionary to store id and default values
+
+        # Iterate over all <setting> elements in the XML tree
+        for setting in root.iter('setting'):
+            setting_id = setting.get('id')
+            setting_default = setting.get('default')
 
             # If 'default' is an attribute, use it
             if setting_default is None:
@@ -71,6 +101,7 @@ def parse_settings_from_xml(xml_file):
     except FileNotFoundError:
         print(f"Error: File '{xml_file}' not found.")
         return None
+
 
 def parse_po_file(file_path):
 
@@ -115,6 +146,7 @@ class Addon():
             id = plugin.plugin_name
         
         po_file_path = os.path.join(utils.full_addons_path(), f'{id}/resources/language/resource.language.en_gb/strings.po')
+        # settings_xml_path = os.path.join(utils.full_addons_path(), f'../userdata/addon_data/{id}/settings.xml')
         settings_xml_path = os.path.join(utils.full_addons_path(), f'{id}/resources/settings.xml')
         addon_xml_path = os.path.join(utils.full_addons_path(), f'{id}/addon.xml')
 
@@ -124,7 +156,7 @@ class Addon():
             print(f"Warning: PO file '{po_file_path}' not found.")
 
         if os.path.exists(settings_xml_path):
-            self.settings = parse_settings_from_xml(settings_xml_path)
+            self.settings = parse_settings_from_xml_backup(settings_xml_path)
         else:
             print(f"Warning: Settings XML file '{settings_xml_path}' not found.")
 

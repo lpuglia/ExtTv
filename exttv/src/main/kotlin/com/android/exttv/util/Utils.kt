@@ -1,5 +1,6 @@
 package com.android.exttv.util
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Bitmap
@@ -16,9 +17,13 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.android.exttv.model.data.CardItem
 import com.android.exttv.model.manager.AddonManager
 import com.android.exttv.model.manager.FavouriteManager
+import com.android.exttv.model.manager.PythonManager
 import com.android.exttv.model.manager.StatusManager.drawerItems
+import com.android.exttv.model.manager.dumpSettingValues
+import com.android.exttv.model.manager.readSettingMeta
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -58,6 +63,13 @@ object ToastUtils {
         handler.post {
             Toast.makeText(Status.appContext, message, duration).show()
         }
+    }
+}
+
+object CardUtils {
+    @JvmStatic
+    fun addCardFromPython(card: CardItem) {
+        PythonManager.itemList.add(card)
     }
 }
 
@@ -376,6 +388,7 @@ fun getRootDirectoryName(zipFile: File): String? {
 class DownloadError(message: String) : Exception(message)
 class ExtractionError(message: String) : Exception(message)
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class PluginData(
     val zipURL: String,
@@ -413,6 +426,20 @@ fun installDependencies(pluginPath: File) {
             }
         }
     }
+}
+
+fun createSettings(pluginPath: File) {
+    val settingFile = pluginPath.resolve("resources/settings.xml")
+
+    if(settingFile.exists()){
+        val settings = readSettingMeta(pluginPath.name)
+        val addonDataDir = Addons.addonsPath.resolve("../userdata/addon_data/${pluginPath.name}")
+        if (!addonDataDir.exists()) {
+            addonDataDir.mkdirs() // Create the directory and any missing parent directories
+        }
+        dumpSettingValues(settings, pluginPath.name)
+    }
+
 }
 
 fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: Boolean = false) {
@@ -460,6 +487,8 @@ fun installAddon(zipURL: String, pluginName: String, sourceURL: String, force: B
                         Log.d("D&E","Plugin $pluginName extracted successfully.")
 
                         installDependencies(pluginPath)
+
+//                        createSettings(pluginPath)
 
                     } catch (e: Exception) {
                         throw ExtractionError("Failed to extract ${zipFile.toPath()}: ${e.message}")

@@ -58,9 +58,11 @@ import coil.compose.AsyncImage
 import com.android.exttv.model.manager.LoadingStatus
 import com.android.exttv.util.PluginData
 import com.android.exttv.util.ToastUtils
+import com.android.exttv.util.cleanText
 import com.android.exttv.util.getFromGit
 import com.android.exttv.util.getFromRepository
 import com.android.exttv.util.getLatestZipName
+import com.android.exttv.util.stripTags
 import com.android.exttv.util.updateSection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,8 +82,9 @@ import com.android.exttv.model.manager.SectionManager as Sections
 fun NewPlaylistMenu() {
     if (!Status.showNewPlaylistMenu) return
     val cardItem = Sections.getFocusedCard()
-    var playlistName by remember { mutableStateOf("") }
+    var favouriteLabel by remember { mutableStateOf(cleanText(stripTags(cardItem.label))) }
     val focusRequester = remember { FocusRequester() }
+    val focusRequesterLabel = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
     Dialog(onDismissRequest = { Status.showNewPlaylistMenu = false }) {
@@ -95,20 +98,39 @@ fun NewPlaylistMenu() {
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 TextField(
-                    value = playlistName,
-                    onValueChange = { newName -> playlistName = newName },
+                    value = Status.defaultPlaylistName,
+                    onValueChange = { newName -> Status.defaultPlaylistName = newName },
                     placeholder = { Text("New Playlist") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(focusRequester)
+                        .focusRequester(focusRequester),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = {
+                        focusRequesterLabel.requestFocus()
+                    }),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Enter favourite label, must be unique for each playlist",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                TextField(
+                    value = favouriteLabel,
+                    onValueChange = { newName -> favouriteLabel = newName },
+                    placeholder = { Text("Favourite label") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequesterLabel)
                         .onKeyEvent { event ->
                             if (event.type == KeyEventType.KeyDown) {
                                 when (event.key) {
                                     Key.Enter -> {
-                                        Favourites.addCardOrCreateFavourite(playlistName, cardItem)
+                                        Favourites.addCardOrCreateFavourite(Status.defaultPlaylistName, cardItem.copy(favouriteLabel = favouriteLabel))
                                         Status.showNewPlaylistMenu = false // Close dialog after creation
                                         Status.showFavouriteMenu = false
-                                        focusManager.clearFocus() // Clear focus
+                                        Status.defaultPlaylistName = ""
+                                        Sections.refocusCard()
                                         true
                                     }
                                     else -> false
@@ -122,14 +144,14 @@ fun NewPlaylistMenu() {
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            Favourites.addCardOrCreateFavourite(playlistName, cardItem)
+                            Favourites.addCardOrCreateFavourite(Status.defaultPlaylistName, cardItem.copy(favouriteLabel = favouriteLabel))
                             Status.showNewPlaylistMenu = false // Close dialog after creation
                             Status.showFavouriteMenu = false
-                            focusManager.clearFocus() // Clear focus
+                            Status.defaultPlaylistName = ""
+                            Sections.refocusCard()
                         }
                     )
                 )
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -157,7 +179,9 @@ fun OptionItem(text: String, onClick: () -> Unit) {
 @Composable
 fun FavouriteMenu() {
     if (!Status.showFavouriteMenu) return
-    Dialog(onDismissRequest = { Status.showFavouriteMenu = false }) {
+    Dialog(onDismissRequest = {
+        Status.showFavouriteMenu = false
+    }) {
         Surface(
             shape = MaterialTheme.shapes.medium,
         ) {
@@ -177,10 +201,16 @@ fun FavouriteMenu() {
                 )
                 OptionItem(text = "Add content to new playlist", onClick = {})
                 Favourites.getAllFavouriteNames().forEach { name ->
-                    OptionItem(text = "Add to $name", onClick = {
-                        Favourites.addCardOrCreateFavourite(name, Sections.getFocusedCard())
-                        Status.showFavouriteMenu = false
-                    })
+                    OptionItem(text = "Add to $name",
+                        onClick = {
+                            if(Status.reboundEnter){
+                                Status.reboundEnter = false
+                            }else {
+                                Status.showNewPlaylistMenu = true
+                                Status.defaultPlaylistName = name
+                            }
+                        }
+                    )
                     OptionItem(text = "Add content to $name", onClick = {})
                 }
             }
@@ -215,6 +245,7 @@ fun RemoveDialog() {
                             }
                             Favourites.deleteFavourite(favouriteIndex)
                             updateSection()
+                            Sections.refocusCard()
                         }
                     }
                 }
@@ -256,6 +287,7 @@ fun UninstallDialog() {
                             }
                             Addons.uninstallAddon(indexAddon)
                             updateSection()
+                            Sections.refocusCard()
                         }
                     }
                 }
@@ -394,7 +426,7 @@ fun RepositoryDialog() {
                 .width(450.dp)
                 .height(500.dp),
             tonalElevation = 8.dp,
-            colors = SurfaceDefaults.colors(containerColor = Color(0xA30F2B31))
+            colors = SurfaceDefaults.colors(containerColor = Color(0xA3111111))
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth(), // Make sure the Box takes the full width
@@ -414,7 +446,7 @@ fun RepositoryDialog() {
                 state = listState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xA30F2B31))
+                    .background(Color(0xA3111111))
                     .padding(top = 38.dp)
                     .padding(horizontal = 23.dp)
             ) {
@@ -447,7 +479,7 @@ fun RepositoryDialog() {
 //                            .clickable {
 //                                selectedItem = addon
 //                            },
-                        colors = CardDefaults.colors(containerColor = Color(0xCB2B474D)),
+                        colors = CardDefaults.colors(containerColor = Color(0xCB333333)),
                     ){
                         AddonBox(addon)
                     }
@@ -594,9 +626,9 @@ fun GithubDialog() {
                             Status.showGithubDialog = false
                             coroutineScope.launch {
                                 withContext(Dispatchers.IO) {
-                                    val owner = "kodiondemand"
-                                    val repo = "addon"
-                                    val branch = "master"
+                                    val owner = "lpuglia"
+                                    val repo = "kod-addon"
+                                    val branch = "patch-2"
                                     val url = "$owner/$repo/$branch"
 
                                     Status.loadingState = LoadingStatus.INSTALLING_ADDON
